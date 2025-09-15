@@ -1,5 +1,11 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
+import type { Database } from '../lib/supabase'
+
+type Trip = Database['public']['Tables']['trips']['Row'] & {
+  destinations?: Database['public']['Tables']['destinations']['Row'][]
+  participant_count?: number
+}
 
 export function useDashboard() {
   const [stats, setStats] = useState({
@@ -10,7 +16,7 @@ export function useDashboard() {
     profitMargin: 0
   })
   const [recentTransactions, setRecentTransactions] = useState([])
-  const [upcomingTrips, setUpcomingTrips] = useState([])
+  const [upcomingTrips, setUpcomingTrips] = useState<Trip[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -31,7 +37,23 @@ export function useDashboard() {
         supabase.from('transactions').select('*').eq('status', 'active'),
         supabase
           .from('trips')
-          .select('id,name,departure_date,quota,status')
+          .select(`
+            id,
+            name,
+            departure_date,
+            return_date,
+            quota,
+            status,
+            meeting_point,
+            price,
+            participants!left(id),
+            trip_destinations!left(
+              destinations(
+                id,
+                name
+              )
+            )
+          `)
           .eq('status', 'active')
       ])
 
@@ -62,11 +84,20 @@ export function useDashboard() {
       ).slice(0, 10) || []
       setRecentTransactions(sortedTransactions)
 
+      // Process trips data with proper structure
+      const processedTrips = trips?.map(trip => ({
+        ...trip,
+        participant_count: trip.participants?.length || 0,
+        destinations: trip.trip_destinations?.map(td => td.destinations).filter(Boolean) || []
+      })) || []
+
       // Set upcoming trips
       const today = new Date().toISOString().split('T')[0]
-      const upcoming = trips?.filter(trip => trip.departure_date >= today)
+      const upcoming = processedTrips
+        .filter(trip => trip.departure_date >= today)
         .sort((a, b) => new Date(a.departure_date).getTime() - new Date(b.departure_date).getTime())
-        .slice(0, 5) || []
+        .slice(0, 5)
+      
       setUpcomingTrips(upcoming)
 
     } catch (error) {
