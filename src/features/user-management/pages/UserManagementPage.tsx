@@ -193,9 +193,9 @@ export function UserManagementPage() {
             Refresh
           </Button>
           <Button onClick={() => setShowInviteForm(true)} className="bg-purple-600 hover:bg-purple-700">
-          <Plus className="h-4 w-4 mr-2" />
-          Undang Pengguna
-        </Button>
+            <Plus className="h-4 w-4 mr-2" />
+            Undang Pengguna
+          </Button>
         </div>
       </div>
 
@@ -462,14 +462,6 @@ export function UserManagementPage() {
           </div>
         </CardContent>
       </Card>
-    </div>
-  )
-}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
