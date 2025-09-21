@@ -25,16 +25,30 @@ export function useDashboard() {
 
   const fetchDashboardData = async () => {
     try {
+      console.time('fetchDashboardData')
       setLoading(true)
       
       // Fetch all required data
+      console.time('fetchParticipants')
       const [
         { data: participants },
+      ] = await Promise.all([
+        supabase.from('participants').select('*')
+      ])
+      console.timeEnd('fetchParticipants')
+      
+      console.time('fetchTransactions')
+      const [
         { data: transactions },
+      ] = await Promise.all([
+        supabase.from('transactions').select('*').eq('status', 'active')
+      ])
+      console.timeEnd('fetchTransactions')
+      
+      console.time('fetchTrips')
+      const [
         { data: trips }
       ] = await Promise.all([
-        supabase.from('participants').select('*'),
-        supabase.from('transactions').select('*').eq('status', 'active'),
         supabase
           .from('trips')
           .select(`
@@ -56,7 +70,9 @@ export function useDashboard() {
           `)
           .eq('status', 'active')
       ])
+      console.timeEnd('fetchTrips')
 
+      console.time('processData')
       // Calculate income and expenses
       const totalIncome = transactions?.filter(t => t.transaction_type === 'Pemasukan')
         .reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0) || 0
@@ -99,11 +115,21 @@ export function useDashboard() {
         .slice(0, 5)
       
       setUpcomingTrips(upcoming)
+      console.timeEnd('processData')
+
+      console.log('Dashboard data loaded:', {
+        participantsCount: participants?.length || 0,
+        transactionsCount: transactions?.length || 0,
+        tripsCount: trips?.length || 0,
+        stats,
+        upcomingTripsCount: upcoming.length
+      })
 
     } catch (error) {
       console.error('Error fetching dashboard data:', error)
     } finally {
       setLoading(false)
+      console.timeEnd('fetchDashboardData')
     }
   }
 
