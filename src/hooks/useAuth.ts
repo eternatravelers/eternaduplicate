@@ -65,10 +65,12 @@ export function useAuthProvider(): AuthContextType {
       console.log('📋 Fetching user profile for userId:', userId)
       
       console.log('🔍 Starting Supabase query for user_profiles...')
+      console.time('supabase_fetch_user_profile')
       const { data, error } = await supabase
         .from('user_profiles')
-        .select('*')
+        .select('id, user_id, full_name, company_name, phone, role, tenant_id, created_at, updated_at')
         .eq('user_id', userId)
+      console.timeEnd('supabase_fetch_user_profile')
       
       console.log('📊 Supabase query completed. Data:', data, 'Error:', error)
 
