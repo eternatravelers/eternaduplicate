@@ -156,13 +156,14 @@ export function useAuthProvider(): AuthContextType {
           setTenantId(profile.tenant_id)
           setUserRole(profile.role)
         } else {
-          // Create profile for existing users who don't have one
-          const newProfile = await createUserProfile(data.user)
-          if (newProfile) {
-            setUserProfile(newProfile)
-            setTenantId(newProfile.tenant_id)
-            setUserRole(newProfile.role)
-          }
+          // For existing users without profiles, don't auto-create
+          // They need to be set up by an admin or created manually
+          console.warn('User exists but has no profile. Contact admin to set up profile.')
+          setError('Profil pengguna belum diatur. Hubungi administrator untuk mengatur profil Anda.')
+          
+          // Sign out the user since they can't use the app without a profile
+          await supabase.auth.signOut()
+          return
         }
       }
     } catch (err) {
@@ -194,12 +195,15 @@ export function useAuthProvider(): AuthContextType {
       if (error) throw error
 
       if (data.user) {
-        // Create user profile
+        // Try to create user profile
         const profile = await createUserProfile(data.user, signUpData)
         if (profile) {
           setUserProfile(profile)
           setTenantId(profile.tenant_id)
           setUserRole(profile.role)
+        } else {
+          // If profile creation fails, show appropriate message
+          setError('Pendaftaran berhasil, tetapi profil belum dapat dibuat. Hubungi administrator.')
         }
       }
 
