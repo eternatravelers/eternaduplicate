@@ -3,19 +3,18 @@ import { AuthProvider } from '@/components/Auth/AuthProvider'
 import { ProtectedRoute } from '@/components/Auth/ProtectedRoute'
 import { Layout } from '@/components/Layout'
 import { Dashboard } from '@/components/Dashboard'
-import { Participants } from '@/components/Participants'
-import { Trips } from '@/components/Trips'
+import { ParticipantsPage } from '@/features/participants/pages/ParticipantsPage'
+import { TripsPage } from '@/features/trips/pages/TripsPage'
 import { Destinations } from '@/components/Destinations'
-import { Sales } from '@/components/Sales'
+import { SalesPage } from '@/features/sales/pages/SalesPage'
 import { OperationalResources } from '@/components/OperationalResources'
 import { Finance } from '@/components/Finance'
-import { Operations } from '@/components/Operations'
-import { Reports } from '@/components/Reports'
-import { Analytics } from '@/components/Analytics'
-import { CostPlans } from '@/components/CostPlans'
-import { TrashTransactions } from '@/components/TrashTransactions'
-
-import { UserManagement } from '@/components/UserManagement'
+import { OperationsPage } from '@/features/operations/pages/OperationsPage'
+import { ReportsPage } from '@/features/finance/pages/ReportsPage'
+import { AnalyticsPage } from '@/features/analytics/pages/AnalyticsPage'
+import { CostPlansPage } from '@/features/cost-plans/pages/CostPlansPage'
+import { TrashTransactionsPage } from '@/features/finance/pages/TrashTransactionsPage'
+import { UserManagementPage } from '@/features/user-management/pages/UserManagementPage'
 function AppContent() {
   const [activeTab, setActiveTab] = useState('dashboard')
 
@@ -24,29 +23,29 @@ function AppContent() {
       case 'dashboard':
         return <Dashboard />
       case 'participants':
-        return <Participants />
+        return <ParticipantsPage />
       case 'trips':
-        return <Trips />
+        return <TripsPage />
       case 'destinations':
         return <Destinations />
       case 'sales':
-        return <Sales />
+        return <SalesPage />
       case 'operational-resources':
         return <OperationalResources />
       case 'finance':
         return <Finance />
       case 'operations':
-        return <Operations />
+        return <OperationsPage />
       case 'reports':
-        return <Reports />
+        return <ReportsPage />
       case 'analytics':
-        return <Analytics />
+        return <AnalyticsPage />
       case 'cost-plans':
-        return <CostPlans />
+        return <CostPlansPage />
       case 'trash':
-        return <TrashTransactions />
+        return <TrashTransactionsPage />
       case 'user-management':
-        return <UserManagement />
+        return <UserManagementPage />
       default:
         return <Dashboard />
     }
