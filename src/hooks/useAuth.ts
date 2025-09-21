@@ -84,16 +84,18 @@ export function useAuthProvider(): AuthContextType {
   // Create user profile for new users
   const createUserProfile = async (user: User, signUpData?: SignUpData): Promise<UserProfile | null> => {
     try {
-      // Generate tenant ID for new users (or use existing one from signup data)
-      const newTenantId = crypto.randomUUID()
+      // For new users, we'll create them as regular users
+      // Super admin should be created manually in the database
+      // Generate tenant ID only if this is the first user (which should be done manually)
+      // For regular signups, we'll leave tenant_id as null initially
       
       const profileData = {
         user_id: user.id,
         full_name: signUpData?.fullName || user.user_metadata?.full_name || null,
         company_name: signUpData?.companyName || user.user_metadata?.company_name || null,
         phone: signUpData?.phone || user.user_metadata?.phone || null,
-        role: 'super_admin', // First user becomes super admin
-        tenant_id: newTenantId
+        role: 'user', // Default role for new signups
+        tenant_id: null // Will be assigned by admin later
       }
 
       const { data, error } = await supabase
