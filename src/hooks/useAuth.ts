@@ -2,9 +2,22 @@ import { useState, useEffect, createContext, useContext } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { User, Session } from '@supabase/supabase-js'
 
+interface UserProfile {
+  id: string
+  user_id: string
+  full_name: string | null
+  company_name: string | null
+  phone: string | null
+  role: string
+  tenant_id: string | null
+  created_at: string
+  updated_at: string
+}
+
 interface AuthContextType {
   user: User | null
   session: Session | null
+  userProfile: UserProfile | null
   loading: boolean
   error: string | null
   signIn: (email: string, password: string) => Promise<void>
@@ -14,6 +27,7 @@ interface AuthContextType {
   userRole: string | null
   isAdmin: boolean
   isSuperAdmin: boolean
+  refreshProfile: () => Promise<void>
 }
 
 interface SignUpData {
@@ -37,19 +51,80 @@ export function useAuth() {
 export function useAuthProvider(): AuthContextType {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [tenantId, setTenantId] = useState<string | null>(null)
   const [userRole, setUserRole] = useState<string | null>(null)
 
-  // Get tenant ID from user metadata
-  const getTenantId = (user: User): string | null => {
-    return user.user_metadata?.tenant_id || user.app_metadata?.tenant_id || null
+  // Fetch user profile from user_profiles table
+  const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .single()
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // No profile found, return null
+          return null
+        }
+        throw error
+      }
+
+      return data
+    } catch (err) {
+      console.error('Error fetching user profile:', err)
+      return null
+    }
   }
 
-  // Get user role from user metadata
-  const getUserRole = (user: User): string => {
-    return user.user_metadata?.role || user.app_metadata?.role || 'admin'
+  // Create user profile for new users
+  const createUserProfile = async (user: User, signUpData?: SignUpData): Promise<UserProfile | null> => {
+    try {
+      // Generate tenant ID for new users (or use existing one from signup data)
+      const newTenantId = crypto.randomUUID()
+      
+      const profileData = {
+        user_id: user.id,
+        full_name: signUpData?.fullName || user.user_metadata?.full_name || null,
+        company_name: signUpData?.companyName || user.user_metadata?.company_name || null,
+        phone: signUpData?.phone || user.user_metadata?.phone || null,
+        role: 'super_admin', // First user becomes super admin
+        tenant_id: newTenantId
+      }
+
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .insert([profileData])
+        .select()
+        .single()
+
+      if (error) throw error
+
+      return data
+    } catch (err) {
+      console.error('Error creating user profile:', err)
+      return null
+    }
+  }
+
+  // Refresh user profile
+  const refreshProfile = async () => {
+    if (!user) return
+
+    const profile = await fetchUserProfile(user.id)
+    setUserProfile(profile)
+    
+    if (profile) {
+      setTenantId(profile.tenant_id)
+      setUserRole(profile.role)
+    } else {
+      setTenantId(null)
+      setUserRole(null)
+    }
   }
 
   // Check if user is admin (has basic access)
@@ -71,16 +146,21 @@ export function useAuthProvider(): AuthContextType {
       if (error) throw error
 
       if (data.user) {
-        const userTenantId = getTenantId(data.user)
-        const role = getUserRole(data.user)
-        setUserRole(role)
-        if (userTenantId) {
-          setTenantId(userTenantId)
+        // Fetch user profile
+        const profile = await fetchUserProfile(data.user.id)
+        
+        if (profile) {
+          setUserProfile(profile)
+          setTenantId(profile.tenant_id)
+          setUserRole(profile.role)
         } else {
-          // For now, create a default tenant ID if none exists
-          const defaultTenantId = crypto.randomUUID()
-          setTenantId(defaultTenantId)
-          console.log('Created default tenant ID:', defaultTenantId)
+          // Create profile for existing users who don't have one
+          const newProfile = await createUserProfile(data.user)
+          if (newProfile) {
+            setUserProfile(newProfile)
+            setTenantId(newProfile.tenant_id)
+            setUserRole(newProfile.role)
+          }
         }
       }
     } catch (err) {
@@ -97,10 +177,6 @@ export function useAuthProvider(): AuthContextType {
       setLoading(true)
       setError(null)
 
-      // Generate a tenant ID for the new user
-      const newTenantId = crypto.randomUUID()
-
-      // Create the user with tenant_id in metadata
       const { data, error } = await supabase.auth.signUp({
         email: signUpData.email,
         password: signUpData.password,
@@ -108,9 +184,7 @@ export function useAuthProvider(): AuthContextType {
           data: {
             full_name: signUpData.fullName,
             company_name: signUpData.companyName,
-            phone: signUpData.phone,
-            tenant_id: newTenantId,
-            role: 'super_admin' // First user becomes super admin
+            phone: signUpData.phone
           }
         }
       })
@@ -118,9 +192,13 @@ export function useAuthProvider(): AuthContextType {
       if (error) throw error
 
       if (data.user) {
-        setTenantId(newTenantId)
-        setUserRole('super_admin')
-        console.log('User registered with tenant ID:', newTenantId)
+        // Create user profile
+        const profile = await createUserProfile(data.user, signUpData)
+        if (profile) {
+          setUserProfile(profile)
+          setTenantId(profile.tenant_id)
+          setUserRole(profile.role)
+        }
       }
 
     } catch (err) {
@@ -140,6 +218,7 @@ export function useAuthProvider(): AuthContextType {
       const { error } = await supabase.auth.signOut()
       if (error) throw error
 
+      setUserProfile(null)
       setTenantId(null)
       setUserRole(null)
     } catch (err) {
@@ -163,15 +242,20 @@ export function useAuthProvider(): AuthContextType {
         setUser(session?.user ?? null)
 
         if (session?.user) {
-          const userTenantId = getTenantId(session.user)
-          const role = getUserRole(session.user)
-          setUserRole(role)
-          if (userTenantId) {
-            setTenantId(userTenantId)
+          const profile = await fetchUserProfile(session.user.id)
+          
+          if (profile) {
+            setUserProfile(profile)
+            setTenantId(profile.tenant_id)
+            setUserRole(profile.role)
           } else {
-            // Create a default tenant ID if none exists
-            const defaultTenantId = crypto.randomUUID()
-            setTenantId(defaultTenantId)
+            // Create profile for existing users who don't have one
+            const newProfile = await createUserProfile(session.user)
+            if (newProfile) {
+              setUserProfile(newProfile)
+              setTenantId(newProfile.tenant_id)
+              setUserRole(newProfile.role)
+            }
           }
         }
       } catch (err) {
@@ -191,17 +275,23 @@ export function useAuthProvider(): AuthContextType {
         setUser(session?.user ?? null)
 
         if (session?.user) {
-          const userTenantId = getTenantId(session.user)
-          const role = getUserRole(session.user)
-          setUserRole(role)
-          if (userTenantId) {
-            setTenantId(userTenantId)
+          const profile = await fetchUserProfile(session.user.id)
+          
+          if (profile) {
+            setUserProfile(profile)
+            setTenantId(profile.tenant_id)
+            setUserRole(profile.role)
           } else {
-            // Create a default tenant ID if none exists
-            const defaultTenantId = crypto.randomUUID()
-            setTenantId(defaultTenantId)
+            // Create profile for users who don't have one
+            const newProfile = await createUserProfile(session.user)
+            if (newProfile) {
+              setUserProfile(newProfile)
+              setTenantId(newProfile.tenant_id)
+              setUserRole(newProfile.role)
+            }
           }
         } else {
+          setUserProfile(null)
           setTenantId(null)
           setUserRole(null)
         }
@@ -216,6 +306,7 @@ export function useAuthProvider(): AuthContextType {
   return {
     user,
     session,
+    userProfile,
     loading,
     error,
     signIn,
@@ -224,7 +315,8 @@ export function useAuthProvider(): AuthContextType {
     tenantId,
     userRole,
     isAdmin,
-    isSuperAdmin
+    isSuperAdmin,
+    refreshProfile
   }
 }
 
