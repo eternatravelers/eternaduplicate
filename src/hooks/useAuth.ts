@@ -57,9 +57,12 @@ export function useAuthProvider(): AuthContextType {
   const [tenantId, setTenantId] = useState<string | null>(null)
   const [userRole, setUserRole] = useState<string | null>(null)
 
+  console.log('🔄 useAuthProvider initialized', { loading, user: !!user, userProfile: !!userProfile })
+
   // Fetch user profile from user_profiles table
   const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => {
     try {
+      console.log('📋 Fetching user profile for userId:', userId)
       const { data, error } = await supabase
         .from('user_profiles')
         .select('*')
@@ -69,11 +72,13 @@ export function useAuthProvider(): AuthContextType {
       if (error) {
         if (error.code === 'PGRST116') {
           // No profile found, return null
+          console.log('❌ No profile found for user:', userId)
           return null
         }
         throw error
       }
 
+      console.log('✅ User profile fetched successfully:', data)
       return data
     } catch (err) {
       console.error('Error fetching user profile:', err)
@@ -84,6 +89,7 @@ export function useAuthProvider(): AuthContextType {
   // Create user profile for new users
   const createUserProfile = async (user: User, signUpData?: SignUpData): Promise<UserProfile | null> => {
     try {
+      console.log('🆕 Creating user profile for user:', user.id)
       // For new users, we'll create them as regular users
       // Super admin should be created manually in the database
       // Generate tenant ID only if this is the first user (which should be done manually)
@@ -106,6 +112,7 @@ export function useAuthProvider(): AuthContextType {
 
       if (error) throw error
 
+      console.log('✅ User profile created successfully:', data)
       return data
     } catch (err) {
       console.error('Error creating user profile:', err)
@@ -115,6 +122,7 @@ export function useAuthProvider(): AuthContextType {
 
   // Refresh user profile
   const refreshProfile = async () => {
+    console.log('🔄 Refreshing profile for user:', user?.id)
     if (!user) return
 
     const profile = await fetchUserProfile(user.id)
@@ -123,9 +131,11 @@ export function useAuthProvider(): AuthContextType {
     if (profile) {
       setTenantId(profile.tenant_id)
       setUserRole(profile.role)
+      console.log('✅ Profile refreshed:', { role: profile.role, tenantId: profile.tenant_id })
     } else {
       setTenantId(null)
       setUserRole(null)
+      console.log('❌ No profile found during refresh')
     }
   }
 
@@ -139,6 +149,7 @@ export function useAuthProvider(): AuthContextType {
     try {
       setLoading(true)
       setError(null)
+      console.log('🔐 Attempting sign in for:', email)
 
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -146,6 +157,7 @@ export function useAuthProvider(): AuthContextType {
       })
 
       if (error) throw error
+      console.log('✅ Sign in successful, user:', data.user?.id)
 
       if (data.user) {
         // Fetch user profile
@@ -155,6 +167,7 @@ export function useAuthProvider(): AuthContextType {
           setUserProfile(profile)
           setTenantId(profile.tenant_id)
           setUserRole(profile.role)
+          console.log('✅ Profile loaded after sign in:', { role: profile.role })
         } else {
           // For existing users without profiles, don't auto-create
           // They need to be set up by an admin or created manually
@@ -169,9 +182,11 @@ export function useAuthProvider(): AuthContextType {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Terjadi kesalahan saat login'
       setError(errorMessage)
+      console.error('❌ Sign in error:', errorMessage)
       throw err
     } finally {
       setLoading(false)
+      console.log('🔄 Sign in process completed, loading:', false)
     }
   }
 
@@ -240,35 +255,44 @@ export function useAuthProvider(): AuthContextType {
     // Get initial session
     const getInitialSession = async () => {
       try {
+        console.log('🚀 Getting initial session...')
         const { data: { session }, error } = await supabase.auth.getSession()
         
         if (error) throw error
+        console.log('📋 Initial session:', { hasSession: !!session, userId: session?.user?.id })
 
         setSession(session)
         setUser(session?.user ?? null)
 
         if (session?.user) {
+          console.log('👤 User found in session, fetching profile...')
           const profile = await fetchUserProfile(session.user.id)
           
           if (profile) {
             setUserProfile(profile)
             setTenantId(profile.tenant_id)
             setUserRole(profile.role)
+            console.log('✅ Initial profile loaded:', { role: profile.role, tenantId: profile.tenant_id })
           } else {
             // Create profile for existing users who don't have one
+            console.log('🆕 No profile found, creating new profile...')
             const newProfile = await createUserProfile(session.user)
             if (newProfile) {
               setUserProfile(newProfile)
               setTenantId(newProfile.tenant_id)
               setUserRole(newProfile.role)
+              console.log('✅ New profile created:', { role: newProfile.role })
             }
           }
+        } else {
+          console.log('❌ No user in session')
         }
       } catch (err) {
         console.error('Error getting initial session:', err)
         setError(err instanceof Error ? err.message : 'Unknown error')
       } finally {
         setLoading(false)
+        console.log('🔄 Initial session loading completed, loading:', false)
       }
     }
 
@@ -277,37 +301,53 @@ export function useAuthProvider(): AuthContextType {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('🔄 Auth state changed:', { event, hasSession: !!session, userId: session?.user?.id })
         setSession(session)
         setUser(session?.user ?? null)
 
         if (session?.user) {
+          console.log('👤 User in auth state change, fetching profile...')
           const profile = await fetchUserProfile(session.user.id)
           
           if (profile) {
             setUserProfile(profile)
             setTenantId(profile.tenant_id)
             setUserRole(profile.role)
+            console.log('✅ Profile loaded in auth state change:', { role: profile.role })
           } else {
             // Create profile for users who don't have one
+            console.log('🆕 Creating profile in auth state change...')
             const newProfile = await createUserProfile(session.user)
             if (newProfile) {
               setUserProfile(newProfile)
               setTenantId(newProfile.tenant_id)
               setUserRole(newProfile.role)
+              console.log('✅ New profile created in auth state change:', { role: newProfile.role })
             }
           }
         } else {
+          console.log('❌ No user in auth state change')
           setUserProfile(null)
           setTenantId(null)
           setUserRole(null)
         }
 
         setLoading(false)
+        console.log('🔄 Auth state change completed, loading:', false)
       }
     )
 
     return () => subscription.unsubscribe()
   }, [])
+
+  console.log('🔄 useAuthProvider returning:', { 
+    loading, 
+    hasUser: !!user, 
+    hasUserProfile: !!userProfile, 
+    userRole,
+    isAdmin,
+    isSuperAdmin 
+  })
 
   return {
     user,
