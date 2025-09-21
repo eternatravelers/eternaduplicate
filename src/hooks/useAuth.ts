@@ -63,25 +63,36 @@ export function useAuthProvider(): AuthContextType {
   const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => {
     try {
       console.log('📋 Fetching user profile for userId:', userId)
+      
+      console.log('🔍 Starting Supabase query for user_profiles...')
       const { data, error } = await supabase
         .from('user_profiles')
         .select('*')
         .eq('user_id', userId)
         .single()
+      
+      console.log('📊 Supabase query completed. Data:', data, 'Error:', error)
 
       if (error) {
         if (error.code === 'PGRST116') {
-          // No profile found, return null
           console.log('❌ No profile found for user:', userId)
           return null
         }
+        console.error('❌ Supabase error details:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        })
         throw error
       }
 
       console.log('✅ User profile fetched successfully:', data)
       return data
     } catch (err) {
-      console.error('Error fetching user profile:', err)
+      console.error('❌ Unhandled error in fetchUserProfile:', err)
+      console.error('❌ Error type:', typeof err)
+      console.error('❌ Error stack:', err instanceof Error ? err.stack : 'No stack trace')
       return null
     }
   }
@@ -90,10 +101,6 @@ export function useAuthProvider(): AuthContextType {
   const createUserProfile = async (user: User, signUpData?: SignUpData): Promise<UserProfile | null> => {
     try {
       console.log('🆕 Creating user profile for user:', user.id)
-      // For new users, we'll create them as regular users
-      // Super admin should be created manually in the database
-      // Generate tenant ID only if this is the first user (which should be done manually)
-      // For regular signups, we'll leave tenant_id as null initially
       
       const profileData = {
         user_id: user.id,
@@ -103,19 +110,26 @@ export function useAuthProvider(): AuthContextType {
         role: 'user', // Default role for new signups
         tenant_id: null // Will be assigned by admin later
       }
+      
+      console.log('📝 Profile data to insert:', profileData)
+      console.log('🔍 Starting Supabase insert for user_profiles...')
 
       const { data, error } = await supabase
         .from('user_profiles')
         .insert([profileData])
         .select()
         .single()
+      
+      console.log('📊 Supabase insert completed. Data:', data, 'Error:', error)
 
       if (error) throw error
 
       console.log('✅ User profile created successfully:', data)
       return data
     } catch (err) {
-      console.error('Error creating user profile:', err)
+      console.error('❌ Unhandled error in createUserProfile:', err)
+      console.error('❌ Error type:', typeof err)
+      console.error('❌ Error stack:', err instanceof Error ? err.stack : 'No stack trace')
       return null
     }
   }
@@ -219,6 +233,12 @@ export function useAuthProvider(): AuthContextType {
         } else {
           // If profile creation fails, show appropriate message
           setError('Pendaftaran berhasil, tetapi profil belum dapat dibuat. Hubungi administrator.')
+        console.error('❌ Supabase insert error details:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        })
         }
       }
 
