@@ -69,15 +69,10 @@ export function useAuthProvider(): AuthContextType {
         .from('user_profiles')
         .select('*')
         .eq('user_id', userId)
-        .single()
       
       console.log('📊 Supabase query completed. Data:', data, 'Error:', error)
 
       if (error) {
-        if (error.code === 'PGRST116') {
-          console.log('❌ No profile found for user:', userId)
-          return null
-        }
         console.error('❌ Supabase error details:', {
           code: error.code,
           message: error.message,
@@ -87,8 +82,14 @@ export function useAuthProvider(): AuthContextType {
         throw error
       }
 
-      console.log('✅ User profile fetched successfully:', data)
-      return data
+      // Handle result as array
+      if (data && data.length > 0) {
+        console.log('✅ User profile fetched successfully:', data[0])
+        return data[0] as UserProfile
+      } else {
+        console.log('❌ No profile found for user:', userId)
+        return null
+      }
     } catch (err) {
       console.error('❌ Unhandled error in fetchUserProfile:', err)
       console.error('❌ Error type:', typeof err)
