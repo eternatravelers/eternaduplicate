@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { AuthProvider } from '@/components/Auth/AuthProvider'
 import { ProtectedRoute } from '@/components/Auth/ProtectedRoute'
 import { Layout } from '@/components/Layout'
@@ -19,63 +19,6 @@ import { supabase } from '@/lib/supabase'
 
 function AppContent() {
   const [activeTab, setActiveTab] = useState('dashboard')
-
-  // --- START TEMPORARY DIAGNOSTIC CODE ---
-  useEffect(() => {
-    const testSupabaseConnection = async () => {
-      console.log('🚀 Starting Supabase connection test...')
-      console.time('supabase_connection_test')
-      try {
-        // Test 1: Try to fetch from trip_types table
-        console.log('📋 Testing trip_types table...')
-        const { data: tripTypesData, error: tripTypesError } = await supabase
-          .from('trip_types')
-          .select('id, name')
-          .limit(1)
-
-        if (tripTypesError) {
-          console.error('❌ trip_types query failed:', tripTypesError)
-        } else {
-          console.log('✅ trip_types query successful:', tripTypesData)
-        }
-
-        // Test 2: Try to fetch from destinations table
-        console.log('📋 Testing destinations table...')
-        const { data: destinationsData, error: destinationsError } = await supabase
-          .from('destinations')
-          .select('id, name')
-          .limit(1)
-
-        if (destinationsError) {
-          console.error('❌ destinations query failed:', destinationsError)
-        } else {
-          console.log('✅ destinations query successful:', destinationsData)
-        }
-
-        // Test 3: Try to fetch from user_profiles table (the problematic one)
-        console.log('📋 Testing user_profiles table...')
-        const { data: userProfilesData, error: userProfilesError } = await supabase
-          .from('user_profiles')
-          .select('id, user_id')
-          .limit(1)
-
-        if (userProfilesError) {
-          console.error('❌ user_profiles query failed:', userProfilesError)
-        } else {
-          console.log('✅ user_profiles query successful:', userProfilesData)
-        }
-
-      } catch (err) {
-        console.error('❌ Supabase connection test caught an exception:', err)
-      } finally {
-        console.timeEnd('supabase_connection_test')
-        console.log('🏁 Supabase connection test finished')
-      }
-    }
-
-    testSupabaseConnection()
-  }, [])
-  // --- END TEMPORARY DIAGNOSTIC CODE ---
 
   const renderContent = () => {
     switch (activeTab) {
@@ -117,7 +60,52 @@ function AppContent() {
   )
 }
 
+// --- START TEMPORARY DIAGNOSTIC CODE ---
+import { useEffect } from 'react'; // Import useEffect here
+
 function App() {
+  useEffect(() => {
+    const testSupabaseConnection = async () => {
+      console.log('🚀 Starting Supabase connection test...');
+      console.time('supabase_connection_test');
+      try {
+        // Test 1: Try to fetch from trip_types table
+        console.log('📋 Testing trip_types table...');
+        const { data: tripTypesData, error: tripTypesError } = await supabase
+          .from('trip_types')
+          .select('id, name')
+          .limit(1);
+
+        if (tripTypesError) {
+          console.error('❌ trip_types query failed:', tripTypesError);
+        } else {
+          console.log('✅ trip_types query successful:', tripTypesData);
+        }
+
+        // Test 2: Try to fetch from destinations table
+        console.log('📋 Testing destinations table...');
+        const { data: destinationsData, error: destinationsError } = await supabase
+          .from('destinations')
+          .select('id, name')
+          .limit(1);
+
+        if (destinationsError) {
+          console.error('❌ destinations query failed:', destinationsError);
+        } else {
+          console.log('✅ destinations query successful:', destinationsData);
+        }
+
+      } catch (err) {
+        console.error('❌ Supabase connection test caught an exception:', err);
+      } finally {
+        console.timeEnd('supabase_connection_test');
+        console.log('🏁 Supabase connection test finished');
+      }
+    };
+    testSupabaseConnection();
+  }, []);
+  // --- END TEMPORARY DIAGNOSTIC CODE ---
+
   return (
     <AuthProvider>
       <ProtectedRoute>
