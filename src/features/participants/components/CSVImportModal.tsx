@@ -282,8 +282,9 @@ export function CSVImportModal({
                 <ul className="text-sm text-blue-700 space-y-1">
                   <li>• File harus berformat CSV dengan encoding UTF-8</li>
                   <li>• Kolom yang wajib: nama_lengkap, email, telepon, alamat, harga_paket</li>
-                  <li>• Kolom opsional: jumlah_peserta, dp_amount, permintaan_tambahan</li>
+                  <li>• Kolom opsional: jumlah_peserta, dp_amount, nama_trip, nama_sales, permintaan_tambahan</li>
                   <li>• Gunakan template yang disediakan untuk memastikan format yang benar</li>
+                  <li>• Nama trip dan sales akan dicocokkan otomatis dengan data yang ada</li>
                 </ul>
               </div>
 
