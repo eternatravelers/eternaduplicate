@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { MapPin, Plus, Search, Edit, Trash2, Globe } from 'lucide-react'
 import { useDestinations, useCreateDestination, useUpdateDestination } from '@/hooks/useDestinations'
 import { formatShortDate } from '@/lib/utils'
@@ -74,6 +75,17 @@ export function Destinations() {
       location: '',
       description: ''
     })
+  }
+
+  const handleDelete = async (id: string) => {
+    try {
+      const { error } = await deleteDestination(id)
+      if (!error) {
+        refetch()
+      }
+    } catch (error) {
+      console.error('Error deleting destination:', error)
+    }
   }
 
   const filteredDestinations = destinations.filter(destination =>
