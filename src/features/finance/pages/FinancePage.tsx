@@ -171,12 +171,12 @@ export function FinancePage() {
           {showAddForm && (
             <TransactionForm
               initialData={editingTransaction ? transactions.find(t => t.id === editingTransaction) : undefined}
-              onSubmit={handleSubmit}
+              onSubmit={handleFormSubmit}
               onCancel={handleCancel}
               trips={trips}
               destinations={destinations}
               creating={creating}
-              updating={false}
+              updating={updating}
               editingTransaction={editingTransaction}
             />
           )}

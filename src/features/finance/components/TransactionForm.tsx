@@ -73,6 +73,21 @@ export function TransactionForm({
     }
 
     await onSubmit(submitData, proofFile)
+    
+    // Reset form after successful submission if not editing
+    if (!editingTransaction) {
+      setFormData({
+        transaction_date: new Date().toISOString().split('T')[0],
+        transaction_type: '',
+        category: '',
+        amount: '',
+        description: '',
+        trip_id: '',
+        destination_id: '',
+        trip_type: ''
+      })
+      setProofFile(null)
+    }
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {

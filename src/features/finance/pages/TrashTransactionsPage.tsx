@@ -154,7 +154,9 @@ export function TrashTransactionsPage() {
       <TrashTransactionTable
         transactions={filteredTransactions}
         onRestoreTransaction={handleRestore}
+        onPermanentDelete={handlePermanentDelete}
         restoring={restoring}
+        permanentDeleting={permanentDeleting}
       />
 
       {/* Info Box */}

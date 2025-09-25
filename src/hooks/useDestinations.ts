@@ -94,3 +94,32 @@ export function useUpdateDestination() {
 
   return { updateDestination, loading, error }
 }
+
+export function useDeleteDestination() {
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const deleteDestination = async (id: string) => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      const { error } = await supabase
+        .from('destinations')
+        .delete()
+        .eq('id', id)
+
+      if (error) throw error
+
+      return { error: null }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+      setError(errorMessage)
+      return { error: errorMessage }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return { deleteDestination, loading, error }
+}

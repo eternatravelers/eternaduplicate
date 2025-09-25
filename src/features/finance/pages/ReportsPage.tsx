@@ -82,10 +82,16 @@ export function ReportsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Laporan & Rekapitulasi</h1>
-        <Button variant="outline">
-          <Download className="h-4 w-4 mr-2" />
-          Export Excel
-        </Button>
+        <div className="flex space-x-2">
+          <Button variant="outline" onClick={handleExportCSV}>
+            <FileSpreadsheet className="h-4 w-4 mr-2" />
+            Export CSV
+          </Button>
+          <Button variant="outline" onClick={handleExportCSV}>
+            <Download className="h-4 w-4 mr-2" />
+            Export Excel
+          </Button>
+        </div>
       </div>
 
       {deleteError && (

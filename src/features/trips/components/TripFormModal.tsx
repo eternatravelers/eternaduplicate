@@ -177,7 +177,7 @@ export function TripFormModal({
             <div>
               <Label htmlFor="tour_leader_ids">Tour Leaders</Label>
               <MultiSelect
-                options={tourLeaders.map(leader => ({
+                options={tourLeaders.filter(leader => leader.status === 'active').map(leader => ({
                   label: leader.name,
                   value: leader.id
                 }))}
@@ -223,7 +223,7 @@ export function TripFormModal({
             <div>
               <Label htmlFor="bus_ids">Kendaraan</Label>
               <MultiSelect
-                options={buses.map(bus => ({
+                options={buses.filter(bus => bus.status === 'active').map(bus => ({
                   label: `${bus.plate_number} - ${bus.model || 'N/A'} (${bus.capacity || 0} kursi)`,
                   value: bus.id
                 }))}
@@ -235,7 +235,7 @@ export function TripFormModal({
             <div>
               <Label htmlFor="driver_ids">Driver</Label>
               <MultiSelect
-                options={drivers.map(driver => ({
+                options={drivers.filter(driver => driver.status === 'active').map(driver => ({
                   label: `${driver.name} - ${driver.license_number || 'N/A'}`,
                   value: driver.id
                 }))}

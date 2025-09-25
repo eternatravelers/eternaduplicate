@@ -46,7 +46,7 @@ export function TrashTransactionTable({
                 <TableHead>Trip</TableHead>
                 <TableHead>Keterangan</TableHead>
                 <TableHead>Dihapus</TableHead>
-                <TableHead className="w-32">Aksi</TableHead>
+                <TableHead className="w-40">Aksi</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -84,6 +84,46 @@ export function TrashTransactionTable({
                       >
                         <RotateCcw className="h-3 w-3" />
                       </Button>
+                      {onPermanentDelete && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              title="Hapus permanen"
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              disabled={permanentDeleting}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Hapus Permanen</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Apakah Anda yakin ingin menghapus transaksi ini secara permanen? 
+                                Tindakan ini tidak dapat dibatalkan dan data akan hilang selamanya.
+                                <br /><br />
+                                <strong>Detail Transaksi:</strong>
+                                <br />• Tanggal: {formatShortDate(transaction.transaction_date)}
+                                <br />• Jenis: {transaction.transaction_type}
+                                <br />• Kategori: {transaction.category}
+                                <br />• Jumlah: {formatCurrency(transaction.amount)}
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Batal</AlertDialogCancel>
+                              <AlertDialogAction 
+                                onClick={() => onPermanentDelete(transaction.id)}
+                                disabled={permanentDeleting}
+                                className="bg-red-600 hover:bg-red-700"
+                              >
+                                {permanentDeleting ? 'Menghapus...' : 'Hapus Permanen'}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>

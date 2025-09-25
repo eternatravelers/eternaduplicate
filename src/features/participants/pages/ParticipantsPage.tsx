@@ -85,8 +85,8 @@ export function ParticipantsPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Pendaftaran Peserta</h1>
         <div className="flex items-center space-x-2">
-          <Button variant="outline" size="sm">
-            <Upload className="h-4 w-4 mr-2" />
+          <Button variant="outline" size="sm" onClick={handleImportCSV}>
+            <FileSpreadsheet className="h-4 w-4 mr-2" />
             Import CSV
           </Button>
           <Button onClick={handleAddNew}>
@@ -95,6 +95,13 @@ export function ParticipantsPage() {
           </Button>
         </div>
       </div>
+
+      {importError && (
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{importError}</AlertDescription>
+        </Alert>
+      )}
 
       {showAddForm && (
         <ParticipantForm

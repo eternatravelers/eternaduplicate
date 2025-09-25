@@ -76,8 +76,8 @@ export function TripsPage() {
       departure_date: newDeparture.toISOString().split('T')[0],
       return_date: newReturn.toISOString().split('T')[0],
       tour_leader_ids: trip.tour_leaders?.map((tl: any) => tl.id) || [],
-      bus_ids: [],
-      driver_ids: [],
+      bus_ids: trip.buses?.map((bus: any) => bus.id) || [],
+      driver_ids: trip.drivers?.map((driver: any) => driver.id) || [],
       status: 'active'
     }
     

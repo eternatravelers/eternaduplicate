@@ -313,9 +313,37 @@ export function Destinations() {
                           <Edit className="h-3 w-3" />
                         </Button>
                         {isSuperAdmin && (
-                          <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-red-600 hover:text-red-700">
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-red-600 hover:text-red-700">
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Hapus Destinasi</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Apakah Anda yakin ingin menghapus destinasi "{destination.name}"? 
+                                  Tindakan ini tidak dapat dibatalkan dan akan mempengaruhi trip yang menggunakan destinasi ini.
+                                  <br /><br />
+                                  <strong>Detail Destinasi:</strong>
+                                  <br />• Nama: {destination.name}
+                                  <br />• Lokasi: {destination.location || 'N/A'}
+                                  <br />• Deskripsi: {destination.description ? destination.description.substring(0, 100) + '...' : 'N/A'}
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Batal</AlertDialogCancel>
+                                <AlertDialogAction 
+                                  onClick={() => handleDelete(destination.id)}
+                                  disabled={deleting}
+                                  className="bg-red-600 hover:bg-red-700"
+                                >
+                                  {deleting ? 'Menghapus...' : 'Hapus'}
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         )}
                       </div>
                     </div>
