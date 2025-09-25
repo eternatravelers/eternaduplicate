@@ -49,7 +49,7 @@ export function useParticipants(filters?: ParticipantFilters) {
             name,
             departure_date,
             meeting_point,
-            trip_type,
+            trip_type
           )
         `)
 
