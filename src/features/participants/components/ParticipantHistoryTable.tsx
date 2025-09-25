@@ -32,8 +32,8 @@ interface ParticipantHistoryTableProps {
   filterStatus: string;
   setFilterStatus: (status: string) => void;
   onEdit: (participant: Participant) => void;
-  onDelete: (participant: Participant) => void;
-  deleting: string[];
+  onDelete: (id: string, reason?: string, permanent?: boolean) => Promise<void>;
+  deleting: boolean;
 }
 
 export function ParticipantHistoryTable({
@@ -175,8 +175,8 @@ export function ParticipantHistoryTable({
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => onEdit(participant)}
-                      >
+                        onClick={() => onDelete(participant.id)}
+                        disabled={deleting}
                         <Edit className="h-4 w-4" />
                       </Button>
                       <ParticipantPermissionsGuard requiredRole="admin">
