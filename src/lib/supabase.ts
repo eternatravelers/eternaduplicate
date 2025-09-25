@@ -3,9 +3,6 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-console.log('🔧 Supabase URL:', supabaseUrl ? 'Loaded' : 'Missing', supabaseUrl)
-console.log('🔑 Supabase Anon Key:', supabaseAnonKey ? 'Loaded' : 'Missing', supabaseAnonKey ? `${supabaseAnonKey.substring(0, 20)}...` : 'N/A')
-
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables. Please check your .env file.')
 }
@@ -15,13 +12,8 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true
-  },
-  realtime: {
-    enabled: false
   }
 })
-
-console.log('✅ Supabase client initialized successfully')
 
 export type Database = {
   public: {
