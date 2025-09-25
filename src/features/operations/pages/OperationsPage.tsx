@@ -217,10 +217,12 @@ export function OperationsPage() {
             </DialogTitle>
           </DialogHeader>
           {selectedTrip && (
-            <ChecklistManager
-              tripId={selectedTrip.id}
-              tripName={selectedTrip.name}
-            />
+            <div className="mt-4">
+              <ChecklistManager
+                tripId={selectedTrip.id}
+                tripName={selectedTrip.name}
+              />
+            </div>
           )}
         </DialogContent>
       </Dialog>

@@ -266,6 +266,14 @@ export function TripsPage() {
         }}
         trip={selectedTripForParticipants}
       />
+      <TripParticipantsModal
+        isOpen={showParticipantsModal}
+        onClose={() => {
+          setShowParticipantsModal(false)
+          setSelectedTripForParticipants(null)
+        }}
+        trip={selectedTripForParticipants}
+      />
     </div>
   )
 }

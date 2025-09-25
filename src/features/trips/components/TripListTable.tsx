@@ -22,6 +22,7 @@ export function TripListTable({
   onEdit,
   onDuplicate,
   onDelete,
+  onViewParticipants,
   isSuperAdmin,
   deleting
 }: TripListTableProps) {
