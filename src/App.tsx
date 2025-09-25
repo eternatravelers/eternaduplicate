@@ -15,6 +15,7 @@ import { AnalyticsPage } from '@/features/analytics/pages/AnalyticsPage'
 import { CostPlansPage } from '@/features/cost-plans/pages/CostPlansPage'
 import { TrashTransactionsPage } from '@/features/finance/pages/TrashTransactionsPage'
 import { UserManagementPage } from '@/features/user-management/pages/UserManagementPage'
+import { FinancePage } from '@/features/finance/pages/FinancePage'
 function AppContent() {
   const [activeTab, setActiveTab] = useState('dashboard')
 
@@ -33,7 +34,7 @@ function AppContent() {
       case 'operational-resources':
         return <OperationalResourcesPage />
       case 'finance':
-        return <Finance />
+        return <FinancePage />
       case 'operations':
         return <OperationsPage />
       case 'reports':
