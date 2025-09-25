@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Edit, Search } from 'lucide-react';
+import { Trash2, CreditCard as Edit, Search } from 'lucide-react';
 import { ParticipantPermissionsGuard } from './ParticipantPermissionsGuard';
 
 interface Participant {
