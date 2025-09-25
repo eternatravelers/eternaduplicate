@@ -21,7 +21,70 @@ export function useTrips() {
       setLoading(true)
       const { data, error } = await supabase
         .from('trips')
-        .select('id,name,trip_type,departure_date,return_date,meeting_point,quota,price,additional_facilities,tour_leader,status,created_at,updated_at,pricing_type,cost_plan_id,trip_destinations!left(destinations(id,name,location)),cost_plans(id,name,estimated_participants,categories,total_cost,cost_per_person),trip_tour_leaders!left(tour_leaders(id,name,email,phone,certification,specialization,experience_years,status,bio)),trip_buses!left(buses(id,plate_number,model,capacity,status)),trip_drivers!left(drivers(id,name,phone,license_number,status)),participants!left(id)')
+        .select(`
+          id,
+          name,
+          trip_type,
+          departure_date,
+          return_date,
+          meeting_point,
+          quota,
+          price,
+          additional_facilities,
+          tour_leader,
+          status,
+          created_at,
+          updated_at,
+          pricing_type,
+          cost_plan_id,
+          trip_destinations!left(
+            destinations(
+              id,
+              name,
+              location
+            )
+          ),
+          cost_plans(
+            id,
+            name,
+            estimated_participants,
+            categories,
+            total_cost,
+            cost_per_person
+          ),
+          trip_tour_leaders!left(
+            tour_leaders(
+              id,
+              name,
+              email,
+              phone,
+              certification,
+              specialization,
+              experience_years,
+              status,
+              bio
+            )
+          ),
+          trip_buses!left(
+            buses(
+              id,
+              plate_number,
+              model,
+              capacity,
+              status
+            )
+          ),
+          trip_drivers!left(
+            drivers(
+              id,
+              name,
+              phone,
+              license_number,
+              status
+            )
+          ),
+          participants!left(id)
+        `)
         .in('status', ['active', 'completed', 'cancelled', 'draft']) // Filter out deleted trips by explicitly including active ones
         
       if (error) throw error
