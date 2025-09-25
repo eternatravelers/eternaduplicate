@@ -41,8 +41,9 @@ export function GroupRegistrationForm({
     groupAddress: '',
     trip_id: '',
     sales_id: '',
-    package_price: '' as number | '',
-    dp_amount: '' as number | '',
+    total_group_participants: '' as number | '',
+    total_package_price: '' as number | '',
+    total_dp_amount: '' as number | '',
     meeting_point_details: ''
   })
 
@@ -75,9 +76,9 @@ export function GroupRegistrationForm({
       email: groupData.groupEmail,
       phone: groupData.groupPhone,
       address: groupData.groupAddress,
-      participant_count: 1, // Group leader is always 1 person
-      package_price: groupData.package_price === '' ? 0 : Number(groupData.package_price),
-      dp_amount: groupData.dp_amount === '' ? 0 : Number(groupData.dp_amount),
+      participant_count: groupData.total_group_participants === '' ? 1 : Number(groupData.total_group_participants),
+      package_price: groupData.total_package_price === '' ? 0 : Number(groupData.total_package_price),
+      dp_amount: groupData.total_dp_amount === '' ? 0 : Number(groupData.total_dp_amount),
       dp_transfer_date: new Date().toISOString().split('T')[0],
       additional_requests: `Group Leader for: ${groupData.groupName}`,
       meeting_point_details: groupData.meeting_point_details,
@@ -103,12 +104,15 @@ export function GroupRegistrationForm({
   }
 
   const handleMemberSubmit = async (memberData: any) => {
-    // Ensure member inherits trip and sales from group leader
+    // Ensure member inherits trip and sales from group leader, with zero payment amounts
     const memberSubmitData = {
       ...memberData,
       trip_id: groupData.trip_id,
       sales_id: groupData.sales_id,
-      parent_participant_id: groupLeaderId
+      parent_participant_id: groupLeaderId,
+      participant_count: 1, // Each member is 1 person
+      package_price: 0, // Payment is consolidated at group leader level
+      dp_amount: 0 // Payment is consolidated at group leader level
     }
 
     await onSubmit(memberSubmitData)
@@ -117,12 +121,15 @@ export function GroupRegistrationForm({
   }
 
   const handleBulkImport = async (participantsData: any[]) => {
-    // Add parent_participant_id to all imported participants
+    // Add parent_participant_id and zero payment amounts to all imported participants
     const membersData = participantsData.map(participant => ({
       ...participant,
       trip_id: groupData.trip_id,
       sales_id: groupData.sales_id,
-      parent_participant_id: groupLeaderId
+      parent_participant_id: groupLeaderId,
+      participant_count: 1, // Each member is 1 person
+      package_price: 0, // Payment is consolidated at group leader level
+      dp_amount: 0 // Payment is consolidated at group leader level
     }))
 
     // Import members one by one
@@ -152,8 +159,9 @@ export function GroupRegistrationForm({
       groupAddress: '',
       trip_id: '',
       sales_id: '',
-      package_price: '',
-      dp_amount: '',
+      total_group_participants: '',
+      total_package_price: '',
+      total_dp_amount: '',
       meeting_point_details: ''
     })
     setGroupProofOfTransferUrl(null)
@@ -161,11 +169,10 @@ export function GroupRegistrationForm({
   }
 
   // Calculate group totals
-  const totalGroupParticipants = 1 + groupMembers.length // Leader + members
-  const totalGroupRevenue = (groupLeaderData?.package_price || 0) + 
-    groupMembers.reduce((sum, member) => sum + (member.package_price || 0), 0)
-  const totalGroupDP = (groupLeaderData?.dp_amount || 0) + 
-    groupMembers.reduce((sum, member) => sum + (member.dp_amount || 0), 0)
+  const totalGroupParticipants = groupLeaderData?.participant_count || 0 // Total from group leader record
+  const totalGroupRevenue = groupLeaderData?.package_price || 0 // Total from group leader record
+  const totalGroupDP = groupLeaderData?.dp_amount || 0 // Total from group leader record
+  const actualMembersCount = groupMembers.length // Actual individual members added
 
   if (step === 'group-leader') {
     return (
@@ -273,30 +280,52 @@ export function GroupRegistrationForm({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="group_package_price">Harga Paket Ketua Grup</Label>
+                <Label htmlFor="total_group_participants">Total Peserta dalam Grup <span className="text-red-500">*</span></Label>
                 <Input
-                  id="group_package_price"
+                  id="total_group_participants"
                   type="number"
-                  value={groupData.package_price}
+                  min="1"
+                  value={groupData.total_group_participants}
                   onChange={(e) => {
-                    const val = e.target.value === '' ? '' : parseFloat(e.target.value)
-                    setGroupData(prev => ({ ...prev, package_price: isNaN(val) ? '' : val }))
+                    const val = e.target.value === '' ? '' : parseInt(e.target.value)
+                    setGroupData(prev => ({ ...prev, total_group_participants: isNaN(val) ? '' : val }))
                   }}
-                  placeholder="0"
+                  placeholder="Contoh: 5"
+                  required
+                  className="focus:ring-green-500 focus:border-green-500"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="group_dp_amount">DP Ketua Grup</Label>
+                <Label htmlFor="total_package_price">Total Harga Paket Grup <span className="text-red-500">*</span></Label>
                 <Input
-                  id="group_dp_amount"
+                  id="total_package_price"
                   type="number"
-                  value={groupData.dp_amount}
+                  min="0"
+                  value={groupData.total_package_price}
                   onChange={(e) => {
                     const val = e.target.value === '' ? '' : parseFloat(e.target.value)
-                    setGroupData(prev => ({ ...prev, dp_amount: isNaN(val) ? '' : val }))
+                    setGroupData(prev => ({ ...prev, total_package_price: isNaN(val) ? '' : val }))
                   }}
                   placeholder="0"
+                  required
+                  className="focus:ring-green-500 focus:border-green-500"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="total_dp_amount">Total DP Grup</Label>
+                <Input
+                  id="total_dp_amount"
+                  type="number"
+                  min="0"
+                  value={groupData.total_dp_amount}
+                  onChange={(e) => {
+                    const val = e.target.value === '' ? '' : parseFloat(e.target.value)
+                    setGroupData(prev => ({ ...prev, total_dp_amount: isNaN(val) ? '' : val }))
+                  }}
+                  placeholder="0"
+                  className="focus:ring-green-500 focus:border-green-500"
                 />
               </div>
             </div>
@@ -350,7 +379,7 @@ export function GroupRegistrationForm({
             <ProofOfTransferUploader
               url={groupProofOfTransferUrl}
               onUrlChange={handleUrlChange}
-              title="Bukti Transfer DP Ketua Grup"
+              title="Bukti Transfer DP Grup (Total)"
             />
 
             <div className="flex space-x-3 pt-4 border-t">
@@ -379,7 +408,7 @@ export function GroupRegistrationForm({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
             <div>
               <span className="text-gray-600">Nama Grup:</span>
-              <div className="font-medium">{groupLeaderData?.groupName}</div>
+              <div className="font-medium">{groupData.groupName}</div>
             </div>
             <div>
               <span className="text-gray-600">Ketua Grup:</span>
@@ -394,6 +423,14 @@ export function GroupRegistrationForm({
               <div className="font-medium">
                 {trips.find(t => t.id === groupData.trip_id)?.name}
               </div>
+            </div>
+            <div>
+              <span className="text-gray-600">Total Peserta:</span>
+              <div className="font-medium">{totalGroupParticipants} orang</div>
+            </div>
+            <div>
+              <span className="text-gray-600">Total Harga:</span>
+              <div className="font-medium text-green-600">{formatCurrency(totalGroupRevenue)}</div>
             </div>
           </div>
         </CardContent>
@@ -412,20 +449,32 @@ export function GroupRegistrationForm({
             <div className="text-center p-4 bg-blue-50 rounded-lg">
               <div className="text-2xl font-bold text-blue-700">{totalGroupParticipants}</div>
               <div className="text-sm text-blue-600">Total Peserta</div>
+              <div className="text-xs text-gray-500 mt-1">
+                Ketua grup + {actualMembersCount} anggota
+              </div>
             </div>
             <div className="text-center p-4 bg-green-50 rounded-lg">
               <div className="text-2xl font-bold text-green-700">{formatCurrency(totalGroupRevenue)}</div>
               <div className="text-sm text-green-600">Total Revenue</div>
+              <div className="text-xs text-gray-500 mt-1">
+                Pembayaran konsolidasi
+              </div>
             </div>
             <div className="text-center p-4 bg-purple-50 rounded-lg">
               <div className="text-2xl font-bold text-purple-700">{formatCurrency(totalGroupDP)}</div>
               <div className="text-sm text-purple-600">Total DP</div>
+              <div className="text-xs text-gray-500 mt-1">
+                DP yang sudah dibayar
+              </div>
             </div>
             <div className="text-center p-4 bg-orange-50 rounded-lg">
               <div className="text-2xl font-bold text-orange-700">
                 {formatCurrency(totalGroupRevenue - totalGroupDP)}
               </div>
               <div className="text-sm text-orange-600">Sisa Bayar</div>
+              <div className="text-xs text-gray-500 mt-1">
+                Belum dibayar
+              </div>
             </div>
           </div>
         </CardContent>
@@ -497,17 +546,11 @@ export function GroupRegistrationForm({
                         <div className="text-sm text-gray-600">{member.phone}</div>
                       </div>
                       <div>
-                        <div className="text-sm">
-                          <span className="text-gray-600">Harga: </span>
-                          <span className="font-medium text-green-600">
-                            {formatCurrency(member.package_price)}
-                          </span>
-                        </div>
-                        <div className="text-sm">
-                          <span className="text-gray-600">DP: </span>
-                          <span className="font-medium text-blue-600">
-                            {formatCurrency(member.dp_amount)}
-                          </span>
+                        <div className="text-sm text-gray-600">
+                          <div>Pembayaran: Termasuk dalam grup</div>
+                          <div className="text-xs text-gray-500">
+                            (Konsolidasi di ketua grup)
+                          </div>
                         </div>
                       </div>
                       <div>
