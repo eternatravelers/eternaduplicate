@@ -119,6 +119,11 @@ export function TripsPage() {
     }
   }
 
+  const handleViewParticipants = (trip: any) => {
+    setSelectedTripForParticipants(trip)
+    setShowParticipantsModal(true)
+  }
+
   if (loading) {
     return <div className="flex justify-center items-center h-64">Loading...</div>
   }
