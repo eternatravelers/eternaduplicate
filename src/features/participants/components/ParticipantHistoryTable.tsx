@@ -217,7 +217,7 @@ export function ParticipantHistoryTable({
                   </TableCell>
                   <TableCell>
                     <div>
-                      <div className={`font-medium ${participant.parent_participant_id ? 'text-gray-400' : 'text-green-600'}`}>
+                      <div className={\`font-medium ${participant.parent_participant_id ? 'text-gray-400' : 'text-green-600'}`}>
                         {formatCurrency(participant.package_price)}
                       </div>
                       {participant.parent_participant_id && (
@@ -229,7 +229,7 @@ export function ParticipantHistoryTable({
                   </TableCell>
                   <TableCell>
                     <div>
-                      <div className={`font-medium ${participant.parent_participant_id ? 'text-gray-400' : 'text-purple-600'}`}>
+                      <div className={\`font-medium ${participant.parent_participant_id ? 'text-gray-400' : 'text-purple-600'}`}>
                         {formatCurrency(participant.dp_amount)}
                       </div>
                       <div className="text-xs text-gray-500">
