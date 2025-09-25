@@ -5,8 +5,11 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Users, Search, Edit, Eye, MapPin } from 'lucide-react'
+import { Users, Search, Edit, Eye, MapPin, Trash2, History } from 'lucide-react'
 import { formatCurrency, formatShortDate } from '@/lib/utils'
+import { DeleteParticipantDialog } from './DeleteParticipantDialog'
+import { useAuth } from '@/hooks/useAuth'
+import { ParticipantPermissionsGuard } from './ParticipantPermissionsGuard'
 
 interface ParticipantHistoryTableProps {
   participants: any[]
@@ -15,6 +18,8 @@ interface ParticipantHistoryTableProps {
   filterStatus: string
   setFilterStatus: (status: string) => void
   onEdit: (participant: any) => void
+  onDelete: (id: string, reason?: string, permanent?: boolean) => Promise<void>
+  deleting: boolean
 }
 
 export function ParticipantHistoryTable({
@@ -23,8 +28,12 @@ export function ParticipantHistoryTable({
   setSearchTerm,
   filterStatus,
   setFilterStatus,
-  onEdit
+  onEdit,
+  onDelete,
+  deleting
 }: ParticipantHistoryTableProps) {
+  const { isAdmin, isSuperAdmin } = useAuth()
+
   const filteredParticipants = participants.filter(participant => {
     const matchesSearch = participant.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          participant.email.toLowerCase().includes(searchTerm.toLowerCase())
@@ -152,16 +161,26 @@ export function ParticipantHistoryTable({
                 </TableCell>
                 <TableCell>{formatShortDate(participant.created_at)}</TableCell>
                 <TableCell>
-                  <Button 
-                    size="sm" 
-                    variant="ghost" 
-                    className="h-8 w-8 p-0"
-                    onClick={() => onEdit(participant)}
-                    title="Edit peserta"
-                  >
-                    <Edit className="h-3 w-3" />
-                  </Button>
-                </TableCell>
+                  <div className="flex space-x-1">
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      className="h-8 w-8 p-0"
+                      onClick={() => onEdit(participant)}
+                      title="Edit peserta"
+                    >
+                      <Edit className="h-3 w-3" />
+                    </Button>
+                    
+                    <ParticipantPermissionsGuard requiredRole="admin">
+                      <DeleteParticipantDialog
+                        participant={participant}
+                        onDelete={onDelete}
+                        deleting={deleting}
+                      />
+                    </ParticipantPermissionsGuard>
+                  </div>
+                <TableHead className="w-32">Aksi</TableHead>
               </TableRow>
             ))}
           </TableBody>
@@ -170,7 +189,12 @@ export function ParticipantHistoryTable({
         {filteredParticipants.length === 0 && (
           <div className="text-center py-8 text-gray-500">
             <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>Tidak ada peserta yang ditemukan</p>
+            <p>
+              {searchTerm || filterStatus !== 'all' 
+                ? 'Tidak ada peserta yang ditemukan dengan filter tersebut' 
+                : 'Belum ada peserta yang terdaftar'
+              }
+            </p>
           </div>
         )}
       </CardContent>
