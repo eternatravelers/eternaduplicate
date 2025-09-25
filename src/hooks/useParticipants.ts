@@ -121,7 +121,7 @@ export function useParticipants(filters?: ParticipantFilters) {
 
       // Apply search filter
       if (filters?.searchTerm) {
-        query = query.or(`full_name.ilike.%${filters.searchTerm}%,email.ilike.%${filters.searchTerm}%,phone.ilike.%${filters.searchTerm}%`)
+        query = query.or(\`full_name.ilike.%${filters.searchTerm}%,email.ilike.%${filters.searchTerm}%,phone.ilike.%${filters.searchTerm}%`)
       }
 
       // Apply status filter
@@ -225,7 +225,7 @@ export function useCreateParticipant() {
             meeting_point,
             trip_type
           ),
-          sales!participants_sales_id_fkey (
+          sales (
             id,
             name
           )
@@ -289,7 +289,7 @@ export function useUpdateParticipant() {
             meeting_point,
             trip_type
           ),
-          sales!participants_sales_id_fkey (
+          sales (
             id,
             name
           )
@@ -509,7 +509,7 @@ export function useDeletedParticipants() {
             meeting_point,
             trip_type
           ),
-          sales!participants_sales_id_fkey (
+          sales (
             id,
             name
           )
@@ -572,7 +572,7 @@ export function useGroupMembers(groupLeaderId: string) {
             meeting_point,
             trip_type
           ),
-          sales!participants_sales_id_fkey (
+          sales (
             id,
             name
           )
