@@ -8,17 +8,23 @@ import { BusForm } from '../components/BusForm'
 import { BusTable } from '../components/BusTable'
 import { DriverForm } from '../components/DriverForm'
 import { DriverTable } from '../components/DriverTable'
+import { TourLeaderForm } from '../components/TourLeaderForm'
+import { TourLeaderTable } from '../components/TourLeaderTable'
 import { useBuses, useCreateBus, useUpdateBus, useDeleteBus } from '@/hooks/useBuses'
 import { useDrivers, useCreateDriver, useUpdateDriver, useDeleteDriver } from '@/hooks/useDrivers'
+import { useTourLeaders, useCreateTourLeader, useUpdateTourLeader, useDeleteTourLeader } from '@/hooks/useTourLeaders'
 
 export function OperationalResourcesPage() {
-  const [activeTab, setActiveTab] = useState('buses')
+  const [activeTab, setActiveTab] = useState('tour-leaders')
   const [showBusForm, setShowBusForm] = useState(false)
   const [showDriverForm, setShowDriverForm] = useState(false)
+  const [showTourLeaderForm, setShowTourLeaderForm] = useState(false)
   const [editingBus, setEditingBus] = useState<string | null>(null)
   const [editingDriver, setEditingDriver] = useState<string | null>(null)
+  const [editingTourLeader, setEditingTourLeader] = useState<string | null>(null)
   const [busSearchTerm, setBusSearchTerm] = useState('')
   const [driverSearchTerm, setDriverSearchTerm] = useState('')
+  const [tourLeaderSearchTerm, setTourLeaderSearchTerm] = useState('')
   const [error, setError] = useState<string | null>(null)
 
   // Bus hooks
@@ -32,6 +38,12 @@ export function OperationalResourcesPage() {
   const { createDriver, loading: creatingDriver } = useCreateDriver()
   const { updateDriver, loading: updatingDriver } = useUpdateDriver()
   const { deleteDriver, loading: deletingDriver } = useDeleteDriver()
+
+  // Tour Leader hooks
+  const { tourLeaders, loading: tourLeadersLoading, refetch: refetchTourLeaders } = useTourLeaders()
+  const { createTourLeader, loading: creatingTourLeader } = useCreateTourLeader()
+  const { updateTourLeader, loading: updatingTourLeader } = useUpdateTourLeader()
+  const { deleteTourLeader, loading: deletingTourLeader } = useDeleteTourLeader()
 
   // Bus handlers
   const handleBusSubmit = async (formData: any) => {
@@ -83,6 +95,59 @@ export function OperationalResourcesPage() {
   const handleBusCancel = () => {
     setShowBusForm(false)
     setEditingBus(null)
+    setError(null)
+  }
+
+  // Tour Leader handlers
+  const handleTourLeaderSubmit = async (formData: any) => {
+    try {
+      setError(null)
+      const { data, error } = editingTourLeader 
+        ? await updateTourLeader(editingTourLeader, formData)
+        : await createTourLeader(formData)
+
+      if (error) {
+        setError(error)
+        return
+      }
+
+      if (data) {
+        setShowTourLeaderForm(false)
+        setEditingTourLeader(null)
+        refetchTourLeaders()
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Terjadi kesalahan')
+    }
+  }
+
+  const handleTourLeaderEdit = (tourLeader: any) => {
+    setEditingTourLeader(tourLeader.id)
+    setShowTourLeaderForm(true)
+  }
+
+  const handleTourLeaderDelete = async (id: string) => {
+    try {
+      setError(null)
+      const { error } = await deleteTourLeader(id)
+      if (error) {
+        setError(error)
+        return
+      }
+      refetchTourLeaders()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Terjadi kesalahan')
+    }
+  }
+
+  const handleTourLeaderAddNew = () => {
+    setEditingTourLeader(null)
+    setShowTourLeaderForm(true)
+  }
+
+  const handleTourLeaderCancel = () => {
+    setShowTourLeaderForm(false)
+    setEditingTourLeader(null)
     setError(null)
   }
 
@@ -139,7 +204,7 @@ export function OperationalResourcesPage() {
     setError(null)
   }
 
-  if (busesLoading || driversLoading) {
+  if (busesLoading || driversLoading || tourLeadersLoading) {
     return (
       <div className="space-y-6">
         <h1 className="text-3xl font-bold">Sumber Daya Operasional</h1>
@@ -171,7 +236,39 @@ export function OperationalResourcesPage() {
       )}
 
       {/* Stats Cards */}
-      <div className="grid gap-6 md:grid-cols-4">
+      <div className="grid gap-6 md:grid-cols-6">
+        <Card className="hover:shadow-lg transition-shadow">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-gray-600">
+              Total Tour Leader
+            </CardTitle>
+            <UserCheck className="h-4 w-4 text-purple-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{tourLeaders.length}</div>
+            <p className="text-xs text-gray-500">
+              Tour leader terdaftar
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:shadow-lg transition-shadow">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-gray-600">
+              Tour Leader Aktif
+            </CardTitle>
+            <UserCheck className="h-4 w-4 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">
+              {tourLeaders.filter(tl => tl.status === 'active').length}
+            </div>
+            <p className="text-xs text-gray-500">
+              Siap memimpin
+            </p>
+          </CardContent>
+        </Card>
+
         <Card className="hover:shadow-lg transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-gray-600">
@@ -239,19 +336,52 @@ export function OperationalResourcesPage() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <div className="flex items-center justify-between">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsList className="grid w-full max-w-lg grid-cols-3">
+            <TabsTrigger value="tour-leaders">Manajemen Tour Leader</TabsTrigger>
             <TabsTrigger value="buses">Manajemen Bus</TabsTrigger>
             <TabsTrigger value="drivers">Manajemen Driver</TabsTrigger>
           </TabsList>
           
           <Button 
-            onClick={activeTab === 'buses' ? handleBusAddNew : handleDriverAddNew}
-            className={activeTab === 'buses' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-green-600 hover:bg-green-700'}
+            onClick={
+              activeTab === 'tour-leaders' ? handleTourLeaderAddNew :
+              activeTab === 'buses' ? handleBusAddNew : 
+              handleDriverAddNew
+            }
+            className={
+              activeTab === 'tour-leaders' ? 'bg-purple-600 hover:bg-purple-700' :
+              activeTab === 'buses' ? 'bg-blue-600 hover:bg-blue-700' : 
+              'bg-green-600 hover:bg-green-700'
+            }
           >
             <Plus className="h-4 w-4 mr-2" />
-            {activeTab === 'buses' ? 'Tambah Bus' : 'Tambah Driver'}
+            {activeTab === 'tour-leaders' ? 'Tambah Tour Leader' : 
+             activeTab === 'buses' ? 'Tambah Bus' : 
+             'Tambah Driver'}
           </Button>
         </div>
+
+        <TabsContent value="tour-leaders" className="space-y-6">
+          {showTourLeaderForm && (
+            <TourLeaderForm
+              initialData={editingTourLeader ? tourLeaders.find(tl => tl.id === editingTourLeader) : undefined}
+              onSubmit={handleTourLeaderSubmit}
+              onCancel={handleTourLeaderCancel}
+              creating={creatingTourLeader}
+              updating={updatingTourLeader}
+              editingTourLeader={editingTourLeader}
+            />
+          )}
+
+          <TourLeaderTable
+            tourLeaders={tourLeaders}
+            searchTerm={tourLeaderSearchTerm}
+            setSearchTerm={setTourLeaderSearchTerm}
+            onEdit={handleTourLeaderEdit}
+            onDelete={handleTourLeaderDelete}
+            deleting={deletingTourLeader}
+          />
+        </TabsContent>
 
         <TabsContent value="buses" className="space-y-6">
           {showBusForm && (
