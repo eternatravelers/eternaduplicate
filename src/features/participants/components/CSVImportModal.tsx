@@ -29,6 +29,8 @@ interface ParsedParticipant {
   dp_amount: number
   trip_id?: string
   sales_id?: string
+  trip_name?: string
+  sales_name?: string
   additional_requests?: string
   errors: string[]
 }
@@ -134,6 +136,16 @@ export function CSVImportModal({
               case 'catatan':
                 participant.additional_requests = value
                 break
+              case 'nama_trip':
+              case 'trip_name':
+                // Store trip name for later matching
+                participant.trip_name = value
+                break
+              case 'nama_sales':
+              case 'sales_name':
+                // Store sales name for later matching
+                participant.sales_name = value
+                break
             }
           })
 
@@ -154,7 +166,38 @@ export function CSVImportModal({
           return participant
         })
 
-        setParsedData(parsed)
+        // Match trip and sales names to IDs
+        const processedParsed = parsed.map(participant => {
+          // Find trip by name
+          if (participant.trip_name) {
+            const matchedTrip = trips.find(trip => 
+              trip.name.toLowerCase().includes(participant.trip_name.toLowerCase()) ||
+              participant.trip_name.toLowerCase().includes(trip.name.toLowerCase())
+            )
+            if (matchedTrip) {
+              participant.trip_id = matchedTrip.id
+            } else {
+              participant.errors.push(`Trip "${participant.trip_name}" tidak ditemukan`)
+            }
+          }
+
+          // Find sales by name
+          if (participant.sales_name) {
+            const matchedSales = sales.find(sale => 
+              sale.name.toLowerCase().includes(participant.sales_name.toLowerCase()) ||
+              participant.sales_name.toLowerCase().includes(sale.name.toLowerCase())
+            )
+            if (matchedSales) {
+              participant.sales_id = matchedSales.id
+            } else {
+              participant.errors.push(`Sales "${participant.sales_name}" tidak ditemukan`)
+            }
+          }
+
+          return participant
+        })
+
+        setParsedData(processedParsed)
         setParseError(null)
         setStep('preview')
       } catch (error) {

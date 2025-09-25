@@ -1,6 +1,6 @@
-nama_lengkap,email,telepon,alamat,jumlah_peserta,harga_paket,dp_amount,permintaan_tambahan
-"John Doe","john@example.com","08123456789","Jl. Sudirman No. 123, Jakarta Pusat",2,1500000,500000,"Makanan vegetarian"
-"Jane Smith","jane@example.com","08198765432","Jl. Thamrin No. 456, Jakarta Pusat",1,1500000,500000,""
-"Bob Wilson","bob@example.com","08111222333","Jl. Gatot Subroto No. 789, Jakarta Selatan",3,1500000,500000,"Kursi roda untuk lansia"
-"Alice Johnson","alice@example.com","08155667788","Jl. Kemang Raya No. 321, Jakarta Selatan",1,1500000,500000,"Alergi seafood"
-"Michael Brown","michael@example.com","08177889900","Jl. Senopati No. 654, Jakarta Selatan",4,1500000,500000,"Kamar connecting untuk keluarga"
+nama_lengkap,email,telepon,alamat,jumlah_peserta,harga_paket,dp_amount,nama_trip,nama_sales,permintaan_tambahan
+"John Doe","john@example.com","08123456789","Jl. Sudirman No. 123, Jakarta Pusat",2,1500000,500000,"Bali Adventure 3D2N","Ahmad Wijaya","Makanan vegetarian"
+"Jane Smith","jane@example.com","08198765432","Jl. Thamrin No. 456, Jakarta Pusat",1,1500000,500000,"Yogyakarta Cultural Tour","Siti Nurhaliza",""
+"Bob Wilson","bob@example.com","08111222333","Jl. Gatot Subroto No. 789, Jakarta Selatan",3,1500000,500000,"Lombok Beach Holiday","Ahmad Wijaya","Kursi roda untuk lansia"
+"Alice Johnson","alice@example.com","08155667788","Jl. Kemang Raya No. 321, Jakarta Selatan",1,1500000,500000,"Bandung City Tour","Rina Sari","Alergi seafood"
+"Michael Brown","michael@example.com","08177889900","Jl. Senopati No. 654, Jakarta Selatan",4,1500000,500000,"Bali Adventure 3D2N","Ahmad Wijaya","Kamar connecting untuk keluarga"
