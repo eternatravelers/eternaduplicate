@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { MapPin, Plus, Search, Edit, Trash2, Globe } from 'lucide-react'
-import { useDestinations, useCreateDestination, useUpdateDestination } from '@/hooks/useDestinations'
+import { useDestinations, useCreateDestination, useUpdateDestination, useDeleteDestination } from '@/hooks/useDestinations'
 import { formatShortDate } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 
@@ -20,6 +20,7 @@ export function Destinations() {
   const { destinations, loading, refetch } = useDestinations()
   const { createDestination, loading: creating } = useCreateDestination()
   const { updateDestination, loading: updating } = useUpdateDestination()
+  const { deleteDestination, loading: deleting } = useDeleteDestination()
   const { isSuperAdmin } = useAuth()
 
   const [formData, setFormData] = useState({
