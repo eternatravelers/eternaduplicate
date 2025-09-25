@@ -260,6 +260,39 @@ export function ParticipantsPage() {
               </Button>
             </div>
           </div>
+          <div className="flex items-center space-x-4 mb-4">
+            <Label className="text-sm font-medium">Filter Riwayat:</Label>
+            <div className="flex space-x-2">
+              <Button
+                variant={historyFilter === 'all' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setHistoryFilter('all')}
+              >
+                Semua Peserta
+              </Button>
+              <Button
+                variant={historyFilter === 'individual' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setHistoryFilter('individual')}
+              >
+                Individual
+              </Button>
+              <Button
+                variant={historyFilter === 'group_leader' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setHistoryFilter('group_leader')}
+              >
+                Ketua Grup
+              </Button>
+              <Button
+                variant={historyFilter === 'group_member' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setHistoryFilter('group_member')}
+              >
+                Anggota Grup
+              </Button>
+            </div>
+          </div>
           <ParticipantHistoryTable
             participants={participants}
             searchTerm={searchTerm}
@@ -269,6 +302,7 @@ export function ParticipantsPage() {
             onEdit={handleEdit}
             onDelete={handleDelete}
             deleting={deleting}
+            historyFilter={historyFilter}
             historyFilter={historyFilter}
           />
         </TabsContent>

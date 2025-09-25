@@ -17,6 +17,8 @@ interface ParticipantFilters {
   endDate?: string
   tripId?: string
   typeFilter?: 'individual' | 'group_leader' | 'group_member' | 'all'
+  searchTerm?: string
+  statusFilter?: string
 }
 
 export function useParticipants(filters?: ParticipantFilters) {
@@ -105,6 +107,16 @@ export function useParticipants(filters?: ParticipantFilters) {
         query = query.eq('trip_id', filters.tripId)
       }
 
+      // Apply search filter
+      if (filters?.searchTerm) {
+        query = query.or(`full_name.ilike.%${filters.searchTerm}%,email.ilike.%${filters.searchTerm}%,phone.ilike.%${filters.searchTerm}%`)
+      }
+
+      // Apply status filter
+      if (filters?.statusFilter && filters.statusFilter !== 'all') {
+        query = query.eq('status', filters.statusFilter)
+      }
+
       const { data, error } = await query
         .order('created_at', { ascending: false })
 
@@ -128,7 +140,7 @@ export function useParticipants(filters?: ParticipantFilters) {
 
   useEffect(() => {
     fetchParticipants()
-  }, [filters?.startDate, filters?.endDate, filters?.tripId, filters?.typeFilter])
+  }, [filters?.startDate, filters?.endDate, filters?.tripId, filters?.typeFilter, filters?.searchTerm, filters?.statusFilter])
 
   return { participants, loading, error, refetch: fetchParticipants }
 }

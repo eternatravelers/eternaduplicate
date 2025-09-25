@@ -280,7 +280,7 @@ export function ParticipantHistoryTable({
 
       {/* Results Summary */}
       <div className="text-sm text-gray-500">
-        Showing {filteredParticipants.length} of {participants.length} participants
+        Showing {participants.length} participants
       </div>
     </div>
   );
