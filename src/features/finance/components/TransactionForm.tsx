@@ -68,8 +68,8 @@ export function TransactionForm({
     const submitData = {
       ...formData,
       amount: formData.amount === '' ? 0 : Number(formData.amount),
-      trip_id: formData.trip_id || null,
-      destination_id: formData.destination_id || null
+      trip_id: formData.trip_id === "" || formData.trip_id === "no-trip" ? null : formData.trip_id,
+      destination_id: formData.destination_id === "" || formData.destination_id === "no-destination" ? null : formData.destination_id
     }
 
     await onSubmit(submitData, proofFile)
@@ -223,13 +223,13 @@ export function TransactionForm({
               </Label>
               <Select 
                 value={formData.trip_id} 
-                onValueChange={(value) => setFormData(prev => ({ ...prev, trip_id: value }))}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, trip_id: value === "no-trip" ? "" : value }))}
               >
                 <SelectTrigger className="focus:ring-green-500 focus:border-green-500">
                   <SelectValue placeholder="Pilih trip" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Tidak ada trip</SelectItem>
+                  <SelectItem value="no-trip">Tidak ada trip</SelectItem>
                   {trips.map(trip => (
                     <SelectItem key={trip.id} value={trip.id}>
                       {trip.name}
@@ -245,13 +245,13 @@ export function TransactionForm({
               </Label>
               <Select 
                 value={formData.destination_id} 
-                onValueChange={(value) => setFormData(prev => ({ ...prev, destination_id: value }))}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, destination_id: value === "no-destination" ? "" : value }))}
               >
                 <SelectTrigger className="focus:ring-green-500 focus:border-green-500">
                   <SelectValue placeholder="Pilih destinasi" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Tidak ada destinasi</SelectItem>
+                  <SelectItem value="no-destination">Tidak ada destinasi</SelectItem>
                   {destinations.map(destination => (
                     <SelectItem key={destination.id} value={destination.id}>
                       {destination.name}
