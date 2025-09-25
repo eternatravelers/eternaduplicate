@@ -175,16 +175,17 @@ export function ParticipantHistoryTable({
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => onDelete(participant.id)}
+                        onClick={() => onEdit(participant)}
                         disabled={deleting}
+                      >
                         <Edit className="h-4 w-4" />
                       </Button>
                       <ParticipantPermissionsGuard requiredRole="admin">
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => onDelete(participant)}
-                          disabled={deleting.includes(participant.id)}
+                          onClick={() => onDelete(participant.id)}
+                          disabled={deleting}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
