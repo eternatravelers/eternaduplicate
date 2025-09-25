@@ -172,7 +172,7 @@ export function CSVImportModal({
       return
     }
 
-    const participantsToImport = validParticipants.map(p => ({
+    const participantsToImport = validParticipants.map(({ errors, ...p }) => ({
       ...p,
       trip_id: defaultTripId || null,
       sales_id: defaultSalesId || null,
