@@ -2,9 +2,22 @@ import { useState, useEffect, createContext, useContext } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { User, Session } from '@supabase/supabase-js'
 
+interface UserProfile {
+  id: string
+  user_id: string
+  full_name: string | null
+  company_name: string | null
+  phone: string | null
+  role: string
+  tenant_id: string | null
+  created_at: string
+  updated_at: string
+}
+
 interface AuthContextType {
   user: User | null
   session: Session | null
+  userProfile: UserProfile | null
   loading: boolean
   error: string | null
   signIn: (email: string, password: string) => Promise<void>
@@ -14,6 +27,7 @@ interface AuthContextType {
   userRole: string | null
   isAdmin: boolean
   isSuperAdmin: boolean
+  refreshProfile: () => Promise<void>
 }
 
 interface SignUpData {
@@ -37,19 +51,109 @@ export function useAuth() {
 export function useAuthProvider(): AuthContextType {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [tenantId, setTenantId] = useState<string | null>(null)
   const [userRole, setUserRole] = useState<string | null>(null)
 
-  // Get tenant ID from user metadata
-  const getTenantId = (user: User): string | null => {
-    return user.user_metadata?.tenant_id || user.app_metadata?.tenant_id || null
+  console.log('🔄 useAuthProvider initialized', { loading, user: !!user, userProfile: !!userProfile })
+
+  // Fetch user profile from user_profiles table
+  const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => {
+    try {
+      console.log('📋 Fetching user profile for userId:', userId)
+      
+      console.log('🔍 Starting Supabase query for user_profiles...')
+      console.time('supabase_fetch_user_profile')
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('id, user_id, full_name, company_name, phone, role, tenant_id, created_at, updated_at')
+        .eq('user_id', userId)
+      console.timeEnd('supabase_fetch_user_profile')
+      
+      console.log('📊 Supabase query completed. Data:', data, 'Error:', error)
+
+      if (error) {
+        console.error('❌ Supabase error details:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        })
+        throw error
+      }
+
+      // Handle result as array
+      if (data && data.length > 0) {
+        console.log('✅ User profile fetched successfully:', data[0])
+        return data[0] as UserProfile
+      } else {
+        console.log('❌ No profile found for user:', userId)
+        return null
+      }
+    } catch (err) {
+      console.error('❌ Unhandled error in fetchUserProfile:', err)
+      console.error('❌ Error type:', typeof err)
+      console.error('❌ Error stack:', err instanceof Error ? err.stack : 'No stack trace')
+      return null
+    }
   }
 
-  // Get user role from user metadata
-  const getUserRole = (user: User): string => {
-    return user.user_metadata?.role || user.app_metadata?.role || 'admin'
+  // Create user profile for new users
+  const createUserProfile = async (user: User, signUpData?: SignUpData): Promise<UserProfile | null> => {
+    try {
+      console.log('🆕 Creating user profile for user:', user.id)
+      
+      const profileData = {
+        user_id: user.id,
+        full_name: signUpData?.fullName || user.user_metadata?.full_name || null,
+        company_name: signUpData?.companyName || user.user_metadata?.company_name || null,
+        phone: signUpData?.phone || user.user_metadata?.phone || null,
+        role: 'user', // Default role for new signups
+        tenant_id: null // Will be assigned by admin later
+      }
+      
+      console.log('📝 Profile data to insert:', profileData)
+      console.log('🔍 Starting Supabase insert for user_profiles...')
+
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .insert([profileData])
+        .select()
+        .single()
+      
+      console.log('📊 Supabase insert completed. Data:', data, 'Error:', error)
+
+      if (error) throw error
+
+      console.log('✅ User profile created successfully:', data)
+      return data
+    } catch (err) {
+      console.error('❌ Unhandled error in createUserProfile:', err)
+      console.error('❌ Error type:', typeof err)
+      console.error('❌ Error stack:', err instanceof Error ? err.stack : 'No stack trace')
+      return null
+    }
+  }
+
+  // Refresh user profile
+  const refreshProfile = async () => {
+    console.log('🔄 Refreshing profile for user:', user?.id)
+    if (!user) return
+
+    const profile = await fetchUserProfile(user.id)
+    setUserProfile(profile)
+    
+    if (profile) {
+      setTenantId(profile.tenant_id)
+      setUserRole(profile.role)
+      console.log('✅ Profile refreshed:', { role: profile.role, tenantId: profile.tenant_id })
+    } else {
+      setTenantId(null)
+      setUserRole(null)
+      console.log('❌ No profile found during refresh')
+    }
   }
 
   // Check if user is admin (has basic access)
@@ -62,6 +166,7 @@ export function useAuthProvider(): AuthContextType {
     try {
       setLoading(true)
       setError(null)
+      console.log('🔐 Attempting sign in for:', email)
 
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -69,26 +174,36 @@ export function useAuthProvider(): AuthContextType {
       })
 
       if (error) throw error
+      console.log('✅ Sign in successful, user:', data.user?.id)
 
       if (data.user) {
-        const userTenantId = getTenantId(data.user)
-        const role = getUserRole(data.user)
-        setUserRole(role)
-        if (userTenantId) {
-          setTenantId(userTenantId)
+        // Fetch user profile
+        const profile = await fetchUserProfile(data.user.id)
+        
+        if (profile) {
+          setUserProfile(profile)
+          setTenantId(profile.tenant_id)
+          setUserRole(profile.role)
+          console.log('✅ Profile loaded after sign in:', { role: profile.role })
         } else {
-          // For now, create a default tenant ID if none exists
-          const defaultTenantId = crypto.randomUUID()
-          setTenantId(defaultTenantId)
-          console.log('Created default tenant ID:', defaultTenantId)
+          // For existing users without profiles, don't auto-create
+          // They need to be set up by an admin or created manually
+          console.warn('User exists but has no profile. Contact admin to set up profile.')
+          setError('Profil pengguna belum diatur. Hubungi administrator untuk mengatur profil Anda.')
+          
+          // Sign out the user since they can't use the app without a profile
+          await supabase.auth.signOut()
+          return
         }
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Terjadi kesalahan saat login'
       setError(errorMessage)
+      console.error('❌ Sign in error:', errorMessage)
       throw err
     } finally {
       setLoading(false)
+      console.log('🔄 Sign in process completed, loading:', false)
     }
   }
 
@@ -97,10 +212,6 @@ export function useAuthProvider(): AuthContextType {
       setLoading(true)
       setError(null)
 
-      // Generate a tenant ID for the new user
-      const newTenantId = crypto.randomUUID()
-
-      // Create the user with tenant_id in metadata
       const { data, error } = await supabase.auth.signUp({
         email: signUpData.email,
         password: signUpData.password,
@@ -108,9 +219,7 @@ export function useAuthProvider(): AuthContextType {
           data: {
             full_name: signUpData.fullName,
             company_name: signUpData.companyName,
-            phone: signUpData.phone,
-            tenant_id: newTenantId,
-            role: 'super_admin' // First user becomes super admin
+            phone: signUpData.phone
           }
         }
       })
@@ -118,9 +227,22 @@ export function useAuthProvider(): AuthContextType {
       if (error) throw error
 
       if (data.user) {
-        setTenantId(newTenantId)
-        setUserRole('super_admin')
-        console.log('User registered with tenant ID:', newTenantId)
+        // Try to create user profile
+        const profile = await createUserProfile(data.user, signUpData)
+        if (profile) {
+          setUserProfile(profile)
+          setTenantId(profile.tenant_id)
+          setUserRole(profile.role)
+        } else {
+          // If profile creation fails, show appropriate message
+          setError('Pendaftaran berhasil, tetapi profil belum dapat dibuat. Hubungi administrator.')
+        console.error('❌ Supabase insert error details:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        })
+        }
       }
 
     } catch (err) {
@@ -140,6 +262,7 @@ export function useAuthProvider(): AuthContextType {
       const { error } = await supabase.auth.signOut()
       if (error) throw error
 
+      setUserProfile(null)
       setTenantId(null)
       setUserRole(null)
     } catch (err) {
@@ -155,30 +278,44 @@ export function useAuthProvider(): AuthContextType {
     // Get initial session
     const getInitialSession = async () => {
       try {
+        console.log('🚀 Getting initial session...')
         const { data: { session }, error } = await supabase.auth.getSession()
         
         if (error) throw error
+        console.log('📋 Initial session:', { hasSession: !!session, userId: session?.user?.id })
 
         setSession(session)
         setUser(session?.user ?? null)
 
         if (session?.user) {
-          const userTenantId = getTenantId(session.user)
-          const role = getUserRole(session.user)
-          setUserRole(role)
-          if (userTenantId) {
-            setTenantId(userTenantId)
+          console.log('👤 User found in session, fetching profile...')
+          const profile = await fetchUserProfile(session.user.id)
+          
+          if (profile) {
+            setUserProfile(profile)
+            setTenantId(profile.tenant_id)
+            setUserRole(profile.role)
+            console.log('✅ Initial profile loaded:', { role: profile.role, tenantId: profile.tenant_id })
           } else {
-            // Create a default tenant ID if none exists
-            const defaultTenantId = crypto.randomUUID()
-            setTenantId(defaultTenantId)
+            // Create profile for existing users who don't have one
+            console.log('🆕 No profile found, creating new profile...')
+            const newProfile = await createUserProfile(session.user)
+            if (newProfile) {
+              setUserProfile(newProfile)
+              setTenantId(newProfile.tenant_id)
+              setUserRole(newProfile.role)
+              console.log('✅ New profile created:', { role: newProfile.role })
+            }
           }
+        } else {
+          console.log('❌ No user in session')
         }
       } catch (err) {
         console.error('Error getting initial session:', err)
         setError(err instanceof Error ? err.message : 'Unknown error')
       } finally {
         setLoading(false)
+        console.log('🔄 Initial session loading completed, loading:', false)
       }
     }
 
@@ -187,35 +324,58 @@ export function useAuthProvider(): AuthContextType {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('🔄 Auth state changed:', { event, hasSession: !!session, userId: session?.user?.id })
         setSession(session)
         setUser(session?.user ?? null)
 
         if (session?.user) {
-          const userTenantId = getTenantId(session.user)
-          const role = getUserRole(session.user)
-          setUserRole(role)
-          if (userTenantId) {
-            setTenantId(userTenantId)
+          console.log('👤 User in auth state change, fetching profile...')
+          const profile = await fetchUserProfile(session.user.id)
+          
+          if (profile) {
+            setUserProfile(profile)
+            setTenantId(profile.tenant_id)
+            setUserRole(profile.role)
+            console.log('✅ Profile loaded in auth state change:', { role: profile.role })
           } else {
-            // Create a default tenant ID if none exists
-            const defaultTenantId = crypto.randomUUID()
-            setTenantId(defaultTenantId)
+            // Create profile for users who don't have one
+            console.log('🆕 Creating profile in auth state change...')
+            const newProfile = await createUserProfile(session.user)
+            if (newProfile) {
+              setUserProfile(newProfile)
+              setTenantId(newProfile.tenant_id)
+              setUserRole(newProfile.role)
+              console.log('✅ New profile created in auth state change:', { role: newProfile.role })
+            }
           }
         } else {
+          console.log('❌ No user in auth state change')
+          setUserProfile(null)
           setTenantId(null)
           setUserRole(null)
         }
 
         setLoading(false)
+        console.log('🔄 Auth state change completed, loading:', false)
       }
     )
 
     return () => subscription.unsubscribe()
   }, [])
 
+  console.log('🔄 useAuthProvider returning:', { 
+    loading, 
+    hasUser: !!user, 
+    hasUserProfile: !!userProfile, 
+    userRole,
+    isAdmin,
+    isSuperAdmin 
+  })
+
   return {
     user,
     session,
+    userProfile,
     loading,
     error,
     signIn,
@@ -224,7 +384,8 @@ export function useAuthProvider(): AuthContextType {
     tenantId,
     userRole,
     isAdmin,
-    isSuperAdmin
+    isSuperAdmin,
+    refreshProfile
   }
 }
 
