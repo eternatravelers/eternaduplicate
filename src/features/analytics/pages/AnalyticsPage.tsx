@@ -10,6 +10,7 @@ import { ExpenseCategoryChart } from '../components/ExpenseCategoryChart'
 import { SalesPerformanceChart } from '../components/SalesPerformanceChart'
 import { useAnalytics } from '@/hooks/useAnalytics'
 import { useTrips } from '@/hooks/useTrips'
+import { formatCurrency } from '@/lib/utils'
 
 export function AnalyticsPage() {
   const [activeTab, setActiveTab] = useState('overview')
