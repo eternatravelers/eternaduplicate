@@ -87,17 +87,22 @@ export function GroupRegistrationForm({
     }
 
     try {
-      await onSubmit(submitData)
+      const newGroupLeader = await onSubmit(submitData)
       
-      // Store group leader data for the next step
-      setGroupLeaderData({
-        ...submitData,
-        id: 'temp-id', // Will be replaced with actual ID
-        groupName: groupData.groupName
-      })
-      
-      // Move to next step
-      setStep('add-members')
+      if (newGroupLeader) {
+        // Store group leader data for the next step
+        setGroupLeaderData({
+          ...submitData,
+          id: newGroupLeader.id,
+          groupName: groupData.groupName
+        })
+        
+        // Set the group leader ID for linking members
+        setGroupLeaderId(newGroupLeader.id)
+        
+        // Move to next step
+        setStep('add-members')
+      }
     } catch (error) {
       console.error('Error creating group leader:', error)
     }
