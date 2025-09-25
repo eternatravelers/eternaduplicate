@@ -1,7 +1,10 @@
 import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Plus } from 'lucide-react'
 import { CostPlanStatsCards } from '../components/CostPlanStatsCards'
+import { CostPlanForm } from '../components/CostPlanForm'
+import { CostPlanTable } from '../components/CostPlanTable'
 import { useCostPlans, useCreateCostPlan, useUpdateCostPlan, useDeleteCostPlan } from '@/hooks/useCostPlans'
 import { useAuth } from '@/hooks/useAuth'
 
@@ -10,6 +13,7 @@ export function CostPlansPage() {
   const [editingCostPlan, setEditingCostPlan] = useState<string | null>(null)
   const [isDuplicating, setIsDuplicating] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
+  const [error, setError] = useState<string | null>(null)
   
   const { costPlans, loading, refetch } = useCostPlans()
   const { createCostPlan, loading: creating } = useCreateCostPlan()
@@ -18,15 +22,51 @@ export function CostPlansPage() {
   const { isSuperAdmin } = useAuth()
 
   const handleSubmit = async (formData: any) => {
-    const { data, error } = editingCostPlan 
-      ? await updateCostPlan(editingCostPlan, formData)
-      : await createCostPlan(formData)
+    try {
+      setError(null)
+      const { data, error } = editingCostPlan 
+        ? await updateCostPlan(editingCostPlan, formData)
+        : await createCostPlan(formData)
 
-    if (!error) {
-      setShowAddForm(false)
-      setEditingCostPlan(null)
-      setIsDuplicating(false)
+      if (error) {
+        setError(error)
+        return
+      }
+
+      if (data) {
+        setShowAddForm(false)
+        setEditingCostPlan(null)
+        setIsDuplicating(false)
+        refetch()
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Terjadi kesalahan')
+    }
+  }
+
+  const handleEdit = (costPlan: any) => {
+    setEditingCostPlan(costPlan.id)
+    setIsDuplicating(false)
+    setShowAddForm(true)
+  }
+
+  const handleDuplicate = (costPlan: any) => {
+    setEditingCostPlan(null)
+    setIsDuplicating(true)
+    setShowAddForm(true)
+  }
+
+  const handleDelete = async (id: string) => {
+    try {
+      setError(null)
+      const { error } = await deleteCostPlan(id)
+      if (error) {
+        setError(error)
+        return
+      }
       refetch()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Terjadi kesalahan')
     }
   }
 
@@ -40,6 +80,26 @@ export function CostPlansPage() {
     setShowAddForm(false)
     setEditingCostPlan(null)
     setIsDuplicating(false)
+    setError(null)
+  }
+
+  const getInitialData = () => {
+    if (isDuplicating && costPlans.length > 0) {
+      // For duplication, we'll use the last selected cost plan
+      // In a real implementation, you'd track which plan was selected for duplication
+      const planToDuplicate = costPlans[0] // This should be the selected plan
+      return {
+        ...planToDuplicate,
+        name: `${planToDuplicate.name} (Copy)`,
+        id: undefined // Remove ID so it creates a new record
+      }
+    }
+    
+    if (editingCostPlan) {
+      return costPlans.find(plan => plan.id === editingCostPlan)
+    }
+    
+    return undefined
   }
 
   if (loading) {
@@ -66,12 +126,34 @@ export function CostPlansPage() {
         </Button>
       </div>
 
+      {error && (
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
       <CostPlanStatsCards costPlans={costPlans} />
 
-      {/* Form and table components will be implemented later */}
-      <div className="text-center py-8 text-gray-500">
-        Cost plan form and table coming soon...
-      </div>
+      {showAddForm && (
+        <CostPlanForm
+          initialData={getInitialData()}
+          onSubmit={handleSubmit}
+          onCancel={handleCancel}
+          creating={creating}
+          updating={updating}
+          editingCostPlan={editingCostPlan}
+        />
+      )}
+
+      <CostPlanTable
+        costPlans={costPlans}
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        onEdit={handleEdit}
+        onDuplicate={handleDuplicate}
+        onDelete={handleDelete}
+        deleting={deleting}
+      />
     </div>
   )
 }
