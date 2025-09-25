@@ -22,6 +22,17 @@ interface ParticipantFilters {
   statusFilter?: string
 }
 
+interface TransactionSummary {
+  totalIncome: number
+  totalExpense: number
+  netBalance: number
+}
+
+function useTransactions(filters?: ParticipantFilters) {
+  const [transactions, setTransactions] = useState<any[]>([])
+  return { transactions }
+}
+
 export function useParticipants(filters?: ParticipantFilters) {
   const [participants, setParticipants] = useState<Participant[]>([])
   const [loading, setLoading] = useState(true)
@@ -110,7 +121,7 @@ export function useParticipants(filters?: ParticipantFilters) {
 
       // Apply search filter
       if (filters?.searchTerm) {
-        query = query.or(\`full_name.ilike.%${filters.searchTerm}%,email.ilike.%${filters.searchTerm}%,phone.ilike.%${filters.searchTerm}%`)
+        query = query.or(`full_name.ilike.%${filters.searchTerm}%,email.ilike.%${filters.searchTerm}%,phone.ilike.%${filters.searchTerm}%`)
       }
 
       // Apply status filter
@@ -179,7 +190,7 @@ export function useCreateParticipant() {
   const [error, setError] = useState<string | null>(null)
 
   const createParticipant = async (
-    participantData: Database['public']['Tables']['participants']['Insert'],
+    participantData: Database['public']['Tables']['participants']['Insert']
   ) => {
     try {
       setLoading(true)
@@ -490,7 +501,6 @@ export function useDeletedParticipants() {
           deleted_at,
           deleted_by_user_name,
           deletion_reason,
-          parent_participant_id,
           parent_participant_id,
           trips (
             id,
