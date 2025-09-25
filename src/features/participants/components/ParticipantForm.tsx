@@ -11,15 +11,13 @@ import { formatShortDate } from '@/lib/utils'
 
 interface ParticipantFormProps {
   initialData?: any
-  onSubmit: (data: any) => Promise<void>
+  onSubmit: (data: any, file?: File | null) => Promise<void>
   onCancel: () => void
   trips: any[]
   sales: any[]
   creating: boolean
   updating: boolean
   editingParticipant: string | null
-  parentParticipantId?: string | null
-  isGroupMember?: boolean
 }
 
 export function ParticipantForm({
@@ -30,9 +28,7 @@ export function ParticipantForm({
   sales,
   creating,
   updating,
-  editingParticipant,
-  parentParticipantId,
-  isGroupMember = false
+  editingParticipant
 }: ParticipantFormProps) {
   const [formData, setFormData] = useState({
     trip_id: '',
@@ -46,9 +42,7 @@ export function ParticipantForm({
     dp_amount: '' as number | '',
     dp_transfer_date: '',
     additional_requests: '',
-    meeting_point_details: '',
-    parent_participant_id: parentParticipantId || '',
-    status: 'pending'
+    meeting_point_details: ''
   })
 
   const [proofOfTransferUrl, setProofOfTransferUrl] = useState<string | null>(null)
@@ -85,17 +79,10 @@ export function ParticipantForm({
       package_price: formData.package_price === '' ? 0 : Number(formData.package_price),
       dp_amount: formData.dp_amount === '' ? 0 : Number(formData.dp_amount),
       dp_transfer_date: formData.dp_transfer_date || new Date().toISOString().split('T')[0],
-      proof_of_transfer_url: proofOfTransferUrl,
-      parent_participant_id: parentParticipantId || null,
-      // Override values for group members
-      ...(isGroupMember && {
-        participant_count: 1,
-        package_price: 0,
-        dp_amount: 0
-      })
+      proof_of_transfer_url: proofOfTransferUrl
     }
 
-    await onSubmit(submitData)
+    await onSubmit(submitData, null)
   }
 
   const handleUrlChange = (url: string | null) => {
@@ -106,24 +93,10 @@ export function ParticipantForm({
     <Card className="border-blue-200 shadow-lg">
       <CardHeader className="bg-blue-50">
         <CardTitle className="text-blue-800">
-          {editingParticipant ? 'Edit Peserta' : 
-           isGroupMember ? 'Tambah Anggota Grup' : 
-           'Tambah Peserta Baru'}
+          {editingParticipant ? 'Edit Peserta' : 'Tambah Peserta Baru'}
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-6">
-        {isGroupMember && (
-          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <div className="flex items-center space-x-2 text-blue-800">
-              <Users className="h-5 w-5" />
-              <span className="font-medium">Pendaftaran Anggota Grup</span>
-            </div>
-            <p className="text-sm text-blue-700 mt-1">
-              Peserta ini akan ditambahkan sebagai anggota grup. Trip dan sales akan mengikuti pengaturan ketua grup.
-            </p>
-          </div>
-        )}
-        
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
@@ -131,7 +104,6 @@ export function ParticipantForm({
               <Select 
                 value={formData.trip_id} 
                 onValueChange={(value) => setFormData(prev => ({ ...prev, trip_id: value }))}
-                disabled={isGroupMember}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Pilih trip" />
@@ -151,7 +123,6 @@ export function ParticipantForm({
               <Select 
                 value={formData.sales_id} 
                 onValueChange={(value) => setFormData(prev => ({ ...prev, sales_id: value }))}
-                disabled={isGroupMember}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Pilih sales" />
@@ -208,13 +179,7 @@ export function ParticipantForm({
                   const val = e.target.value === '' ? '' : parseInt(e.target.value)
                   setFormData(prev => ({ ...prev, participant_count: isNaN(val) ? '' : val }))
                 }}
-                disabled={isGroupMember}
               />
-              {isGroupMember && (
-                <p className="text-xs text-gray-500">
-                  Anggota grup selalu dihitung sebagai 1 orang
-                </p>
-              )}
             </div>
 
             <div className="space-y-2">
@@ -228,13 +193,7 @@ export function ParticipantForm({
                   setFormData(prev => ({ ...prev, package_price: isNaN(val) ? '' : val }))
                 }}
                 required
-                disabled={isGroupMember}
               />
-              {isGroupMember && (
-                <p className="text-xs text-gray-500">
-                  Pembayaran sudah termasuk dalam pembayaran ketua grup
-                </p>
-              )}
             </div>
 
             <div className="space-y-2">
@@ -248,13 +207,7 @@ export function ParticipantForm({
                   setFormData(prev => ({ ...prev, dp_amount: isNaN(val) ? '' : val }))
                 }}
                 required
-                disabled={isGroupMember}
               />
-              {isGroupMember && (
-                <p className="text-xs text-gray-500">
-                  DP sudah termasuk dalam pembayaran ketua grup
-                </p>
-              )}
             </div>
 
             <div className="space-y-2">
@@ -265,24 +218,6 @@ export function ParticipantForm({
                 value={formData.dp_transfer_date}
                 onChange={(e) => setFormData(prev => ({ ...prev, dp_transfer_date: e.target.value }))}
               />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="status">Status Pembayaran</Label>
-              <Select 
-                value={formData.status} 
-                onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Pilih status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="dp_paid">DP Dibayar</SelectItem>
-                  <SelectItem value="paid_in_full">Lunas</SelectItem>
-                  <SelectItem value="cancelled">Dibatalkan</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
           </div>
 
@@ -343,24 +278,11 @@ export function ParticipantForm({
           <ProofOfTransferUploader
             url={proofOfTransferUrl}
             onUrlChange={handleUrlChange}
-            title={isGroupMember ? "Bukti Transfer (Opsional)" : "Bukti Transfer DP"}
           />
-          
-          {isGroupMember && (
-            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <p className="text-sm text-yellow-800">
-                <strong>Catatan:</strong> Anggota grup tidak perlu upload bukti transfer terpisah. 
-                Pembayaran sudah dikonsolidasi melalui ketua grup.
-              </p>
-            </div>
-          )}
 
           <div className="flex space-x-3 pt-4 border-t">
             <Button type="submit" disabled={creating || updating}>
-              {creating || updating ? 'Menyimpan...' : 
-               editingParticipant ? 'Update Peserta' : 
-               isGroupMember ? 'Tambah ke Grup' : 
-               'Simpan Peserta'}
+              {creating || updating ? 'Menyimpan...' : editingParticipant ? 'Update Peserta' : 'Simpan Peserta'}
             </Button>
             <Button type="button" variant="outline" onClick={onCancel}>
               Batal

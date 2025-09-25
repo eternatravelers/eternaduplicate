@@ -65,9 +65,7 @@ export function useDashboard() {
       
       // Calculate stats
       const totalTrips = trips?.length || 0
-      // Only count participants where parent_participant_id is null to avoid double-counting groups
-      const consolidatedParticipants = participants?.filter(p => !p.parent_participant_id) || []
-      const totalParticipants = consolidatedParticipants.reduce((sum, p) => sum + (p.participant_count || 1), 0)
+      const totalParticipants = participants?.length || 0
       const totalRevenue = totalIncome // Omset is total income
       const activeTrips = trips?.filter(trip => trip.status === 'active').length || 0
       const profitMargin = totalIncome > 0 ? ((totalIncome - totalExpense) / totalIncome) * 100 : 0

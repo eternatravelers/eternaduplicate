@@ -61,7 +61,6 @@ export function TripListTable({
               <TableHead>Price</TableHead>
               <TableHead>Cost Plan</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Payment Status</TableHead>
               <TableHead>Kendaraan</TableHead>
               <TableHead>Driver</TableHead>
               <TableHead>Actions</TableHead>
@@ -92,47 +91,6 @@ export function TripListTable({
                   <Badge className={getStatusBadge(trip.status)}>
                     {trip.status}
                   </Badge>
-                </TableCell>
-                <TableCell>
-                  {trip.payment_summary ? (
-                    <div className="space-y-1">
-                      <div className="text-xs">
-                        <div className="flex items-center justify-between">
-                          <span className="text-gray-600">Total:</span>
-                          <span className="font-medium">{trip.payment_summary.total_participants} orang</span>
-                        </div>
-                        {trip.payment_summary.pending_count > 0 && (
-                          <div className="flex items-center justify-between">
-                            <span className="text-yellow-600">Pending:</span>
-                            <span className="font-medium text-yellow-600">{trip.payment_summary.pending_count}</span>
-                          </div>
-                        )}
-                        {trip.payment_summary.dp_paid_count > 0 && (
-                          <div className="flex items-center justify-between">
-                            <span className="text-blue-600">DP:</span>
-                            <span className="font-medium text-blue-600">{trip.payment_summary.dp_paid_count}</span>
-                          </div>
-                        )}
-                        {trip.payment_summary.paid_in_full_count > 0 && (
-                          <div className="flex items-center justify-between">
-                            <span className="text-green-600">Lunas:</span>
-                            <span className="font-medium text-green-600">{trip.payment_summary.paid_in_full_count}</span>
-                          </div>
-                        )}
-                        {trip.payment_summary.cancelled_count > 0 && (
-                          <div className="flex items-center justify-between">
-                            <span className="text-red-600">Batal:</span>
-                            <span className="font-medium text-red-600">{trip.payment_summary.cancelled_count}</span>
-                          </div>
-                        )}
-                      </div>
-                      <div className="text-xs text-gray-500 border-t pt-1">
-                        Revenue: {formatCurrency(trip.payment_summary.total_revenue)}
-                      </div>
-                    </div>
-                  ) : (
-                    <span className="text-gray-400 text-sm">-</span>
-                  )}
                 </TableCell>
                 <TableCell>
                   {trip.buses && trip.buses.length > 0 ? (

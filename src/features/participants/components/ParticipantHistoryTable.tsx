@@ -1,13 +1,11 @@
-```tsx
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, CreditCard as Edit, Search, Users, Crown } from 'lucide-react';
+import { Trash2, CreditCard as Edit, Search } from 'lucide-react';
 import { ParticipantPermissionsGuard } from './ParticipantPermissionsGuard';
-import { DeleteParticipantDialog } from './DeleteParticipantDialog';
 
 interface Participant {
   id: string;
@@ -23,7 +21,6 @@ interface Participant {
   additional_requests?: string;
   trip_id?: string;
   sales_id?: string;
-  parent_participant_id?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -34,10 +31,9 @@ interface ParticipantHistoryTableProps {
   setSearchTerm: (term: string) => void;
   filterStatus: string;
   setFilterStatus: (status: string) => void;
-  onEdit: (participantId: string) => void;
+  onEdit: (participant: Participant) => void;
   onDelete: (id: string, reason?: string, permanent?: boolean) => Promise<void>;
   deleting: boolean;
-  historyFilter: 'all' | 'individual' | 'group_leader' | 'group_member';
 }
 
 export function ParticipantHistoryTable({
@@ -48,18 +44,14 @@ export function ParticipantHistoryTable({
   setFilterStatus,
   onEdit,
   onDelete,
-  deleting,
-  historyFilter
+  deleting
 }: ParticipantHistoryTableProps) {
   const getStatusBadgeVariant = (status: string) => {
     switch (status.toLowerCase()) {
-      case 'confirmed': // Backward compatibility
-      case 'dp_paid':
-        return 'secondary';
-      case 'paid_in_full':
+      case 'confirmed':
         return 'default';
       case 'pending':
-        return 'outline';
+        return 'secondary';
       case 'cancelled':
         return 'destructive';
       default:
@@ -79,31 +71,18 @@ export function ParticipantHistoryTable({
     return new Date(dateString).toLocaleDateString('id-ID');
   };
 
-  // The participants array passed to this component is already filtered by the parent
-  // based on searchTerm, filterStatus, and historyFilter.
-  // So, no further filtering is needed here.
-
-  const getFilterTitle = () => {
-    switch (historyFilter) {
-      case 'individual':
-        return 'Pendaftaran Individual'
-      case 'group_leader':
-        return 'Ketua Grup'
-      case 'group_member':
-        return 'Anggota Grup'
-      default:
-        return 'Semua Peserta'
-    }
-  }
+  const filteredParticipants = participants.filter(participant => {
+    const matchesSearch = participant.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         participant.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         participant.phone.includes(searchTerm);
+    
+    const matchesStatus = filterStatus === 'all' || participant.status === filterStatus;
+    
+    return matchesSearch && matchesStatus;
+  });
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center space-x-2">
-        <Users className="h-5 w-5 text-blue-600" />
-        <h3 className="text-lg font-semibold">{getFilterTitle()}</h3>
-        <Badge variant="outline">{participants.length} peserta</Badge>
-      </div>
-
       {/* Search and Filter Controls */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
@@ -122,8 +101,7 @@ export function ParticipantHistoryTable({
           <SelectContent>
             <SelectItem value="all">All Status</SelectItem>
             <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="dp_paid">DP Paid</SelectItem>
-            <SelectItem value="paid_in_full">Paid in Full</SelectItem>
+            <SelectItem value="confirmed">Confirmed</SelectItem>
             <SelectItem value="cancelled">Cancelled</SelectItem>
           </SelectContent>
         </Select>
@@ -136,7 +114,6 @@ export function ParticipantHistoryTable({
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Contact</TableHead>
-              <TableHead>Group Info</TableHead>
               <TableHead>Participants</TableHead>
               <TableHead>Package Price</TableHead>
               <TableHead>DP Amount</TableHead>
@@ -146,30 +123,18 @@ export function ParticipantHistoryTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {participants.length === 0 ? (
+            {filteredParticipants.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={9} className="text-center py-8 text-gray-500">
+                <TableCell colSpan={8} className="text-center py-8 text-gray-500">
                   No participants found
                 </TableCell>
               </TableRow>
             ) : (
-              participants.map((participant) => (
+              filteredParticipants.map((participant) => (
                 <TableRow key={participant.id}>
                   <TableCell>
                     <div>
                       <div className="font-medium">{participant.full_name}</div>
-                      {participant.parent_participant_id && (
-                        <div className="flex items-center space-x-1 mt-1">
-                          <Users className="h-3 w-3 text-blue-600" />
-                          <span className="text-xs text-blue-600">Anggota Grup</span>
-                        </div>
-                      )}
-                      {!participant.parent_participant_id && participant.additional_requests?.includes('Group Leader') && (
-                        <div className="flex items-center space-x-1 mt-1">
-                          <Crown className="h-3 w-3 text-yellow-600" />
-                          <span className="text-xs text-yellow-600">Ketua Grup</span>
-                        </div>
-                      )}
                       <div className="text-sm text-gray-500 truncate max-w-48">
                         {participant.address}
                       </div>
@@ -182,68 +147,24 @@ export function ParticipantHistoryTable({
                     </div>
                   </TableCell>
                   <TableCell>
-                    {participant.parent_participant_id ? (
-                      <Badge variant="outline" className="text-blue-600 border-blue-200">
-                        <Users className="h-3 w-3 mr-1" />
-                        Anggota
-                      </Badge>
-                    ) : participant.additional_requests?.includes('Group Leader') ? (
-                      <Badge variant="outline" className="text-yellow-600 border-yellow-200">
-                        <Crown className="h-3 w-3 mr-1" />
-                        Ketua
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="text-gray-600">
-                        Individual
-                      </Badge>
-                    )}
+                    <Badge variant="outline">
+                      {participant.participant_count} person{participant.participant_count > 1 ? 's' : ''}
+                    </Badge>
                   </TableCell>
                   <TableCell>
-                    <div className="text-center">
-                      <Badge variant="outline">
-                        {participant.participant_count} orang
-                      </Badge>
-                      {participant.parent_participant_id && (
-                        <div className="text-xs text-blue-600 mt-1">
-                          (Anggota grup)
-                        </div>
-                      )}
-                      {!participant.parent_participant_id && participant.additional_requests?.includes('Group Leader') && (
-                        <div className="text-xs text-yellow-600 mt-1">
-                          (Total grup)
-                        </div>
-                      )}
-                    </div>
+                    {formatCurrency(participant.package_price)}
                   </TableCell>
                   <TableCell>
                     <div>
-                      <div className={\`font-medium ${participant.parent_participant_id ? 'text-gray-400' : 'text-green-600'}`}>
-                        {formatCurrency(participant.package_price)}
-                      </div>
-                      {participant.parent_participant_id && (
-                        <div className="text-xs text-gray-500">
-                          Termasuk grup
-                        </div>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div>
-                      <div className={\`font-medium ${participant.parent_participant_id ? 'text-gray-400' : 'text-purple-600'}`}>
-                        {formatCurrency(participant.dp_amount)}
-                      </div>
+                      <div>{formatCurrency(participant.dp_amount)}</div>
                       <div className="text-xs text-gray-500">
-                        {participant.parent_participant_id ? 'Termasuk grup' : formatDate(participant.dp_transfer_date)}
+                        {formatDate(participant.dp_transfer_date)}
                       </div>
                     </div>
                   </TableCell>
                   <TableCell>
                     <Badge variant={getStatusBadgeVariant(participant.status)}>
-                      {participant.status === 'dp_paid' ? 'DP Paid' :
-                       participant.status === 'paid_in_full' ? 'Paid in Full' :
-                       participant.status === 'pending' ? 'Pending' :
-                       participant.status === 'cancelled' ? 'Cancelled' :
-                       participant.status}
+                      {participant.status}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -254,17 +175,20 @@ export function ParticipantHistoryTable({
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => onEdit(participant.id)}
+                        onClick={() => onEdit(participant)}
                         disabled={deleting}
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
                       <ParticipantPermissionsGuard requiredRole="admin">
-                        <DeleteParticipantDialog
-                          participant={participant}
-                          onDelete={onDelete}
-                          deleting={deleting}
-                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => onDelete(participant.id)}
+                          disabled={deleting}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </ParticipantPermissionsGuard>
                     </div>
                   </TableCell>
@@ -277,9 +201,8 @@ export function ParticipantHistoryTable({
 
       {/* Results Summary */}
       <div className="text-sm text-gray-500">
-        Showing {participants.length} participants
+        Showing {filteredParticipants.length} of {participants.length} participants
       </div>
     </div>
   );
 }
-```

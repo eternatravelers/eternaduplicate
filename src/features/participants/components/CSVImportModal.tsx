@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
-import { FileSpreadsheet, Upload, Download, AlertCircle, CheckCircle, X, Users } from 'lucide-react'
+import { FileSpreadsheet, Upload, Download, AlertCircle, CheckCircle, X } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 
 interface CSVImportModalProps {
@@ -17,7 +17,6 @@ interface CSVImportModalProps {
   trips: any[]
   sales: any[]
   importing: boolean
-  parentParticipantId?: string | null
 }
 
 interface ParsedParticipant {
@@ -42,8 +41,7 @@ export function CSVImportModal({
   onImport,
   trips,
   sales,
-  importing,
-  parentParticipantId
+  importing
 }: CSVImportModalProps) {
   const [csvFile, setCsvFile] = useState<File | null>(null)
   const [parsedData, setParsedData] = useState<ParsedParticipant[]>([])
@@ -124,18 +122,14 @@ export function CSVImportModal({
               case 'harga_paket':
               case 'package_price':
               case 'harga':
-                if (!parentParticipantId) { // Only set price for non-group members
-                  const price = parseFloat(value)
-                  participant.package_price = isNaN(price) ? 0 : price
-                }
+                const price = parseFloat(value)
+                participant.package_price = isNaN(price) ? 0 : price
                 break
               case 'dp_amount':
               case 'dp':
               case 'uang_muka':
-                if (!parentParticipantId) { // Only set DP for non-group members
-                  const dp = parseFloat(value)
-                  participant.dp_amount = isNaN(dp) ? 0 : dp
-                }
+                const dp = parseFloat(value)
+                participant.dp_amount = isNaN(dp) ? 0 : dp
                 break
               case 'permintaan_tambahan':
               case 'additional_requests':
@@ -160,12 +154,8 @@ export function CSVImportModal({
           if (!participant.email) participant.errors.push('Email wajib diisi')
           if (!participant.phone) participant.errors.push('Telepon wajib diisi')
           if (!participant.address) participant.errors.push('Alamat wajib diisi')
-          
-          // Only validate price for non-group members
-          if (!parentParticipantId) {
-            if (participant.package_price <= 0) participant.errors.push('Harga paket harus lebih dari 0')
-            if (participant.dp_amount < 0) participant.errors.push('DP tidak boleh negatif')
-          }
+          if (participant.package_price <= 0) participant.errors.push('Harga paket harus lebih dari 0')
+          if (participant.dp_amount < 0) participant.errors.push('DP tidak boleh negatif')
 
           // Validate email format
           const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -230,14 +220,7 @@ export function CSVImportModal({
       trip_id: defaultTripId || null,
       sales_id: defaultSalesId || null,
       dp_transfer_date: new Date().toISOString().split('T')[0],
-      status: 'pending',
-      parent_participant_id: parentParticipantId || null,
-      // Override values for group members
-      ...(parentParticipantId && {
-        participant_count: 1, // Each member is 1 person
-        package_price: 0, // Payment is consolidated at group leader level
-        dp_amount: 0 // Payment is consolidated at group leader level
-      })
+      status: 'pending'
     }))
 
     try {
@@ -286,23 +269,11 @@ export function CSVImportModal({
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
             <FileSpreadsheet className="h-5 w-5" />
-            <span>
-              {parentParticipantId ? 'Import Anggota Grup dari CSV' : 'Import Peserta dari CSV'}
-            </span>
+            <span>Import Peserta dari CSV</span>
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6">
-          {parentParticipantId && (
-            <Alert>
-              <Users className="h-4 w-4" />
-              <AlertDescription>
-                Peserta yang diimpor akan ditambahkan sebagai anggota grup dengan pembayaran nol. 
-                Pembayaran sudah dikonsolidasi melalui ketua grup.
-              </AlertDescription>
-            </Alert>
-          )}
-
           {/* Step 1: Upload */}
           {step === 'upload' && (
             <div className="space-y-4">
@@ -311,10 +282,9 @@ export function CSVImportModal({
                 <ul className="text-sm text-blue-700 space-y-1">
                   <li>• File harus berformat CSV dengan encoding UTF-8</li>
                   <li>• Kolom yang wajib: nama_lengkap, email, telepon, alamat, harga_paket</li>
-                  <li>• Kolom opsional: {parentParticipantId ? '' : 'jumlah_peserta, harga_paket, dp_amount, nama_trip, nama_sales, '}permintaan_tambahan</li>
+                  <li>• Kolom opsional: jumlah_peserta, dp_amount, nama_trip, nama_sales, permintaan_tambahan</li>
                   <li>• Gunakan template yang disediakan untuk memastikan format yang benar</li>
-                  {!parentParticipantId && <li>• Nama trip dan sales akan dicocokkan otomatis dengan data yang ada</li>}
-                  {parentParticipantId && <li>• Semua peserta akan ditambahkan ke grup dengan pembayaran nol (konsolidasi di ketua grup)</li>}
+                  <li>• Nama trip dan sales akan dicocokkan otomatis dengan data yang ada</li>
                 </ul>
               </div>
 
@@ -379,7 +349,6 @@ export function CSVImportModal({
               </div>
 
               {/* Default Trip and Sales Selection */}
-              {!parentParticipantId && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
                 <div className="space-y-2">
                   <Label htmlFor="default_trip">Trip Default (Opsional)</Label>
@@ -415,7 +384,6 @@ export function CSVImportModal({
                   </Select>
                 </div>
               </div>
-              )}
 
               {/* Preview Table */}
               <div className="border rounded-lg max-h-96 overflow-auto">
