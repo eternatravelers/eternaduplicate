@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Phone, Plus, Edit, Trash2, AlertTriangle, Hospital, Shield } from 'lucide-react'
+import { Phone, Plus, Edit, Trash2, AlertTriangle, Guitar as Hospital, Shield } from 'lucide-react'
 
 interface EmergencyContact {
   id: string
