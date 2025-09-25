@@ -16,6 +16,7 @@ import { ParticipantDeletionSummary } from '../components/ParticipantDeletionSum
 import { FileSpreadsheet, AlertCircle } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useAuth } from '@/hooks/useAuth'
+import { Label } from '@/components/ui/label'
 
 export function ParticipantsPage() {
   const [editingParticipant, setEditingParticipant] = useState<string | null>(null)
