@@ -86,7 +86,13 @@ export function ParticipantForm({
       dp_amount: formData.dp_amount === '' ? 0 : Number(formData.dp_amount),
       dp_transfer_date: formData.dp_transfer_date || new Date().toISOString().split('T')[0],
       proof_of_transfer_url: proofOfTransferUrl,
-      parent_participant_id: parentParticipantId || null
+      parent_participant_id: parentParticipantId || null,
+      // Override values for group members
+      ...(isGroupMember && {
+        participant_count: 1,
+        package_price: 0,
+        dp_amount: 0
+      })
     }
 
     await onSubmit(submitData)
@@ -202,7 +208,13 @@ export function ParticipantForm({
                   const val = e.target.value === '' ? '' : parseInt(e.target.value)
                   setFormData(prev => ({ ...prev, participant_count: isNaN(val) ? '' : val }))
                 }}
+                disabled={isGroupMember}
               />
+              {isGroupMember && (
+                <p className="text-xs text-gray-500">
+                  Anggota grup selalu dihitung sebagai 1 orang
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -216,7 +228,13 @@ export function ParticipantForm({
                   setFormData(prev => ({ ...prev, package_price: isNaN(val) ? '' : val }))
                 }}
                 required
+                disabled={isGroupMember}
               />
+              {isGroupMember && (
+                <p className="text-xs text-gray-500">
+                  Pembayaran sudah termasuk dalam pembayaran ketua grup
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -230,7 +248,13 @@ export function ParticipantForm({
                   setFormData(prev => ({ ...prev, dp_amount: isNaN(val) ? '' : val }))
                 }}
                 required
+                disabled={isGroupMember}
               />
+              {isGroupMember && (
+                <p className="text-xs text-gray-500">
+                  DP sudah termasuk dalam pembayaran ketua grup
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -319,7 +343,17 @@ export function ParticipantForm({
           <ProofOfTransferUploader
             url={proofOfTransferUrl}
             onUrlChange={handleUrlChange}
+            title={isGroupMember ? "Bukti Transfer (Opsional)" : "Bukti Transfer DP"}
           />
+          
+          {isGroupMember && (
+            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-sm text-yellow-800">
+                <strong>Catatan:</strong> Anggota grup tidak perlu upload bukti transfer terpisah. 
+                Pembayaran sudah dikonsolidasi melalui ketua grup.
+              </p>
+            </div>
+          )}
 
           <div className="flex space-x-3 pt-4 border-t">
             <Button type="submit" disabled={creating || updating}>

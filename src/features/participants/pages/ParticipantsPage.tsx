@@ -36,9 +36,11 @@ export function ParticipantsPage() {
   const { isAdmin, isSuperAdmin } = useAuth()
 
   // Calculate stats
-  const totalParticipants = participants.reduce((sum, p) => sum + (p.participant_count || 1), 0)
-  const totalRevenue = participants.reduce((sum, p) => sum + (p.package_price || 0), 0)
-  const totalDP = participants.reduce((sum, p) => sum + (p.dp_amount || 0), 0)
+  // Only count participants where parent_participant_id is null to avoid double-counting groups
+  const consolidatedParticipants = participants.filter(p => !p.parent_participant_id)
+  const totalParticipants = consolidatedParticipants.reduce((sum, p) => sum + (p.participant_count || 1), 0)
+  const totalRevenue = consolidatedParticipants.reduce((sum, p) => sum + (p.package_price || 0), 0)
+  const totalDP = consolidatedParticipants.reduce((sum, p) => sum + (p.dp_amount || 0), 0)
 
   const handleSubmit = async (data: any, file?: File | null) => {
     const { error } = editingParticipant

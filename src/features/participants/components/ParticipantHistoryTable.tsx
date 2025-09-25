@@ -183,18 +183,41 @@ export function ParticipantHistoryTable({
                     )}
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline">
-                      {participant.participant_count} person{participant.participant_count > 1 ? 's' : ''}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {formatCurrency(participant.package_price)}
+                    <div className="text-center">
+                      <Badge variant="outline">
+                        {participant.participant_count} orang
+                      </Badge>
+                      {participant.parent_participant_id && (
+                        <div className="text-xs text-blue-600 mt-1">
+                          (Anggota grup)
+                        </div>
+                      )}
+                      {!participant.parent_participant_id && participant.additional_requests?.includes('Group Leader') && (
+                        <div className="text-xs text-yellow-600 mt-1">
+                          (Total grup)
+                        </div>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell>
                     <div>
-                      <div>{formatCurrency(participant.dp_amount)}</div>
+                      <div className={`font-medium ${participant.parent_participant_id ? 'text-gray-400' : 'text-green-600'}`}>
+                        {formatCurrency(participant.package_price)}
+                      </div>
+                      {participant.parent_participant_id && (
+                        <div className="text-xs text-gray-500">
+                          Termasuk grup
+                        </div>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div>
+                      <div className={`font-medium ${participant.parent_participant_id ? 'text-gray-400' : 'text-purple-600'}`}>
+                        {formatCurrency(participant.dp_amount)}
+                      </div>
                       <div className="text-xs text-gray-500">
-                        {formatDate(participant.dp_transfer_date)}
+                        {participant.parent_participant_id ? 'Termasuk grup' : formatDate(participant.dp_transfer_date)}
                       </div>
                     </div>
                   </TableCell>

@@ -145,7 +145,11 @@ function calculatePaymentSummary(participants: any[]) {
     remaining_payment: 0
   }
 
-  participants.forEach(participant => {
+  // Only count participants where parent_participant_id is null (group leaders or individual participants)
+  // This avoids double-counting group members since their count/payment is consolidated in the group leader
+  const consolidatedParticipants = participants.filter(p => !p.parent_participant_id)
+  
+  consolidatedParticipants.forEach(participant => {
     const participantCount = participant.participant_count || 1
     const packagePrice = participant.package_price || 0
     const dpAmount = participant.dp_amount || 0
