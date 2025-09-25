@@ -224,10 +224,10 @@ export function useDeleteParticipant() {
           .eq('id', id)
           .single()
 
-        if (fetchError) throw fetchError
+        if (fetchError && fetchError.code !== 'PGRST116') throw fetchError
 
         // Log the permanent deletion
-        if (participantData) {
+        if (participantData && !fetchError) {
           const { error: logError } = await supabase.rpc('log_participant_action', {
             p_participant_id: id,
             p_action: 'permanently_deleted',
@@ -256,7 +256,7 @@ export function useDeleteParticipant() {
           .eq('id', id)
           .single()
 
-        if (fetchError) throw fetchError
+        if (fetchError && fetchError.code !== 'PGRST116') throw fetchError
 
         // Update participant with soft delete fields
         const { error: updateError } = await supabase
@@ -272,7 +272,7 @@ export function useDeleteParticipant() {
         if (updateError) throw updateError
 
         // Log the soft deletion
-        if (participantData) {
+        if (participantData && !fetchError) {
           const { error: logError } = await supabase.rpc('log_participant_action', {
             p_participant_id: id,
             p_action: 'deleted',
@@ -316,7 +316,7 @@ export function useRestoreParticipant() {
         .eq('id', id)
         .single()
 
-      if (fetchError) throw fetchError
+      if (fetchError && fetchError.code !== 'PGRST116') throw fetchError
 
       // Restore participant by clearing soft delete fields
       const { error: updateError } = await supabase
@@ -332,7 +332,7 @@ export function useRestoreParticipant() {
       if (updateError) throw updateError
 
       // Log the restoration
-      if (participantData) {
+      if (participantData && !fetchError) {
         const { error: logError } = await supabase.rpc('log_participant_action', {
           p_participant_id: id,
           p_action: 'restored',
