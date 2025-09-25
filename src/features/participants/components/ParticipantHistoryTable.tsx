@@ -86,8 +86,27 @@ export function ParticipantHistoryTable({
     return matchesSearch && matchesStatus;
   });
 
+  const getFilterTitle = () => {
+    switch (historyFilter) {
+      case 'individual':
+        return 'Pendaftaran Individual'
+      case 'group_leader':
+        return 'Ketua Grup'
+      case 'group_member':
+        return 'Anggota Grup'
+      default:
+        return 'Semua Peserta'
+    }
+  }
+
   return (
     <div className="space-y-4">
+      <div className="flex items-center space-x-2">
+        <Users className="h-5 w-5 text-blue-600" />
+        <h3 className="text-lg font-semibold">{getFilterTitle()}</h3>
+        <Badge variant="outline">{filteredParticipants.length} peserta</Badge>
+      </div>
+
       {/* Search and Filter Controls */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">

@@ -16,6 +16,7 @@ interface ParticipantFilters {
   startDate?: string
   endDate?: string
   tripId?: string
+  typeFilter?: 'individual' | 'group_leader' | 'group_member' | 'all'
 }
 
 export function useParticipants(filters?: ParticipantFilters) {
@@ -47,6 +48,7 @@ export function useParticipants(filters?: ParticipantFilters) {
           updated_at,
           proof_of_transfer_url,
           meeting_point_details,
+          parent_participant_id,
           trips (
             id,
             name,
@@ -65,6 +67,30 @@ export function useParticipants(filters?: ParticipantFilters) {
             name
           )
         `)
+        .is('deleted_at', null)
+
+      // Apply type filter
+      if (filters?.typeFilter) {
+        switch (filters.typeFilter) {
+          case 'individual':
+            query = query
+              .is('parent_participant_id', null)
+              .not('additional_requests', 'ilike', '%Group Leader%')
+            break
+          case 'group_leader':
+            query = query
+              .is('parent_participant_id', null)
+              .ilike('additional_requests', '%Group Leader%')
+            break
+          case 'group_member':
+            query = query.not('parent_participant_id', 'is', null)
+            break
+          case 'all':
+          default:
+            // No additional filter for 'all'
+            break
+        }
+      }
 
       // Apply date filters
       if (filters?.startDate) {
@@ -79,7 +105,8 @@ export function useParticipants(filters?: ParticipantFilters) {
         query = query.eq('trip_id', filters.tripId)
       }
 
-      const { data, error } = await query.order('created_at', { ascending: false })
+      const { data, error } = await query
+        .order('created_at', { ascending: false })
 
       if (error) throw error
 
@@ -101,7 +128,7 @@ export function useParticipants(filters?: ParticipantFilters) {
 
   useEffect(() => {
     fetchParticipants()
-  }, [filters?.startDate, filters?.endDate, filters?.tripId])
+  }, [filters?.startDate, filters?.endDate, filters?.tripId, filters?.typeFilter])
 
   return { participants, loading, error, refetch: fetchParticipants }
 }
