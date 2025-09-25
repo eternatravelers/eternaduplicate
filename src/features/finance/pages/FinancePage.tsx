@@ -115,6 +115,34 @@ export function FinancePage() {
     setError(null)
   }
 
+  const handleFormSubmit = async (formData: any, file?: File | null) => {
+    try {
+      setError(null)
+      
+      // For now, we'll store the file reference in the description if provided
+      // In a real implementation, you'd upload to Supabase Storage
+      let finalData = { ...formData }
+      if (file) {
+        finalData.description = `${formData.description || ''} [Bukti: ${file.name}]`.trim()
+      }
+
+      const { data, error } = await createTransaction(finalData)
+
+      if (error) {
+        setError(error)
+        return
+      }
+
+      if (data) {
+        setShowAddForm(false)
+        setEditingTransaction(null)
+        refetch()
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Terjadi kesalahan')
+    }
+  }
+
   const resetFilters = () => {
     setDateFrom('')
     setDateTo('')
