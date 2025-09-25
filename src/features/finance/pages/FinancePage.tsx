@@ -7,7 +7,7 @@ import { TransactionForm } from '../components/TransactionForm'
 import { TransactionTable } from '../components/TransactionTable'
 import { TransactionFilter } from '../components/TransactionFilter'
 import { FinanceStatsCards } from '../components/FinanceStatsCards'
-import { useTransactions, useCreateTransaction, useDeleteTransaction } from '@/hooks/useTransactions'
+import { useTransactions, useCreateTransaction, useUpdateTransaction, useDeleteTransaction } from '@/hooks/useTransactions'
 import { useTrips } from '@/hooks/useTrips'
 import { useDestinations } from '@/hooks/useDestinations'
 
@@ -24,6 +24,7 @@ export function FinancePage() {
   const { trips } = useTrips()
   const { destinations } = useDestinations()
   const { createTransaction, loading: creating } = useCreateTransaction()
+  const { updateTransaction, loading: updating } = useUpdateTransaction()
   const { deleteTransaction, loading: deleting, error: deleteError } = useDeleteTransaction()
 
   // Filter transactions based on search and date filters
@@ -126,7 +127,14 @@ export function FinancePage() {
         finalData.description = `${formData.description || ''} [Bukti: ${file.name}]`.trim()
       }
 
-      const { data, error } = await createTransaction(finalData)
+      let result
+      if (editingTransaction) {
+        result = await updateTransaction(editingTransaction, finalData)
+      } else {
+        result = await createTransaction(finalData)
+      }
+
+      const { data, error } = result
 
       if (error) {
         setError(error)
