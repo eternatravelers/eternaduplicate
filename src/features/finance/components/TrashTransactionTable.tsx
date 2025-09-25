@@ -3,19 +3,24 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Trash2, RotateCcw } from 'lucide-react'
+import { Trash2, RotateCcw, X } from 'lucide-react'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { formatCurrency, formatShortDate } from '@/lib/utils'
 
 interface TrashTransactionTableProps {
   transactions: any[]
   onRestoreTransaction: (id: string) => void
+  onPermanentDelete: (id: string) => void
   restoring: boolean
+  permanentDeleting: boolean
 }
 
 export function TrashTransactionTable({
   transactions,
   onRestoreTransaction,
-  restoring
+  onPermanentDelete,
+  restoring,
+  permanentDeleting
 }: TrashTransactionTableProps) {
   return (
     <Card>
