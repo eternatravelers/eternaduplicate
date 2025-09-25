@@ -69,7 +69,7 @@ export function useParticipants(filters?: ParticipantFilters) {
             departure_date,
             meeting_point,
             trip_type,
-            trip_destinations!left(
+            trip_destinations(
               destinations (
                 id,
                 name
