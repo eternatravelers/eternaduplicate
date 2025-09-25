@@ -133,19 +133,21 @@ export function useTourLeaderPerformance() {
     try {
       setLoading(true)
       
-      // Get tour leaders with their trip counts and participant counts
+      // Get tour leaders with their trips through the many-to-many relationship
       const { data: tourLeaders, error: tlError } = await supabase
         .from('tour_leaders')
         .select(`
           *,
-          trips!left (
-            id,
-            name,
-            departure_date,
-            status,
-            participants!left (
+          trip_tour_leaders!left (
+            trips (
               id,
-              participant_count
+              name,
+              departure_date,
+              status,
+              participants!left (
+                id,
+                participant_count
+              )
             )
           )
         `)
@@ -153,9 +155,12 @@ export function useTourLeaderPerformance() {
       if (tlError) throw tlError
 
       const performanceData = tourLeaders?.map(tl => {
-        const activeTrips = tl.trips?.filter(t => t.status === 'active') || []
-        const completedTrips = tl.trips?.filter(t => t.status === 'completed') || []
-        const totalParticipants = tl.trips?.reduce((sum, trip) => {
+        // Extract trips from the many-to-many relationship
+        const trips = tl.trip_tour_leaders?.map(ttl => ttl.trips).filter(Boolean) || []
+        
+        const activeTrips = trips.filter(t => t.status === 'active')
+        const completedTrips = trips.filter(t => t.status === 'completed')
+        const totalParticipants = trips.reduce((sum, trip) => {
           return sum + (trip.participants?.reduce((pSum, p) => pSum + p.participant_count, 0) || 0)
         }, 0) || 0
 
@@ -165,14 +170,14 @@ export function useTourLeaderPerformance() {
 
         return {
           ...tl,
-          totalTrips: tl.trips?.length || 0,
+          totalTrips: trips.length,
           activeTrips: activeTrips.length,
           completedTrips: completedTrips.length,
           upcomingTrips,
           totalParticipants,
-          avgParticipantsPerTrip: tl.trips?.length ? totalParticipants / tl.trips.length : 0,
-          lastTripDate: tl.trips?.length ? 
-            Math.max(...tl.trips.map(t => new Date(t.departure_date).getTime())) : null
+          avgParticipantsPerTrip: trips.length ? totalParticipants / trips.length : 0,
+          lastTripDate: trips.length ? 
+            Math.max(...trips.map(t => new Date(t.departure_date).getTime())) : null
         }
       }) || []
 
