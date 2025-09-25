@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
-import { Edit, Trash2, Copy } from 'lucide-react'
+import { Edit, Trash2, Copy, Users } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 
 interface TripListTableProps {
@@ -12,6 +12,7 @@ interface TripListTableProps {
   onEdit: (trip: any) => void
   onDuplicate: (trip: any) => void
   onDelete: (id: string) => void
+  onViewParticipants: (trip: any) => void
   isSuperAdmin: boolean
   deleting: boolean
 }
