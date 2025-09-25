@@ -120,7 +120,37 @@ export function useCreateParticipant() {
       const { data: newParticipant, error: participantError } = await supabase
         .from('participants')
         .insert([participantData])
-        .select()
+        .select(`
+          id,
+          trip_id,
+          sales_id,
+          full_name,
+          email,
+          phone,
+          address,
+          participant_count,
+          package_price,
+          dp_amount,
+          dp_transfer_date,
+          status,
+          additional_requests,
+          created_at,
+          updated_at,
+          proof_of_transfer_url,
+          meeting_point_details,
+          parent_participant_id,
+          trips (
+            id,
+            name,
+            departure_date,
+            meeting_point,
+            trip_type
+          ),
+          sales (
+            id,
+            name
+          )
+        `)
         .single()
 
       if (participantError) throw participantError
@@ -154,7 +184,37 @@ export function useUpdateParticipant() {
         .from('participants')
         .update(participantData)
         .eq('id', id)
-        .select()
+        .select(`
+          id,
+          trip_id,
+          sales_id,
+          full_name,
+          email,
+          phone,
+          address,
+          participant_count,
+          package_price,
+          dp_amount,
+          dp_transfer_date,
+          status,
+          additional_requests,
+          created_at,
+          updated_at,
+          proof_of_transfer_url,
+          meeting_point_details,
+          parent_participant_id,
+          trips (
+            id,
+            name,
+            departure_date,
+            meeting_point,
+            trip_type
+          ),
+          sales (
+            id,
+            name
+          )
+        `)
         .single()
 
       if (error) throw error
