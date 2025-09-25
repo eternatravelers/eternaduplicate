@@ -35,6 +35,8 @@ export function TripsPage() {
   const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false)
   const [isAddTripTypeModalOpen, setIsAddTripTypeModalOpen] = useState(false)
   const [selectedTrip, setSelectedTrip] = useState<any>(null)
+  const [showParticipantsModal, setShowParticipantsModal] = useState(false)
+  const [selectedTripForParticipants, setSelectedTripForParticipants] = useState<any>(null)
   const { isSuperAdmin } = useAuth()
 
   const handleSubmit = async (formData: any) => {
