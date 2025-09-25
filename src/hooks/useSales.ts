@@ -94,3 +94,32 @@ export function useUpdateSales() {
 
   return { updateSales, loading, error }
 }
+
+export function useDeleteSales() {
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const deleteSales = async (id: string) => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      const { error } = await supabase
+        .from('sales')
+        .delete()
+        .eq('id', id)
+
+      if (error) throw error
+
+      return { error: null }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+      setError(errorMessage)
+      return { error: errorMessage }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return { deleteSales, loading, error }
+}

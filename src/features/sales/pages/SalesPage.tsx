@@ -4,17 +4,21 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Plus } from 'lucide-react'
 import { SalesOverviewCards } from '../components/SalesOverviewCards'
 import { SalesForm } from '../components/SalesForm'
+import { SalesTable } from '../components/SalesTable'
 import { useSales, useCreateSales, useUpdateSales } from '@/hooks/useSales'
 import { useParticipants } from '@/hooks/useParticipants'
+import { useDeleteSales } from '@/hooks/useSales'
 
 export function SalesPage() {
   const [showAddForm, setShowAddForm] = useState(false)
   const [editingSales, setEditingSales] = useState<string | null>(null)
+  const [searchTerm, setSearchTerm] = useState('')
   
   const { sales, loading, refetch } = useSales()
   const { participants } = useParticipants()
   const { createSales, loading: creating } = useCreateSales()
   const { updateSales, loading: updating } = useUpdateSales()
+  const { deleteSales, loading: deleting } = useDeleteSales()
 
   const handleSubmit = async (formData: any) => {
     const { data, error } = editingSales 
@@ -41,6 +45,17 @@ export function SalesPage() {
   const handleCancel = () => {
     setShowAddForm(false)
     setEditingSales(null)
+  }
+
+  const handleDelete = async (id: string) => {
+    try {
+      const { error } = await deleteSales(id)
+      if (!error) {
+        refetch()
+      }
+    } catch (error) {
+      console.error('Error deleting sales:', error)
+    }
   }
 
   // Calculate sales performance
@@ -118,10 +133,14 @@ export function SalesPage() {
             />
           )}
           
-          {/* Sales list will be implemented later */}
-          <div className="text-center py-8 text-gray-500">
-            Sales list table coming soon...
-          </div>
+          <SalesTable
+            salesPerformance={salesPerformance}
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            deleting={deleting}
+          />
         </TabsContent>
       </Tabs>
     </div>
