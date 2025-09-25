@@ -9,10 +9,12 @@ import { TripPerformanceChart } from '../components/TripPerformanceChart'
 import { ExpenseCategoryChart } from '../components/ExpenseCategoryChart'
 import { SalesPerformanceChart } from '../components/SalesPerformanceChart'
 import { useAnalytics } from '@/hooks/useAnalytics'
+import { useTrips } from '@/hooks/useTrips'
 
 export function AnalyticsPage() {
   const [activeTab, setActiveTab] = useState('overview')
   const { analyticsData, loading } = useAnalytics()
+  const { trips } = useTrips()
 
   const handleExport = () => {
     // Export functionality would be implemented here
