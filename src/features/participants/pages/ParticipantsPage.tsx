@@ -8,6 +8,7 @@ import { ParticipantHistoryTable } from '../components/ParticipantHistoryTable'
 import { useParticipants, useCreateParticipant, useUpdateParticipant } from '@/hooks/useParticipants'
 import { useTrips } from '@/hooks/useTrips'
 import { useSales } from '@/hooks/useSales'
+import { CSVImportModal } from '../components/CSVImportModal'
 import { FileSpreadsheet, AlertCircle } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 
@@ -17,6 +18,7 @@ export function ParticipantsPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [importError, setImportError] = useState<string>('')
+  const [showCSVImport, setShowCSVImport] = useState(false)
   
   const { participants, loading, refetch } = useParticipants()
   const { trips } = useTrips()
@@ -72,9 +74,17 @@ export function ParticipantsPage() {
     }
   }
 
-  const handleImportCSV = () => {
-    setImportError('Fitur Import CSV belum tersedia. Silakan gunakan form pendaftaran manual.')
-    setTimeout(() => setImportError(''), 5000)
+  const handleBulkImport = async (participantsData: any[]) => {
+    try {
+      // Import participants one by one
+      for (const participantData of participantsData) {
+        await createParticipant(participantData)
+      }
+      refetch()
+    } catch (error) {
+      setImportError('Gagal mengimpor beberapa peserta. Silakan coba lagi.')
+      setTimeout(() => setImportError(''), 5000)
+    }
   }
 
   if (loading) {
@@ -93,7 +103,7 @@ export function ParticipantsPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Pendaftaran Peserta</h1>
         <div className="flex items-center space-x-2">
-          <Button variant="outline" size="sm" onClick={handleImportCSV}>
+          <Button variant="outline" size="sm" onClick={() => setShowCSVImport(true)}>
             <FileSpreadsheet className="h-4 w-4 mr-2" />
             Import CSV
           </Button>
@@ -158,6 +168,15 @@ export function ParticipantsPage() {
           />
         </TabsContent>
       </Tabs>
+
+      <CSVImportModal
+        isOpen={showCSVImport}
+        onClose={() => setShowCSVImport(false)}
+        onImport={handleBulkImport}
+        trips={trips}
+        sales={sales}
+        importing={creating}
+      />
     </div>
   )
 }
