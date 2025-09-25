@@ -1,3 +1,4 @@
+```tsx
 import { useState, useEffect } from 'react'
 import { supabase, uploadProofOfTransfer } from '@/lib/supabase'
 import { useAuth } from './useAuth'
@@ -8,12 +9,28 @@ type Participant = Database['public']['Tables']['participants']['Row'] & {
     destinations?: Database['public']['Tables']['destinations']['Row'][]
   }
   sales?: Database['public']['Tables']['sales']['Row']
+  parent_participant?: Participant | null
+  group_members?: Participant[]
 }
 
 interface ParticipantFilters {
   startDate?: string
   endDate?: string
   tripId?: string
+  typeFilter?: 'individual' | 'group_leader' | 'group_member' | 'all'
+  searchTerm?: string
+  statusFilter?: string
+}
+
+interface TransactionSummary {
+  totalIncome: number
+  totalExpense: number
+  netBalance: number
+}
+
+function useTransactions(filters?: ParticipantFilters) {
+  const [transactions, setTransactions] = useState<any[]>([])
+  return { transactions }
 }
 
 export function useParticipants(filters?: ParticipantFilters) {
@@ -45,24 +62,49 @@ export function useParticipants(filters?: ParticipantFilters) {
           updated_at,
           proof_of_transfer_url,
           meeting_point_details,
+          parent_participant_id,
           trips (
             id,
             name,
             departure_date,
             meeting_point,
             trip_type,
-            trip_destinations!left (
+            trip_destinations(
               destinations (
                 id,
                 name
               )
             )
           ),
-          sales (
+          sales!participants_sales_id_fkey (
             id,
             name
           )
         `)
+        .is('deleted_at', null)
+
+      // Apply type filter
+      if (filters?.typeFilter) {
+        switch (filters.typeFilter) {
+          case 'individual':
+            query = query
+              .is('parent_participant_id', null)
+              .not('additional_requests', 'ilike', '%Group Leader%')
+            break
+          case 'group_leader':
+            query = query
+              .is('parent_participant_id', null)
+              .ilike('additional_requests', '%Group Leader%')
+            break
+          case 'group_member':
+            query = query.not('parent_participant_id', 'is', null)
+            break
+          case 'all':
+          default:
+            // No additional filter for 'all'
+            break
+        }
+      }
 
       // Apply date filters
       if (filters?.startDate) {
@@ -77,7 +119,18 @@ export function useParticipants(filters?: ParticipantFilters) {
         query = query.eq('trip_id', filters.tripId)
       }
 
-      const { data, error } = await query.order('created_at', { ascending: false })
+      // Apply search filter
+      if (filters?.searchTerm) {
+        query = query.or(\`full_name.ilike.%${filters.searchTerm}%,email.ilike.%${filters.searchTerm}%,phone.ilike.%${filters.searchTerm}%`)
+      }
+
+      // Apply status filter
+      if (filters?.statusFilter && filters.statusFilter !== 'all') {
+        query = query.eq('status', filters.statusFilter)
+      }
+
+      const { data, error } = await query
+        .order('created_at', { ascending: false })
 
       if (error) throw error
 
@@ -99,9 +152,37 @@ export function useParticipants(filters?: ParticipantFilters) {
 
   useEffect(() => {
     fetchParticipants()
-  }, [filters?.startDate, filters?.endDate, filters?.tripId])
+  }, [filters?.startDate, filters?.endDate, filters?.tripId, filters?.typeFilter, filters?.searchTerm, filters?.statusFilter])
 
   return { participants, loading, error, refetch: fetchParticipants }
+}
+
+export function useTransactionSummary(filters?: ParticipantFilters) {
+  const [summary, setSummary] = useState<TransactionSummary>({
+    totalIncome: 0,
+    totalExpense: 0,
+    netBalance: 0
+  })
+
+  const { transactions } = useTransactions(filters)
+
+  useEffect(() => {
+    const income = transactions
+      .filter(t => t.transaction_type === 'Pemasukan')
+      .reduce((sum, t) => sum + t.amount, 0)
+
+    const expense = transactions
+      .filter(t => t.transaction_type === 'Pengeluaran')
+      .reduce((sum, t) => sum + t.amount, 0)
+
+    setSummary({
+      totalIncome: income,
+      totalExpense: expense,
+      netBalance: income - expense
+    })
+  }, [transactions])
+
+  return summary
 }
 
 export function useCreateParticipant() {
@@ -109,8 +190,7 @@ export function useCreateParticipant() {
   const [error, setError] = useState<string | null>(null)
 
   const createParticipant = async (
-    participantData: Database['public']['Tables']['participants']['Insert'],
-    proofOfTransferFile?: File | null // Keep for backward compatibility but won't be used
+    participantData: Database['public']['Tables']['participants']['Insert']
   ) => {
     try {
       setLoading(true)
@@ -119,12 +199,40 @@ export function useCreateParticipant() {
       const { data: newParticipant, error: participantError } = await supabase
         .from('participants')
         .insert([participantData])
-        .select()
+        .select(`
+          id,
+          trip_id,
+          sales_id,
+          full_name,
+          email,
+          phone,
+          address,
+          participant_count,
+          package_price,
+          dp_amount,
+          dp_transfer_date,
+          status,
+          additional_requests,
+          created_at,
+          updated_at,
+          proof_of_transfer_url,
+          meeting_point_details,
+          parent_participant_id,
+          trips (
+            id,
+            name,
+            departure_date,
+            meeting_point,
+            trip_type
+          ),
+          sales (
+            id,
+            name
+          )
+        `)
         .single()
 
       if (participantError) throw participantError
-
-      // Note: proof_of_transfer_url is now included in participantData directly
 
       return { data: newParticipant, error: null }
     } catch (err) {
@@ -145,20 +253,47 @@ export function useUpdateParticipant() {
 
   const updateParticipant = async (
     id: string, 
-    participantData: Database['public']['Tables']['participants']['Update'],
-    proofOfTransferFile?: File | null // Keep for backward compatibility but won't be used
+    participantData: Database['public']['Tables']['participants']['Update']
   ) => {
     try {
       setLoading(true)
       setError(null)
 
-      // Note: proof_of_transfer_url is now included in participantData directly
-
       const { data, error } = await supabase
         .from('participants')
         .update(participantData)
         .eq('id', id)
-        .select()
+        .select(`
+          id,
+          trip_id,
+          sales_id,
+          full_name,
+          email,
+          phone,
+          address,
+          participant_count,
+          package_price,
+          dp_amount,
+          dp_transfer_date,
+          status,
+          additional_requests,
+          created_at,
+          updated_at,
+          proof_of_transfer_url,
+          meeting_point_details,
+          parent_participant_id,
+          trips (
+            id,
+            name,
+            departure_date,
+            meeting_point,
+            trip_type
+          ),
+          sales (
+            id,
+            name
+          )
+        `)
         .single()
 
       if (error) throw error
@@ -324,7 +459,7 @@ export function useRestoreParticipant() {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error'
       setError(errorMessage)
-      return { error: errorMessage }
+      return { data: null, error: errorMessage }
     } finally {
       setLoading(false)
     }
@@ -366,6 +501,7 @@ export function useDeletedParticipants() {
           deleted_at,
           deleted_by_user_name,
           deletion_reason,
+          parent_participant_id,
           trips (
             id,
             name,
@@ -396,6 +532,72 @@ export function useDeletedParticipants() {
   }, [])
 
   return { deletedParticipants, loading, error, refetch: fetchDeletedParticipants }
+}
+
+// Hook to get group members for a specific group leader
+export function useGroupMembers(groupLeaderId: string) {
+  const [groupMembers, setGroupMembers] = useState<Participant[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const fetchGroupMembers = async () => {
+    try {
+      setLoading(true)
+      
+      const { data, error } = await supabase
+        .from('participants')
+        .select(`
+          id,
+          trip_id,
+          sales_id,
+          full_name,
+          email,
+          phone,
+          address,
+          participant_count,
+          package_price,
+          dp_amount,
+          dp_transfer_date,
+          status,
+          additional_requests,
+          created_at,
+          updated_at,
+          proof_of_transfer_url,
+          meeting_point_details,
+          parent_participant_id,
+          trips (
+            id,
+            name,
+            departure_date,
+            meeting_point,
+            trip_type
+          ),
+          sales (
+            id,
+            name
+          )
+        `)
+        .eq('parent_participant_id', groupLeaderId)
+        .is('deleted_at', null)
+        .order('created_at', { ascending: true })
+
+      if (error) throw error
+
+      setGroupMembers(data || [])
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (groupLeaderId) {
+      fetchGroupMembers()
+    }
+  }, [groupLeaderId])
+
+  return { groupMembers, loading, error, refetch: fetchGroupMembers }
 }
 
 // Hook to get participant audit log
@@ -435,3 +637,4 @@ export function useParticipantAuditLog(participantId?: string) {
 
   return { auditLog, loading, error, refetch: fetchAuditLog }
 }
+```
