@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { DollarSign, Upload } from 'lucide-react'
-
+import { Link, ExternalLink, X } from 'lucide-react'
 interface TransactionFormProps {
   initialData?: any
   onSubmit: (data: any, file?: File | null) => Promise<void>
