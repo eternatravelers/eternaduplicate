@@ -18,12 +18,12 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useAuth } from '@/hooks/useAuth'
 
 export function ParticipantsPage() {
-  const [showAddForm, setShowAddForm] = useState(false)
   const [editingParticipant, setEditingParticipant] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [importError, setImportError] = useState<string>('')
   const [showCSVImport, setShowCSVImport] = useState(false)
+  const [activeTab, setActiveTab] = useState('individual')
   
   const { participants, loading, refetch } = useParticipants()
   const { deletedParticipants, loading: deletedLoading, refetch: refetchDeleted } = useDeletedParticipants()
@@ -46,7 +46,6 @@ export function ParticipantsPage() {
       : await createParticipant(data, file)
 
     if (!error) {
-      setShowAddForm(false)
       setEditingParticipant(null)
       refetch()
     }
@@ -68,16 +67,15 @@ export function ParticipantsPage() {
       meeting_point_details: participant.meeting_point_details || ''
     }
     setEditingParticipant(participant.id)
-    setShowAddForm(true)
+    setActiveTab('individual')
   }
 
   const handleAddNew = () => {
     setEditingParticipant(null)
-    setShowAddForm(true)
+    setActiveTab('individual')
   }
 
   const handleCancel = () => {
-    setShowAddForm(false)
     setEditingParticipant(null)
   }
 
@@ -179,20 +177,7 @@ export function ParticipantsPage() {
         deletedCount={deletedParticipants.length}
       />
 
-      {showAddForm && (
-        <ParticipantForm
-          initialData={editingParticipant ? participants.find(p => p.id === editingParticipant) : undefined}
-          onSubmit={handleSubmit}
-          onCancel={handleCancel}
-          trips={trips}
-          sales={sales}
-          creating={creating}
-          updating={updating}
-          editingParticipant={editingParticipant}
-        />
-      )}
-
-      <Tabs defaultValue="individual" className="space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="grid w-full grid-cols-5 max-w-4xl">
           <TabsTrigger value="individual">Pendaftaran Individual</TabsTrigger>
           <TabsTrigger value="group">Pendaftaran Group</TabsTrigger>
@@ -217,10 +202,16 @@ export function ParticipantsPage() {
         </TabsList>
 
         <TabsContent value="individual" className="space-y-6">
-          <div className="text-center py-8 text-gray-500">
-            <UserPlus className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>Gunakan tombol "Tambah Peserta" di atas untuk mendaftarkan peserta individual</p>
-          </div>
+          <ParticipantForm
+            initialData={editingParticipant ? participants.find(p => p.id === editingParticipant) : undefined}
+            onSubmit={handleSubmit}
+            onCancel={handleCancel}
+            trips={trips}
+            sales={sales}
+            creating={creating}
+            updating={updating}
+            editingParticipant={editingParticipant}
+          />
         </TabsContent>
 
         <TabsContent value="group" className="space-y-6">
