@@ -70,7 +70,7 @@ export function TransactionForm({
       ...formData,
       amount: formData.amount === '' ? 0 : Number(formData.amount),
       trip_id: formData.trip_id === "" || formData.trip_id === "no-trip" ? null : formData.trip_id,
-      destination_id: formData.destination_id === "" || formData.destination_id === "no-destination" ? null : formData.destination_id
+      destination_id: formData.destination_id === "" || formData.destination_id === "no-destination" ? null : formData.destination_id,
       proof_url: proofUrl || null
     }
 
