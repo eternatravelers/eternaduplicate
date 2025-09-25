@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Download, AlertCircle } from 'lucide-react'
+import { Download, AlertCircle, FileSpreadsheet } from 'lucide-react'
 import { TransactionFilter } from '../components/TransactionFilter'
 import { FinancialSummaryCards } from '../components/FinancialSummaryCards'
 import { DetailedTransactionTable } from '../components/DetailedTransactionTable'
@@ -56,6 +56,40 @@ export function ReportsPage() {
 
   const profit = summaryData.totalIncome - summaryData.totalExpense
 
+  const handleExportCSV = () => {
+    // Convert filtered transactions to CSV format
+    const headers = ['Tanggal', 'Jenis', 'Kategori', 'Jumlah', 'Deskripsi', 'Trip', 'Destinasi']
+    const csvData = [
+      headers.join(','),
+      ...filteredTransactions.map(transaction => [
+        transaction.transaction_date,
+        transaction.transaction_type,
+        transaction.category,
+        transaction.amount,
+        `"${transaction.description || ''}"`,
+        `"${transaction.trip_id || ''}"`,
+        `"${transaction.destination_id || ''}"`
+      ].join(','))
+    ].join('\n')
+
+    // Create and download CSV file
+    const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+    link.setAttribute('href', url)
+    link.setAttribute('download', `laporan-keuangan-${new Date().toISOString().split('T')[0]}.csv`)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
+  const handleExportExcel = () => {
+    // For now, use the same CSV export functionality
+    // In a real implementation, you might want to use a library like xlsx
+    handleExportCSV()
+  }
+
   const handleDeleteTransaction = async (id: string) => {
     try {
       const { error } = await deleteTransaction(id)
@@ -87,7 +121,7 @@ export function ReportsPage() {
             <FileSpreadsheet className="h-4 w-4 mr-2" />
             Export CSV
           </Button>
-          <Button variant="outline" onClick={handleExportCSV}>
+          <Button variant="outline" onClick={handleExportExcel}>
             <Download className="h-4 w-4 mr-2" />
             Export Excel
           </Button>
