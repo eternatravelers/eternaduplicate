@@ -6,15 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Progress } from '@/components/ui/progress'
 import { CheckSquare, Clock, AlertTriangle, CheckCircle } from 'lucide-react'
-
-interface ChecklistItem {
-  id: string
-  title: string
-  description: string
-  completed: boolean
-  priority: 'high' | 'medium' | 'low'
-  category: 'pre-departure' | 'during-trip' | 'post-trip'
-}
+import { useChecklists, useUpdateChecklist, useInitializeDefaultChecklist } from '@/hooks/useChecklists'
 
 interface ChecklistManagerProps {
   tripId: string
@@ -22,121 +14,29 @@ interface ChecklistManagerProps {
 }
 
 export function ChecklistManager({ tripId, tripName }: ChecklistManagerProps) {
-  const [checklist, setChecklist] = useState<ChecklistItem[]>([
-    // Pre-departure checklist
-    {
-      id: '1',
-      title: 'Konfirmasi Peserta',
-      description: 'Pastikan semua peserta sudah dikonfirmasi dan melunasi pembayaran',
-      completed: false,
-      priority: 'high',
-      category: 'pre-departure'
-    },
-    {
-      id: '2',
-      title: 'Persiapan Kendaraan',
-      description: 'Cek kondisi bus, bahan bakar, dan kelengkapan kendaraan',
-      completed: false,
-      priority: 'high',
-      category: 'pre-departure'
-    },
-    {
-      id: '3',
-      title: 'Briefing Tour Leader',
-      description: 'Briefing tour leader tentang itinerary dan informasi penting',
-      completed: false,
-      priority: 'high',
-      category: 'pre-departure'
-    },
-    {
-      id: '4',
-      title: 'Persiapan Dokumen',
-      description: 'Siapkan dokumen trip, daftar peserta, dan kontak darurat',
-      completed: false,
-      priority: 'medium',
-      category: 'pre-departure'
-    },
-    {
-      id: '5',
-      title: 'Konfirmasi Akomodasi',
-      description: 'Konfirmasi booking hotel dan fasilitas akomodasi',
-      completed: false,
-      priority: 'medium',
-      category: 'pre-departure'
-    },
-    
-    // During trip checklist
-    {
-      id: '6',
-      title: 'Absensi Keberangkatan',
-      description: 'Cek kehadiran semua peserta di titik kumpul',
-      completed: false,
-      priority: 'high',
-      category: 'during-trip'
-    },
-    {
-      id: '7',
-      title: 'Safety Briefing',
-      description: 'Berikan safety briefing kepada semua peserta',
-      completed: false,
-      priority: 'high',
-      category: 'during-trip'
-    },
-    {
-      id: '8',
-      title: 'Update Progress',
-      description: 'Update progress trip secara berkala',
-      completed: false,
-      priority: 'medium',
-      category: 'during-trip'
-    },
-    {
-      id: '9',
-      title: 'Dokumentasi',
-      description: 'Ambil foto dan video untuk dokumentasi trip',
-      completed: false,
-      priority: 'low',
-      category: 'during-trip'
-    },
-    
-    // Post-trip checklist
-    {
-      id: '10',
-      title: 'Absensi Kepulangan',
-      description: 'Pastikan semua peserta kembali dengan selamat',
-      completed: false,
-      priority: 'high',
-      category: 'post-trip'
-    },
-    {
-      id: '11',
-      title: 'Evaluasi Trip',
-      description: 'Kumpulkan feedback dari peserta dan tour leader',
-      completed: false,
-      priority: 'medium',
-      category: 'post-trip'
-    },
-    {
-      id: '12',
-      title: 'Laporan Keuangan',
-      description: 'Buat laporan keuangan trip dan rekonsiliasi',
-      completed: false,
-      priority: 'medium',
-      category: 'post-trip'
+  const { checklists, loading, refetch } = useChecklists(tripId)
+  const { toggleChecklistItem, loading: updating } = useUpdateChecklist()
+  const { initializeDefaultChecklist, loading: initializing } = useInitializeDefaultChecklist()
+
+  const handleToggleItem = async (id: string, completed: boolean) => {
+    const { error } = await toggleChecklistItem(id, !completed)
+    if (!error) {
+      refetch()
     }
-  ])
-
-  const toggleChecklistItem = (id: string) => {
-    setChecklist(prev => prev.map(item => 
-      item.id === id ? { ...item, completed: !item.completed } : item
-    ))
   }
 
-  const getChecklistByCategory = (category: ChecklistItem['category']) => {
-    return checklist.filter(item => item.category === category)
+  const handleInitializeChecklist = async () => {
+    const { error } = await initializeDefaultChecklist(tripId)
+    if (!error) {
+      refetch()
+    }
   }
 
-  const getCompletionStats = (category: ChecklistItem['category']) => {
+  const getChecklistByCategory = (category: 'pre-departure' | 'during-trip' | 'post-trip') => {
+    return checklists.filter(item => item.category === category)
+  }
+
+  const getCompletionStats = (category: 'pre-departure' | 'during-trip' | 'post-trip') => {
     const items = getChecklistByCategory(category)
     const completed = items.filter(item => item.completed).length
     const total = items.length
@@ -145,7 +45,7 @@ export function ChecklistManager({ tripId, tripName }: ChecklistManagerProps) {
     return { completed, total, percentage }
   }
 
-  const getPriorityBadge = (priority: ChecklistItem['priority']) => {
+  const getPriorityBadge = (priority: 'high' | 'medium' | 'low') => {
     switch (priority) {
       case 'high':
         return <Badge className="bg-red-100 text-red-800">Tinggi</Badge>
@@ -158,10 +58,39 @@ export function ChecklistManager({ tripId, tripName }: ChecklistManagerProps) {
     }
   }
 
-  const renderChecklistSection = (category: ChecklistItem['category'], title: string, icon: any) => {
+  const renderChecklistSection = (category: 'pre-departure' | 'during-trip' | 'post-trip', title: string, icon: any) => {
     const items = getChecklistByCategory(category)
     const stats = getCompletionStats(category)
     const Icon = icon
+
+    if (items.length === 0) {
+      return (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Icon className="h-5 w-5" />
+              <span>{title}</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center py-8 text-gray-500">
+              <CheckSquare className="h-12 w-12 mx-auto mb-4 opacity-30" />
+              <h3 className="text-lg font-medium mb-2">Belum ada checklist</h3>
+              <p className="text-sm mb-4">
+                Inisialisasi checklist default untuk trip ini
+              </p>
+              <Button 
+                onClick={handleInitializeChecklist}
+                disabled={initializing}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                {initializing ? 'Menginisialisasi...' : 'Inisialisasi Checklist'}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )
+    }
 
     return (
       <Card>
@@ -188,7 +117,8 @@ export function ChecklistManager({ tripId, tripName }: ChecklistManagerProps) {
               <div key={item.id} className="flex items-start space-x-3 p-3 border rounded-lg hover:bg-gray-50">
                 <Checkbox
                   checked={item.completed}
-                  onCheckedChange={() => toggleChecklistItem(item.id)}
+                  onCheckedChange={() => handleToggleItem(item.id, item.completed)}
+                  disabled={updating}
                   className="mt-1"
                 />
                 <div className="flex-1">
@@ -207,6 +137,17 @@ export function ChecklistManager({ tripId, tripName }: ChecklistManagerProps) {
           </div>
         </CardContent>
       </Card>
+    )
+  }
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="animate-pulse">
+          <div className="h-32 bg-gray-200 rounded-lg mb-4"></div>
+          <div className="h-64 bg-gray-200 rounded-lg"></div>
+        </div>
+      </div>
     )
   }
 

@@ -437,6 +437,129 @@ export type Database = {
           updated_at?: string
         }
       }
+      documents: {
+        Row: {
+          id: string
+          name: string
+          type: 'itinerary' | 'participant_list' | 'emergency_contact' | 'insurance' | 'permit' | 'other'
+          file_url: string
+          file_type: string
+          file_size: number
+          uploaded_by: string
+          uploaded_at: string
+          trip_id: string | null
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          type: 'itinerary' | 'participant_list' | 'emergency_contact' | 'insurance' | 'permit' | 'other'
+          file_url: string
+          file_type: string
+          file_size: number
+          uploaded_by: string
+          uploaded_at?: string
+          trip_id?: string | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          type?: 'itinerary' | 'participant_list' | 'emergency_contact' | 'insurance' | 'permit' | 'other'
+          file_url?: string
+          file_type?: string
+          file_size?: number
+          uploaded_by?: string
+          uploaded_at?: string
+          trip_id?: string | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      checklists: {
+        Row: {
+          id: string
+          trip_id: string
+          title: string
+          description: string
+          completed: boolean
+          priority: 'high' | 'medium' | 'low'
+          category: 'pre-departure' | 'during-trip' | 'post-trip'
+          completed_by: string | null
+          completed_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          trip_id: string
+          title: string
+          description: string
+          completed?: boolean
+          priority?: 'high' | 'medium' | 'low'
+          category: 'pre-departure' | 'during-trip' | 'post-trip'
+          completed_by?: string | null
+          completed_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          trip_id?: string
+          title?: string
+          description?: string
+          completed?: boolean
+          priority?: 'high' | 'medium' | 'low'
+          category?: 'pre-departure' | 'during-trip' | 'post-trip'
+          completed_by?: string | null
+          completed_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      emergency_contacts: {
+        Row: {
+          id: string
+          name: string
+          role: string
+          phone: string
+          category: 'medical' | 'police' | 'company' | 'local'
+          location: string | null
+          notes: string | null
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          role: string
+          phone: string
+          category: 'medical' | 'police' | 'company' | 'local'
+          location?: string | null
+          notes?: string | null
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          role?: string
+          phone?: string
+          category?: 'medical' | 'police' | 'company' | 'local'
+          location?: string | null
+          notes?: string | null
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
   }
 }
@@ -488,4 +611,68 @@ export const deleteProofOfTransfer = async (url: string): Promise<boolean> => {
     console.error('Error deleting proof of transfer:', error)
     return false
   }
+}
+
+// Helper function to upload file to Supabase Storage (generic)
+export const uploadFile = async (
+  file: File, 
+  bucket: string, 
+  folder: string, 
+  fileName?: string
+): Promise<string | null> => {
+  try {
+    const fileExt = file.name.split('.').pop()
+    const finalFileName = fileName || `${Date.now()}.${fileExt}`
+    const filePath = `${folder}/${finalFileName}`
+
+    const { data, error } = await supabase.storage
+      .from(bucket)
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false
+      })
+
+    if (error) throw error
+
+    // Get public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from(bucket)
+      .getPublicUrl(filePath)
+
+    return publicUrl
+  } catch (error) {
+    console.error('Error uploading file:', error)
+    return null
+  }
+}
+
+// Helper function to delete file from Supabase Storage (generic)
+export const deleteFile = async (url: string, bucket: string): Promise<boolean> => {
+  try {
+    // Extract file path from URL
+    const urlParts = url.split(`/${bucket}/`)
+    if (urlParts.length < 2) return false
+    
+    const filePath = urlParts[1]
+
+    const { error } = await supabase.storage
+      .from(bucket)
+      .remove([filePath])
+
+    if (error) throw error
+    return true
+  } catch (error) {
+    console.error('Error deleting file:', error)
+    return false
+  }
+}
+
+// Helper function to upload document to Supabase Storage
+export const uploadDocument = async (file: File, documentId: string): Promise<string | null> => {
+  return uploadFile(file, 'documents', 'trip-documents', `${documentId}-${Date.now()}.${file.name.split('.').pop()}`)
+}
+
+// Helper function to delete document from Supabase Storage
+export const deleteDocument = async (url: string): Promise<boolean> => {
+  return deleteFile(url, 'documents')
 }
