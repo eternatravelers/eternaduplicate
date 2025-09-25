@@ -50,12 +50,6 @@ export function useParticipants(filters?: ParticipantFilters) {
             departure_date,
             meeting_point,
             trip_type,
-            trip_destinations!left (
-              destinations (
-                id,
-                name
-              )
-            )
           )
         `)
 
@@ -80,7 +74,6 @@ export function useParticipants(filters?: ParticipantFilters) {
         ...p,
         trips: p.trips ? {
           ...p.trips,
-          destinations: p.trips.trip_destinations?.map(td => td.destinations).filter(Boolean) || []
         } : undefined
       })) || []
 
