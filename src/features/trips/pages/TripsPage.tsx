@@ -257,6 +257,15 @@ export function TripsPage() {
         creatingTripType={creatingTripType}
         deletingTripType={deletingTripType}
       />
+
+      <TripParticipantsModal
+        isOpen={showParticipantsModal}
+        onClose={() => {
+          setShowParticipantsModal(false)
+          setSelectedTripForParticipants(null)
+        }}
+        trip={selectedTripForParticipants}
+      />
     </div>
   )
 }

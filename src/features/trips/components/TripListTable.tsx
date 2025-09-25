@@ -131,6 +131,15 @@ export function TripListTable({
                     <Button
                       variant="outline"
                       size="sm"
+                      onClick={() => onViewParticipants(trip)}
+                      title="Lihat Peserta"
+                      className="text-blue-600 hover:text-blue-700"
+                    >
+                      <Users className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => onDuplicate(trip)}
                       title="Duplicate Trip"
                       className="text-blue-600 hover:text-blue-700"
