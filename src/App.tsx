@@ -7,7 +7,7 @@ import { ParticipantsPage } from '@/features/participants/pages/ParticipantsPage
 import { TripsPage } from '@/features/trips/pages/TripsPage'
 import { Destinations } from '@/components/Destinations'
 import { SalesPage } from '@/features/sales/pages/SalesPage'
-import { OperationalResources } from '@/components/OperationalResources'
+import { OperationalResourcesPage } from '@/features/operational-resources/pages/OperationalResourcesPage'
 import { Finance } from '@/components/Finance'
 import { OperationsPage } from '@/features/operations/pages/OperationsPage'
 import { ReportsPage } from '@/features/finance/pages/ReportsPage'
@@ -31,7 +31,7 @@ function AppContent() {
       case 'sales':
         return <SalesPage />
       case 'operational-resources':
-        return <OperationalResources />
+        return <OperationalResourcesPage />
       case 'finance':
         return <Finance />
       case 'operations':
