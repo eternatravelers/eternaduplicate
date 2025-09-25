@@ -8,12 +8,15 @@ import { ParticipantHistoryTable } from '../components/ParticipantHistoryTable'
 import { useParticipants, useCreateParticipant, useUpdateParticipant } from '@/hooks/useParticipants'
 import { useTrips } from '@/hooks/useTrips'
 import { useSales } from '@/hooks/useSales'
+import { FileSpreadsheet, AlertCircle } from 'lucide-react'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 
 export function ParticipantsPage() {
   const [showAddForm, setShowAddForm] = useState(false)
   const [editingParticipant, setEditingParticipant] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState<string>('all')
+  const [importError, setImportError] = useState<string>('')
   
   const { participants, loading, refetch } = useParticipants()
   const { trips } = useTrips()
@@ -67,6 +70,11 @@ export function ParticipantsPage() {
     if (!error) {
       refetch()
     }
+  }
+
+  const handleImportCSV = () => {
+    setImportError('Fitur Import CSV belum tersedia. Silakan gunakan form pendaftaran manual.')
+    setTimeout(() => setImportError(''), 5000)
   }
 
   if (loading) {
