@@ -228,28 +228,17 @@ export function useUpdateTransaction() {
   const updateTransaction = async (
     id: string,
     transactionData: Database['public']['Tables']['transactions']['Update'],
-    proofFile?: File | null
+    proofFile?: File | null // Keep for backward compatibility but won't be used
   ) => {
     try {
       setLoading(true)
       setError(null)
 
-      let updateData = { ...transactionData }
-
-      // If there's a new proof file, upload it
-      if (proofFile) {
-        const fileExt = proofFile.name.split('.').pop()
-        const fileName = `transaction-${id}-${Date.now()}.${fileExt}`
-        const proofUrl = await uploadFile(proofFile, 'transaction-proofs', 'proofs', fileName)
-        
-        if (proofUrl) {
-          updateData.proof_url = proofUrl
-        }
-      }
+      // Note: proof_url is now included in transactionData directly
 
       const { data, error } = await supabase
         .from('transactions')
-        .update(updateData)
+        .update(transactionData)
         .eq('id', id)
         .select()
         .single()

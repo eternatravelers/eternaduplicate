@@ -45,13 +45,13 @@ export function ParticipantForm({
     meeting_point_details: ''
   })
 
-  const [proofOfTransferFile, setProofOfTransferFile] = useState<File | null>(null)
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [proofOfTransferUrl, setProofOfTransferUrl] = useState<string | null>(null)
   const [selectedTripMeetingPoint, setSelectedTripMeetingPoint] = useState<string>('')
 
   useEffect(() => {
     if (initialData) {
       setFormData(initialData)
+      setProofOfTransferUrl(initialData.proof_of_transfer_url || null)
     }
   }, [initialData])
 
@@ -78,15 +78,15 @@ export function ParticipantForm({
       participant_count: formData.participant_count === '' ? 1 : Number(formData.participant_count),
       package_price: formData.package_price === '' ? 0 : Number(formData.package_price),
       dp_amount: formData.dp_amount === '' ? 0 : Number(formData.dp_amount),
-      dp_transfer_date: formData.dp_transfer_date || new Date().toISOString().split('T')[0]
+      dp_transfer_date: formData.dp_transfer_date || new Date().toISOString().split('T')[0],
+      proof_of_transfer_url: proofOfTransferUrl
     }
 
-    await onSubmit(submitData, proofOfTransferFile)
+    await onSubmit(submitData, null)
   }
 
-  const handleFileChange = (file: File | null, preview: string | null) => {
-    setProofOfTransferFile(file)
-    setPreviewUrl(preview)
+  const handleUrlChange = (url: string | null) => {
+    setProofOfTransferUrl(url)
   }
 
   return (
@@ -276,9 +276,8 @@ export function ParticipantForm({
           </div>
 
           <ProofOfTransferUploader
-            file={proofOfTransferFile}
-            previewUrl={previewUrl}
-            onFileChange={handleFileChange}
+            url={proofOfTransferUrl}
+            onUrlChange={handleUrlChange}
           />
 
           <div className="flex space-x-3 pt-4 border-t">

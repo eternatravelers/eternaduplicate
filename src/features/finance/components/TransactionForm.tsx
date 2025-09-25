@@ -39,7 +39,7 @@ export function TransactionForm({
     trip_type: ''
   })
 
-  const [proofFile, setProofFile] = useState<File | null>(null)
+  const [proofUrl, setProofUrl] = useState<string>('')
 
   useEffect(() => {
     if (initialData) {
@@ -53,6 +53,7 @@ export function TransactionForm({
         destination_id: initialData.destination_id || '',
         trip_type: initialData.trip_type || ''
       })
+      setProofUrl(initialData.proof_url || '')
     } else {
       // Set default date to today
       setFormData(prev => ({
@@ -70,9 +71,10 @@ export function TransactionForm({
       amount: formData.amount === '' ? 0 : Number(formData.amount),
       trip_id: formData.trip_id === "" || formData.trip_id === "no-trip" ? null : formData.trip_id,
       destination_id: formData.destination_id === "" || formData.destination_id === "no-destination" ? null : formData.destination_id
+      proof_url: proofUrl || null
     }
 
-    await onSubmit(submitData, proofFile)
+    await onSubmit(submitData, null)
     
     // Reset form after successful submission if not editing
     if (!editingTransaction) {
@@ -86,28 +88,10 @@ export function TransactionForm({
         destination_id: '',
         trip_type: ''
       })
-      setProofFile(null)
+      setProofUrl('')
     }
   }
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      // Validate file type
-      if (!file.type.startsWith('image/') && file.type !== 'application/pdf') {
-        alert('Hanya file gambar atau PDF yang diperbolehkan')
-        return
-      }
-      
-      // Validate file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        alert('Ukuran file maksimal 5MB')
-        return
-      }
-
-      setProofFile(file)
-    }
-  }
 
   // Common transaction categories
   const incomeCategories = [
@@ -279,37 +263,65 @@ export function TransactionForm({
           {/* Proof Upload Section */}
           <div className="space-y-4 p-4 border rounded-lg bg-gray-50">
             <Label className="text-base font-semibold flex items-center space-x-2">
-              <Upload className="h-5 w-5" />
+              <Link className="h-5 w-5" />
               <span>Bukti Transaksi (Opsional)</span>
             </Label>
             
             <div className="space-y-3">
-              <Input
-                type="file"
-                accept="image/*,application/pdf"
-                onChange={handleFileChange}
-                className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
-              />
-              <p className="text-xs text-gray-500">
-                Format yang didukung: JPG, PNG, GIF, PDF. Maksimal 5MB.
-              </p>
+              <div className="space-y-2">
+                <Label htmlFor="proof_url" className="text-sm font-medium">
+                  URL Google Drive
+                </Label>
+                <Input
+                  id="proof_url"
+                  type="url"
+                  value={proofUrl}
+                  onChange={(e) => setProofUrl(e.target.value)}
+                  placeholder="https://drive.google.com/file/d/..."
+                  className="focus:ring-green-500 focus:border-green-500"
+                />
+              </div>
               
-              {proofFile && (
+              <div className="text-xs text-gray-500 space-y-1">
+                <p><strong>Cara mendapatkan URL Google Drive:</strong></p>
+                <ol className="list-decimal list-inside space-y-1 ml-2">
+                  <li>Upload file bukti transaksi ke Google Drive</li>
+                  <li>Klik kanan pada file → "Get link" atau "Dapatkan link"</li>
+                  <li>Pastikan pengaturan: "Anyone with the link can view"</li>
+                  <li>Copy URL dan paste di kolom di atas</li>
+                </ol>
+              </div>
+              
+              {proofUrl && (
                 <div className="p-3 bg-white border rounded-lg">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <Upload className="h-4 w-4 text-green-600" />
-                      <span className="text-sm font-medium">{proofFile.name}</span>
+                    <div className="flex items-center space-x-2 flex-1 min-w-0">
+                      <Link className="h-4 w-4 text-green-600 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm">Google Drive File</div>
+                        <div className="text-xs text-gray-500 truncate">{proofUrl}</div>
+                      </div>
                     </div>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => setProofFile(null)}
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      Hapus
-                    </Button>
+                    <div className="flex items-center space-x-1 flex-shrink-0">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => window.open(proofUrl, '_blank')}
+                        className="h-8 px-2"
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setProofUrl('')}
+                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               )}

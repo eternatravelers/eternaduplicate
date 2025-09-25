@@ -2,82 +2,126 @@ import React from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Image, X } from 'lucide-react'
+import { Link, X, ExternalLink, Image } from 'lucide-react'
 
 interface ProofOfTransferUploaderProps {
-  file: File | null
-  previewUrl: string | null
-  onFileChange: (file: File | null, preview: string | null) => void
+  url: string | null
+  onUrlChange: (url: string | null) => void
   title?: string
 }
 
 export function ProofOfTransferUploader({
-  file,
-  previewUrl,
-  onFileChange,
+  url,
+  onUrlChange,
   title = "Bukti Transfer DP"
 }: ProofOfTransferUploaderProps) {
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0]
-    if (selectedFile) {
-      // Validate file type
-      if (!selectedFile.type.startsWith('image/')) {
-        alert('Hanya file gambar yang diperbolehkan')
-        return
-      }
-      
-      // Validate file size (max 5MB)
-      if (selectedFile.size > 5 * 1024 * 1024) {
-        alert('Ukuran file maksimal 5MB')
-        return
-      }
-
-      const url = URL.createObjectURL(selectedFile)
-      onFileChange(selectedFile, url)
-    }
+  const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const inputUrl = e.target.value.trim()
+    onUrlChange(inputUrl || null)
   }
 
-  const removeFile = () => {
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl)
+  const removeUrl = () => {
+    onUrlChange(null)
+  }
+
+  const isGoogleDriveUrl = (url: string) => {
+    return url.includes('drive.google.com') || url.includes('docs.google.com')
+  }
+
+  const isImageUrl = (url: string) => {
+    return /\.(jpg|jpeg|png|gif|webp)$/i.test(url) || url.includes('googleusercontent.com')
+  }
+
+  const openUrl = () => {
+    if (url) {
+      window.open(url, '_blank')
     }
-    onFileChange(null, null)
   }
 
   return (
     <div className="space-y-4 p-4 border rounded-lg bg-gray-50">
       <Label className="text-base font-semibold flex items-center space-x-2">
-        <Image className="h-5 w-5" />
+        <Link className="h-5 w-5" />
         <span>{title}</span>
       </Label>
       
       <div className="space-y-3">
-        <Input
-          type="file"
-          accept="image/*"
-          onChange={handleFileChange}
-          className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-        />
-        <p className="text-xs text-gray-500">
-          Format yang didukung: JPG, PNG, GIF. Maksimal 5MB.
-        </p>
+        <div className="space-y-2">
+          <Label htmlFor="proof_url" className="text-sm font-medium">
+            URL Google Drive
+          </Label>
+          <Input
+            id="proof_url"
+            type="url"
+            value={url || ''}
+            onChange={handleUrlChange}
+            placeholder="https://drive.google.com/file/d/..."
+            className="focus:ring-blue-500 focus:border-blue-500"
+          />
+        </div>
         
-        {previewUrl && (
-          <div className="relative inline-block">
-            <img 
-              src={previewUrl} 
-              alt="Preview bukti transfer" 
-              className="w-32 h-32 object-cover rounded-lg border"
-            />
-            <Button
-              type="button"
-              size="sm"
-              variant="destructive"
-              className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
-              onClick={removeFile}
-            >
-              <X className="h-3 w-3" />
-            </Button>
+        <div className="text-xs text-gray-500 space-y-1">
+          <p><strong>Cara mendapatkan URL Google Drive:</strong></p>
+          <ol className="list-decimal list-inside space-y-1 ml-2">
+            <li>Upload file bukti transfer ke Google Drive</li>
+            <li>Klik kanan pada file → "Get link" atau "Dapatkan link"</li>
+            <li>Pastikan pengaturan: "Anyone with the link can view"</li>
+            <li>Copy URL dan paste di kolom di atas</li>
+          </ol>
+        </div>
+        
+        {url && (
+          <div className="p-3 bg-white border rounded-lg">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2 flex-1 min-w-0">
+                {isGoogleDriveUrl(url) ? (
+                  <Link className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                ) : (
+                  <Image className="h-4 w-4 text-green-600 flex-shrink-0" />
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-sm truncate">
+                    {isGoogleDriveUrl(url) ? 'Google Drive File' : 'External File'}
+                  </div>
+                  <div className="text-xs text-gray-500 truncate">{url}</div>
+                </div>
+              </div>
+              <div className="flex items-center space-x-1 flex-shrink-0">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={openUrl}
+                  className="h-8 px-2"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={removeUrl}
+                  className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+            </div>
+            
+            {/* Preview for image URLs */}
+            {url && isImageUrl(url) && (
+              <div className="mt-3">
+                <img 
+                  src={url} 
+                  alt="Preview bukti transfer" 
+                  className="w-32 h-32 object-cover rounded-lg border"
+                  onError={(e) => {
+                    // Hide image if it fails to load
+                    e.currentTarget.style.display = 'none'
+                  }}
+                />
+              </div>
+            )}
           </div>
         )}
       </div>

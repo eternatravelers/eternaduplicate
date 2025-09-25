@@ -35,8 +35,7 @@ export function GroupRegistrationForm({
     meeting_point_details: ''
   })
 
-  const [groupProofOfTransferFile, setGroupProofOfTransferFile] = useState<File | null>(null)
-  const [groupPreviewUrl, setGroupPreviewUrl] = useState<string | null>(null)
+  const [groupProofOfTransferUrl, setGroupProofOfTransferUrl] = useState<string | null>(null)
   const [groupSelectedTripMeetingPoint, setGroupSelectedTripMeetingPoint] = useState<string>('')
   const csvFileInputRef = useRef<HTMLInputElement>(null)
 
@@ -74,10 +73,11 @@ export function GroupRegistrationForm({
       dp_amount: processedGroupData.dp_amount,
       dp_transfer_date: new Date().toISOString().split('T')[0],
       additional_requests: `Group registration for ${processedGroupData.participantCount} participants`,
-      meeting_point_details: groupData.meeting_point_details
+      meeting_point_details: groupData.meeting_point_details,
+      proof_of_transfer_url: groupProofOfTransferUrl
     }
 
-    await onSubmit(submitData, groupProofOfTransferFile)
+    await onSubmit(submitData, null)
     
     // Reset form after successful submission
     setGroupData({
@@ -92,14 +92,12 @@ export function GroupRegistrationForm({
       dp_amount: '',
       meeting_point_details: ''
     })
-    setGroupProofOfTransferFile(null)
-    setGroupPreviewUrl(null)
+    setGroupProofOfTransferUrl(null)
     setGroupSelectedTripMeetingPoint('')
   }
 
-  const handleFileChange = (file: File | null, preview: string | null) => {
-    setGroupProofOfTransferFile(file)
-    setGroupPreviewUrl(preview)
+  const handleUrlChange = (url: string | null) => {
+    setGroupProofOfTransferUrl(url)
   }
 
   const handleCsvFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -281,9 +279,8 @@ export function GroupRegistrationForm({
           </div>
 
           <ProofOfTransferUploader
-            file={groupProofOfTransferFile}
-            previewUrl={groupPreviewUrl}
-            onFileChange={handleFileChange}
+            url={groupProofOfTransferUrl}
+            onUrlChange={handleUrlChange}
             title="Bukti Transfer DP Group"
           />
 

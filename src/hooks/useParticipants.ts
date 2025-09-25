@@ -110,13 +110,12 @@ export function useCreateParticipant() {
 
   const createParticipant = async (
     participantData: Database['public']['Tables']['participants']['Insert'],
-    proofOfTransferFile?: File | null
+    proofOfTransferFile?: File | null // Keep for backward compatibility but won't be used
   ) => {
     try {
       setLoading(true)
       setError(null)
 
-      // First create the participant record
       const { data: newParticipant, error: participantError } = await supabase
         .from('participants')
         .insert([participantData])
@@ -125,24 +124,7 @@ export function useCreateParticipant() {
 
       if (participantError) throw participantError
 
-      // If there's a proof of transfer file, upload it
-      let proofUrl = null
-      if (proofOfTransferFile && newParticipant) {
-        proofUrl = await uploadProofOfTransfer(proofOfTransferFile, newParticipant.id)
-        
-        if (proofUrl) {
-          // Update the participant record with the proof URL
-          const { error: updateError } = await supabase
-            .from('participants')
-            .update({ proof_of_transfer_url: proofUrl })
-            .eq('id', newParticipant.id)
-
-          if (updateError) throw updateError
-          
-          // Update the returned data
-          newParticipant.proof_of_transfer_url = proofUrl
-        }
-      }
+      // Note: proof_of_transfer_url is now included in participantData directly
 
       return { data: newParticipant, error: null }
     } catch (err) {
@@ -164,20 +146,13 @@ export function useUpdateParticipant() {
   const updateParticipant = async (
     id: string, 
     participantData: Database['public']['Tables']['participants']['Update'],
-    proofOfTransferFile?: File | null
+    proofOfTransferFile?: File | null // Keep for backward compatibility but won't be used
   ) => {
     try {
       setLoading(true)
       setError(null)
 
-      // If there's a new proof of transfer file, upload it
-      let proofUrl = participantData.proof_of_transfer_url
-      if (proofOfTransferFile) {
-        proofUrl = await uploadProofOfTransfer(proofOfTransferFile, id)
-        if (proofUrl) {
-          participantData.proof_of_transfer_url = proofUrl
-        }
-      }
+      // Note: proof_of_transfer_url is now included in participantData directly
 
       const { data, error } = await supabase
         .from('participants')
