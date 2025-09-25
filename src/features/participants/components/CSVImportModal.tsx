@@ -243,10 +243,10 @@ export function CSVImportModal({
 
   const downloadTemplate = () => {
     const template = [
-      'nama_lengkap,email,telepon,alamat,jumlah_peserta,harga_paket,dp_amount,permintaan_tambahan',
-      'John Doe,john@example.com,08123456789,"Jl. Sudirman No. 123, Jakarta",2,1500000,500000,"Makanan vegetarian"',
-      'Jane Smith,jane@example.com,08198765432,"Jl. Thamrin No. 456, Jakarta",1,1500000,500000,""',
-      'Bob Wilson,bob@example.com,08111222333,"Jl. Gatot Subroto No. 789, Jakarta",3,1500000,500000,"Kursi roda untuk lansia"'
+      'nama_lengkap,email,telepon,alamat,jumlah_peserta,harga_paket,dp_amount,nama_trip,nama_sales,permintaan_tambahan',
+      'John Doe,john@example.com,08123456789,"Jl. Sudirman No. 123, Jakarta",2,1500000,500000,"Bali Adventure 3D2N","Ahmad Wijaya","Makanan vegetarian"',
+      'Jane Smith,jane@example.com,08198765432,"Jl. Thamrin No. 456, Jakarta",1,1500000,500000,"Yogyakarta Cultural Tour","Siti Nurhaliza",""',
+      'Bob Wilson,bob@example.com,08111222333,"Jl. Gatot Subroto No. 789, Jakarta",3,1500000,500000,"Lombok Beach Holiday","Ahmad Wijaya","Kursi roda untuk lansia"'
     ].join('\n')
 
     const blob = new Blob([template], { type: 'text/csv;charset=utf-8;' })
