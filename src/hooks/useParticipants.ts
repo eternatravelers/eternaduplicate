@@ -373,7 +373,7 @@ export function useDeletedParticipants() {
             meeting_point,
             trip_type
           ),
-          sales (
+          sales!participants_sales_id_fkey (
             id,
             name
           )
