@@ -197,6 +197,7 @@ export function TripsPage() {
         onEdit={handleEdit}
         onDuplicate={handleDuplicate}
         onDelete={handleDelete}
+        onViewParticipants={handleViewParticipants}
         isSuperAdmin={isSuperAdmin}
         deleting={deleting}
       />
