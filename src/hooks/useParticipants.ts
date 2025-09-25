@@ -12,6 +12,7 @@ type Participant = Database['public']['Tables']['participants']['Row'] & {
 interface ParticipantFilters {
   startDate?: string
   endDate?: string
+  tripId?: string
 }
 
 export function useParticipants(filters?: ParticipantFilters) {
@@ -68,6 +69,11 @@ export function useParticipants(filters?: ParticipantFilters) {
       }
       if (filters?.endDate) {
         query = query.lte('created_at', filters.endDate)
+      }
+
+      // Apply trip filter
+      if (filters?.tripId) {
+        query = query.eq('trip_id', filters.tripId)
       }
 
       const { data, error } = await query.order('created_at', { ascending: false })
