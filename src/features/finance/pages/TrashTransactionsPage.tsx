@@ -169,7 +169,6 @@ export function TrashTransactionsPage() {
         onPermanentDelete={handlePermanentDelete}
         restoring={restoring}
         permanentDeleting={permanentDeleting}
-        permanentDeleting={permanentDeleting}
       />
 
       {/* Info Box */}
