@@ -60,7 +60,7 @@ export function useParticipants(filters?: ParticipantFilters) {
               )
             )
           ),
-          sales (
+          sales!participants_sales_id_fkey (
             id,
             name
           )
@@ -146,7 +146,7 @@ export function useCreateParticipant() {
             meeting_point,
             trip_type
           ),
-          sales (
+          sales!participants_sales_id_fkey (
             id,
             name
           )
@@ -210,7 +210,7 @@ export function useUpdateParticipant() {
             meeting_point,
             trip_type
           ),
-          sales (
+          sales!participants_sales_id_fkey (
             id,
             name
           )
@@ -431,7 +431,7 @@ export function useDeletedParticipants() {
             meeting_point,
             trip_type
           ),
-          sales (
+          sales!participants_sales_id_fkey (
             id,
             name
           )
@@ -494,7 +494,7 @@ export function useGroupMembers(groupLeaderId: string) {
             meeting_point,
             trip_type
           ),
-          sales (
+          sales!participants_sales_id_fkey (
             id,
             name
           )
