@@ -218,10 +218,26 @@ export function OperationsPage() {
           </DialogHeader>
           {selectedTrip && (
             <div className="space-y-6">
-              <ChecklistManager
-                tripId={selectedTrip.id}
-                tripName={selectedTrip.name}
-              />
+              <Tabs defaultValue="checklist" className="space-y-4">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="checklist">Checklist</TabsTrigger>
+                  <TabsTrigger value="participants">Peserta</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="checklist">
+                  <ChecklistManager
+                    tripId={selectedTrip.id}
+                    tripName={selectedTrip.name}
+                  />
+                </TabsContent>
+
+                <TabsContent value="participants">
+                  <TripParticipantsTable
+                    tripId={selectedTrip.id}
+                    tripName={selectedTrip.name}
+                  />
+                </TabsContent>
+              </Tabs>
             </div>
           )}
         </DialogContent>

@@ -98,7 +98,7 @@ export function useParticipants(filters?: ParticipantFilters) {
 
   useEffect(() => {
     fetchParticipants()
-  }, [filters?.startDate, filters?.endDate])
+  }, [filters?.startDate, filters?.endDate, filters?.tripId])
 
   return { participants, loading, error, refetch: fetchParticipants }
 }
