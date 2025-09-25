@@ -5,7 +5,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { RefreshCw, AlertTriangle, Trash2 } from 'lucide-react'
 import { TransactionFilter } from '../components/TransactionFilter'
 import { TrashTransactionTable } from '../components/TrashTransactionTable'
-import { useTransactions, useRestoreTransaction } from '@/hooks/useTransactions'
+import { useTransactions, useRestoreTransaction, usePermanentDeleteTransaction } from '@/hooks/useTransactions'
 import { formatCurrency } from '@/lib/utils'
 
 export function TrashTransactionsPage() {
@@ -14,6 +14,7 @@ export function TrashTransactionsPage() {
   
   const { transactions: deletedTransactions, loading, refetch } = useTransactions({ includeDeleted: true })
   const { restoreTransaction, loading: restoring, error: restoreError } = useRestoreTransaction()
+  const { permanentDeleteTransaction, loading: permanentDeleting } = usePermanentDeleteTransaction()
 
   const filteredTransactions = deletedTransactions.filter(transaction => {
     const matchesSearch = 
@@ -34,6 +35,17 @@ export function TrashTransactionsPage() {
       }
     } catch (error) {
       console.error('Error restoring transaction:', error)
+    }
+  }
+
+  const handlePermanentDelete = async (id: string) => {
+    try {
+      const { error } = await permanentDeleteTransaction(id)
+      if (!error) {
+        refetch()
+      }
+    } catch (error) {
+      console.error('Error permanently deleting transaction:', error)
     }
   }
 
