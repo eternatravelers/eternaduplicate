@@ -8,19 +8,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { FileText, Plus, Download, Eye, Upload, Trash2, File, Image, FileSpreadsheet } from 'lucide-react'
 import { formatShortDate } from '@/lib/utils'
-
-interface Document {
-  id: string
-  name: string
-  type: 'itinerary' | 'participant_list' | 'emergency_contact' | 'insurance' | 'permit' | 'other'
-  file_url: string
-  file_type: string
-  file_size: number
-  uploaded_by: string
-  uploaded_at: string
-  trip_id?: string
-  notes?: string
-}
+import { useDocuments, useCreateDocument, useDeleteDocument } from '@/hooks/useDocuments'
+import { useAuth } from '@/hooks/useAuth'
 
 interface DocumentManagerProps {
   tripId?: string
@@ -28,49 +17,15 @@ interface DocumentManagerProps {
 }
 
 export function DocumentManager({ tripId, tripName }: DocumentManagerProps) {
-  const [documents, setDocuments] = useState<Document[]>([
-    {
-      id: '1',
-      name: 'Itinerary Trip Bali 3D2N',
-      type: 'itinerary',
-      file_url: '#',
-      file_type: 'application/pdf',
-      file_size: 2048000,
-      uploaded_by: 'Admin',
-      uploaded_at: '2024-01-15T10:00:00Z',
-      trip_id: tripId,
-      notes: 'Itinerary lengkap dengan jadwal detail'
-    },
-    {
-      id: '2',
-      name: 'Daftar Peserta Trip Bali',
-      type: 'participant_list',
-      file_url: '#',
-      file_type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      file_size: 1024000,
-      uploaded_by: 'Sales Manager',
-      uploaded_at: '2024-01-14T15:30:00Z',
-      trip_id: tripId,
-      notes: 'Daftar lengkap peserta dengan kontak darurat'
-    },
-    {
-      id: '3',
-      name: 'Kontak Darurat Destinasi',
-      type: 'emergency_contact',
-      file_url: '#',
-      file_type: 'application/pdf',
-      file_size: 512000,
-      uploaded_by: 'Tour Leader',
-      uploaded_at: '2024-01-13T09:15:00Z',
-      trip_id: tripId,
-      notes: 'Kontak rumah sakit, polisi, dan fasilitas penting di destinasi'
-    }
-  ])
+  const { documents, loading, refetch } = useDocuments(tripId)
+  const { createDocument, loading: creating } = useCreateDocument()
+  const { deleteDocument, loading: deleting } = useDeleteDocument()
+  const { user } = useAuth()
 
   const [showUploadForm, setShowUploadForm] = useState(false)
   const [uploadData, setUploadData] = useState({
     name: '',
-    type: 'other' as Document['type'],
+    type: 'other' as 'itinerary' | 'participant_list' | 'emergency_contact' | 'insurance' | 'permit' | 'other',
     notes: ''
   })
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
@@ -87,7 +42,7 @@ export function DocumentManager({ tripId, tripName }: DocumentManagerProps) {
     }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
     if (!selectedFile) {
@@ -95,33 +50,34 @@ export function DocumentManager({ tripId, tripName }: DocumentManagerProps) {
       return
     }
 
-    const newDocument: Document = {
-      id: Date.now().toString(),
+    const documentData = {
       name: uploadData.name,
       type: uploadData.type,
-      file_url: URL.createObjectURL(selectedFile), // In real app, this would be uploaded to storage
-      file_type: selectedFile.type,
-      file_size: selectedFile.size,
-      uploaded_by: 'Current User',
-      uploaded_at: new Date().toISOString(),
+      uploaded_by: user?.email || 'Unknown User',
       trip_id: tripId,
       notes: uploadData.notes
     }
 
-    setDocuments(prev => [newDocument, ...prev])
+    const { error } = await createDocument(documentData, selectedFile)
 
-    // Reset form
-    setUploadData({
-      name: '',
-      type: 'other',
-      notes: ''
-    })
-    setSelectedFile(null)
-    setShowUploadForm(false)
+    if (!error) {
+      // Reset form
+      setUploadData({
+        name: '',
+        type: 'other',
+        notes: ''
+      })
+      setSelectedFile(null)
+      setShowUploadForm(false)
+      refetch()
+    }
   }
 
-  const handleDelete = (id: string) => {
-    setDocuments(prev => prev.filter(doc => doc.id !== id))
+  const handleDelete = async (id: string, fileUrl: string) => {
+    const { error } = await deleteDocument(id, fileUrl)
+    if (!error) {
+      refetch()
+    }
   }
 
   const getDocumentIcon = (fileType: string) => {
@@ -136,7 +92,7 @@ export function DocumentManager({ tripId, tripName }: DocumentManagerProps) {
     }
   }
 
-  const getTypeBadge = (type: Document['type']) => {
+  const getTypeBadge = (type: 'itinerary' | 'participant_list' | 'emergency_contact' | 'insurance' | 'permit' | 'other') => {
     const typeLabels = {
       itinerary: 'Itinerary',
       participant_list: 'Daftar Peserta',
@@ -211,7 +167,7 @@ export function DocumentManager({ tripId, tripName }: DocumentManagerProps) {
                   <select
                     id="document_type"
                     value={uploadData.type}
-                    onChange={(e) => setUploadData(prev => ({ ...prev, type: e.target.value as Document['type'] }))}
+                    onChange={(e) => setUploadData(prev => ({ ...prev, type: e.target.value as 'itinerary' | 'participant_list' | 'emergency_contact' | 'insurance' | 'permit' | 'other' }))}
                     className="w-full p-2 border rounded-md"
                     required
                   >
@@ -264,7 +220,7 @@ export function DocumentManager({ tripId, tripName }: DocumentManagerProps) {
 
               <div className="flex space-x-2">
                 <Button type="submit" disabled={!selectedFile}>
-                  Upload Dokumen
+                  {creating ? 'Mengupload...' : 'Upload Dokumen'}
                 </Button>
                 <Button 
                   type="button" 
@@ -283,8 +239,15 @@ export function DocumentManager({ tripId, tripName }: DocumentManagerProps) {
         </Dialog>
       </div>
 
+      {loading && (
+        <div className="animate-pulse">
+          <div className="h-64 bg-gray-200 rounded-lg"></div>
+        </div>
+      )}
+
       {/* Documents Table */}
-      <Card>
+      {!loading && (
+        <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <FileText className="h-5 w-5" />
@@ -368,6 +331,7 @@ export function DocumentManager({ tripId, tripName }: DocumentManagerProps) {
                           className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
                           onClick={() => handleDelete(document.id)}
                           title="Hapus dokumen"
+                          disabled={deleting}
                         >
                           <Trash2 className="h-3 w-3" />
                         </Button>
@@ -380,6 +344,7 @@ export function DocumentManager({ tripId, tripName }: DocumentManagerProps) {
           )}
         </CardContent>
       </Card>
+      )}
 
       {/* Document Templates */}
       <Card className="border-blue-200 bg-blue-50">

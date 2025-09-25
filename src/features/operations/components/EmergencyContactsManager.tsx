@@ -8,54 +8,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Phone, Plus, Edit, Trash2, AlertTriangle, Guitar as Hospital, Shield } from 'lucide-react'
-
-interface EmergencyContact {
-  id: string
-  name: string
-  role: string
-  phone: string
-  category: 'medical' | 'police' | 'company' | 'local'
-  location?: string
-  notes?: string
-}
+import { useEmergencyContactsByCategory, useCreateEmergencyContact, useUpdateEmergencyContact, useDeleteEmergencyContact, useInitializeDefaultEmergencyContacts } from '@/hooks/useEmergencyContacts'
 
 export function EmergencyContactsManager() {
-  const [contacts, setContacts] = useState<EmergencyContact[]>([
-    {
-      id: '1',
-      name: 'RS Umum Daerah',
-      role: 'Rumah Sakit',
-      phone: '119',
-      category: 'medical',
-      location: 'Jakarta',
-      notes: 'Rumah sakit terdekat dengan fasilitas lengkap'
-    },
-    {
-      id: '2',
-      name: 'Polres Jakarta Pusat',
-      role: 'Kepolisian',
-      phone: '110',
-      category: 'police',
-      location: 'Jakarta Pusat',
-      notes: 'Untuk keadaan darurat dan bantuan keamanan'
-    },
-    {
-      id: '3',
-      name: 'Ahmad Supardi',
-      role: 'Manager Operasional',
-      phone: '08123456789',
-      category: 'company',
-      notes: 'Kontak utama untuk koordinasi operasional'
-    },
-    {
-      id: '4',
-      name: 'Budi Santoso',
-      role: 'Tour Leader Senior',
-      phone: '08198765432',
-      category: 'company',
-      notes: 'Backup tour leader untuk situasi darurat'
-    }
-  ])
+  const { contactsByCategory, loading, refetch } = useEmergencyContactsByCategory()
+  const { createContact, loading: creating } = useCreateEmergencyContact()
+  const { updateContact, loading: updating } = useUpdateEmergencyContact()
+  const { deleteContact, loading: deleting } = useDeleteEmergencyContact()
+  const { initializeDefaultContacts, loading: initializing } = useInitializeDefaultEmergencyContacts()
 
   const [showAddForm, setShowAddForm] = useState(false)
   const [editingContact, setEditingContact] = useState<string | null>(null)
@@ -63,42 +23,35 @@ export function EmergencyContactsManager() {
     name: '',
     role: '',
     phone: '',
-    category: 'company' as EmergencyContact['category'],
+    category: 'company' as 'medical' | 'police' | 'company' | 'local',
     location: '',
     notes: ''
   })
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (editingContact) {
-      setContacts(prev => prev.map(contact => 
-        contact.id === editingContact 
-          ? { ...contact, ...formData }
-          : contact
-      ))
-    } else {
-      const newContact: EmergencyContact = {
-        id: Date.now().toString(),
-        ...formData
-      }
-      setContacts(prev => [...prev, newContact])
-    }
+    const { error } = editingContact 
+      ? await updateContact(editingContact, formData)
+      : await createContact(formData)
 
-    // Reset form
-    setFormData({
-      name: '',
-      role: '',
-      phone: '',
-      category: 'company',
-      location: '',
-      notes: ''
-    })
-    setShowAddForm(false)
-    setEditingContact(null)
+    if (!error) {
+      // Reset form
+      setFormData({
+        name: '',
+        role: '',
+        phone: '',
+        category: 'company',
+        location: '',
+        notes: ''
+      })
+      setShowAddForm(false)
+      setEditingContact(null)
+      refetch()
+    }
   }
 
-  const handleEdit = (contact: EmergencyContact) => {
+  const handleEdit = (contact: any) => {
     setFormData({
       name: contact.name,
       role: contact.role,
@@ -111,11 +64,21 @@ export function EmergencyContactsManager() {
     setShowAddForm(true)
   }
 
-  const handleDelete = (id: string) => {
-    setContacts(prev => prev.filter(contact => contact.id !== id))
+  const handleDelete = async (id: string) => {
+    const { error } = await deleteContact(id)
+    if (!error) {
+      refetch()
+    }
   }
 
-  const getCategoryBadge = (category: EmergencyContact['category']) => {
+  const handleInitializeDefaults = async () => {
+    const { error } = await initializeDefaultContacts()
+    if (!error) {
+      refetch()
+    }
+  }
+
+  const getCategoryBadge = (category: 'medical' | 'police' | 'company' | 'local') => {
     switch (category) {
       case 'medical':
         return <Badge className="bg-red-100 text-red-800">Medis</Badge>
@@ -130,7 +93,7 @@ export function EmergencyContactsManager() {
     }
   }
 
-  const getCategoryIcon = (category: EmergencyContact['category']) => {
+  const getCategoryIcon = (category: 'medical' | 'police' | 'company' | 'local') => {
     switch (category) {
       case 'medical':
         return <Hospital className="h-4 w-4 text-red-600" />
@@ -145,12 +108,19 @@ export function EmergencyContactsManager() {
     }
   }
 
-  const contactsByCategory = {
-    medical: contacts.filter(c => c.category === 'medical'),
-    police: contacts.filter(c => c.category === 'police'),
-    company: contacts.filter(c => c.category === 'company'),
-    local: contacts.filter(c => c.category === 'local')
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="animate-pulse">
+          <div className="h-32 bg-gray-200 rounded-lg mb-4"></div>
+          <div className="h-64 bg-gray-200 rounded-lg"></div>
+        </div>
+      </div>
+    )
   }
+
+  // Check if we have any contacts at all
+  const totalContacts = Object.values(contactsByCategory).reduce((sum, cats) => sum + cats.length, 0)
 
   return (
     <div className="space-y-6">
@@ -206,7 +176,7 @@ export function EmergencyContactsManager() {
                   <select
                     id="category"
                     value={formData.category}
-                    onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value as EmergencyContact['category'] }))}
+                    onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value as 'medical' | 'police' | 'company' | 'local' }))}
                     className="w-full p-2 border rounded-md"
                     required
                   >
@@ -235,7 +205,7 @@ export function EmergencyContactsManager() {
               </div>
               <div className="flex space-x-2">
                 <Button type="submit">
-                  {editingContact ? 'Update Kontak' : 'Simpan Kontak'}
+                  {creating || updating ? 'Menyimpan...' : editingContact ? 'Update Kontak' : 'Simpan Kontak'}
                 </Button>
                 <Button 
                   type="button" 
@@ -312,26 +282,48 @@ export function EmergencyContactsManager() {
         </Card>
       </div>
 
+      {/* Initialize Default Contacts if empty */}
+      {totalContacts === 0 && (
+        <Card className="border-yellow-200 bg-yellow-50">
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <Phone className="h-12 w-12 mx-auto mb-4 text-yellow-600" />
+              <h3 className="text-lg font-medium text-yellow-800 mb-2">Belum ada kontak darurat</h3>
+              <p className="text-sm text-yellow-700 mb-4">
+                Inisialisasi kontak darurat default untuk memulai
+              </p>
+              <Button 
+                onClick={handleInitializeDefaults}
+                disabled={initializing}
+                className="bg-yellow-600 hover:bg-yellow-700"
+              >
+                {initializing ? 'Menginisialisasi...' : 'Inisialisasi Kontak Default'}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Emergency Contacts by Category */}
       <Tabs defaultValue="company" className="space-y-4">
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="company">Perusahaan ({contactsByCategory.company.length})</TabsTrigger>
-          <TabsTrigger value="medical">Medis ({contactsByCategory.medical.length})</TabsTrigger>
-          <TabsTrigger value="police">Kepolisian ({contactsByCategory.police.length})</TabsTrigger>
-          <TabsTrigger value="local">Lokal ({contactsByCategory.local.length})</TabsTrigger>
+          <TabsTrigger value="company">Perusahaan ({contactsByCategory?.company?.length || 0})</TabsTrigger>
+          <TabsTrigger value="medical">Medis ({contactsByCategory?.medical?.length || 0})</TabsTrigger>
+          <TabsTrigger value="police">Kepolisian ({contactsByCategory?.police?.length || 0})</TabsTrigger>
+          <TabsTrigger value="local">Lokal ({contactsByCategory?.local?.length || 0})</TabsTrigger>
         </TabsList>
 
-        {Object.entries(contactsByCategory).map(([category, categoryContacts]) => (
+        {Object.entries(contactsByCategory || {}).map(([category, categoryContacts]) => (
           <TabsContent key={category} value={category}>
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
-                  {getCategoryIcon(category as EmergencyContact['category'])}
+                  {getCategoryIcon(category as 'medical' | 'police' | 'company' | 'local')}
                   <span>Kontak {category === 'company' ? 'Perusahaan' : category === 'medical' ? 'Medis' : category === 'police' ? 'Kepolisian' : 'Lokal'}</span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {categoryContacts.length === 0 ? (
+                {!categoryContacts || categoryContacts.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
                     <Phone className="h-12 w-12 mx-auto mb-4 opacity-50" />
                     <p>Belum ada kontak untuk kategori ini</p>
@@ -372,15 +364,17 @@ export function EmergencyContactsManager() {
                               variant="outline"
                               onClick={() => handleEdit(contact)}
                               className="flex-1"
+                              disabled={updating}
                             >
                               <Edit className="h-3 w-3 mr-1" />
-                              Edit
+                              {updating ? 'Updating...' : 'Edit'}
                             </Button>
                             <Button
                               size="sm"
                               variant="outline"
                               onClick={() => handleDelete(contact.id)}
                               className="text-red-600 hover:text-red-700"
+                              disabled={deleting}
                             >
                               <Trash2 className="h-3 w-3" />
                             </Button>
