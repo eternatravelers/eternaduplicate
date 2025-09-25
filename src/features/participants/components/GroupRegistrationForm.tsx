@@ -15,7 +15,7 @@ import { useGroupMembers } from '@/hooks/useParticipants'
 import { formatCurrency, formatShortDate } from '@/lib/utils'
 
 interface GroupRegistrationFormProps {
-  onSubmit: (data: any) => Promise<void>
+  onSubmit: (data: any) => Promise<any>
   trips: any[]
   sales: any[]
   creating: boolean

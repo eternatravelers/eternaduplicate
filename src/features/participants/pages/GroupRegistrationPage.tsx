@@ -17,17 +17,19 @@ export function GroupRegistrationPage({ onGroupSaved }: GroupRegistrationPagePro
   const { createParticipant, loading: creating } = useCreateParticipant()
   const [error, setError] = useState<string | null>(null)
 
-  const handleGroupSubmit = async (data: any) => {
+  const handleGroupSubmit = async (data: any): Promise<any> => {
     setError(null)
     try {
-      const { error: submitError } = await createParticipant(data)
+      const { data: newParticipant, error: submitError } = await createParticipant(data)
       if (submitError) {
         setError(submitError)
-        return
+        return null
       }
       onGroupSaved()
+      return newParticipant
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Terjadi kesalahan saat menyimpan grup.')
+      return null
     }
   }
 
