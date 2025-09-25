@@ -1,11 +1,20 @@
 import React, { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { MapPin, Activity, Calendar, Users } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { MapPin, Activity, Calendar, Users, Monitor, CheckSquare, FileText, Phone } from 'lucide-react'
 import { useTrips } from '@/hooks/useTrips'
+import { TripMonitoringCard } from '../components/TripMonitoringCard'
+import { ChecklistManager } from '../components/ChecklistManager'
+import { DocumentManager } from '../components/DocumentManager'
+import { EmergencyContactsManager } from '../components/EmergencyContactsManager'
+import { formatShortDate } from '@/lib/utils'
 
 export function OperationsPage() {
   const [activeTab, setActiveTab] = useState('monitoring')
+  const [selectedTrip, setSelectedTrip] = useState<any>(null)
+  const [showTripDetails, setShowTripDetails] = useState(false)
   const { trips, loading: tripsLoading } = useTrips()
 
   // Filter trips for monitoring
@@ -32,6 +41,11 @@ export function OperationsPage() {
     const returnDate = new Date(trip.return_date)
     return departureDate <= today && returnDate >= today
   })
+
+  const handleViewTripDetails = (trip: any) => {
+    setSelectedTrip(trip)
+    setShowTripDetails(true)
+  }
 
   if (tripsLoading) {
     return (
@@ -131,33 +145,87 @@ export function OperationsPage() {
         </TabsList>
 
         <TabsContent value="monitoring" className="space-y-6">
-          {/* Trip monitoring components will be implemented later */}
-          <div className="text-center py-8 text-gray-500">
-            Trip monitoring components coming soon...
-          </div>
+          {activeTrips.length === 0 ? (
+            <div className="text-center py-12 text-gray-500">
+              <Monitor className="h-16 w-16 mx-auto mb-4 opacity-30" />
+              <h3 className="text-lg font-medium mb-2">Tidak ada trip aktif</h3>
+              <p className="text-sm mb-4">
+                Belum ada trip yang perlu dimonitor saat ini
+              </p>
+              <Button 
+                variant="outline"
+                onClick={() => window.location.hash = '#trips'}
+              >
+                Buat Trip Baru
+              </Button>
+            </div>
+          ) : (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {activeTrips.map((trip) => (
+                <TripMonitoringCard
+                  key={trip.id}
+                  trip={trip}
+                  onViewDetails={handleViewTripDetails}
+                />
+              ))}
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="checklist" className="space-y-6">
-          {/* Checklist components will be implemented later */}
-          <div className="text-center py-8 text-gray-500">
-            Checklist components coming soon...
-          </div>
+          {selectedTrip ? (
+            <ChecklistManager
+              tripId={selectedTrip.id}
+              tripName={selectedTrip.name}
+            />
+          ) : (
+            <div className="text-center py-12 text-gray-500">
+              <CheckSquare className="h-16 w-16 mx-auto mb-4 opacity-30" />
+              <h3 className="text-lg font-medium mb-2">Pilih Trip untuk Checklist</h3>
+              <p className="text-sm mb-4">
+                Pilih trip dari tab "Trip Monitoring" untuk melihat checklist operasional
+              </p>
+              <Button 
+                variant="outline"
+                onClick={() => setActiveTab('monitoring')}
+              >
+                Lihat Trip Monitoring
+              </Button>
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="documents" className="space-y-6">
-          {/* Document management components will be implemented later */}
-          <div className="text-center py-8 text-gray-500">
-            Document management components coming soon...
-          </div>
+          <DocumentManager
+            tripId={selectedTrip?.id}
+            tripName={selectedTrip?.name}
+          />
         </TabsContent>
 
         <TabsContent value="emergency" className="space-y-6">
-          {/* Emergency contacts components will be implemented later */}
-          <div className="text-center py-8 text-gray-500">
-            Emergency contacts components coming soon...
-          </div>
+          <EmergencyContactsManager />
         </TabsContent>
       </Tabs>
+
+      {/* Trip Details Modal */}
+      <Dialog open={showTripDetails} onOpenChange={setShowTripDetails}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <Monitor className="h-5 w-5" />
+              <span>Detail Trip - {selectedTrip?.name}</span>
+            </DialogTitle>
+          </DialogHeader>
+          {selectedTrip && (
+            <div className="space-y-6">
+              <ChecklistManager
+                tripId={selectedTrip.id}
+                tripName={selectedTrip.name}
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
