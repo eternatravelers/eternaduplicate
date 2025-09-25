@@ -9,6 +9,16 @@ type Trip = Database['public']['Tables']['trips']['Row'] & {
   buses?: Database['public']['Tables']['buses']['Row'][]
   drivers?: Database['public']['Tables']['drivers']['Row'][]
   participant_count?: number
+  payment_summary?: {
+    pending_count: number
+    dp_paid_count: number
+    paid_in_full_count: number
+    cancelled_count: number
+    total_participants: number
+    total_revenue: number
+    total_dp: number
+    remaining_payment: number
+  }
 }
 
 export function useTrips() {
@@ -83,7 +93,14 @@ export function useTrips() {
               status
             )
           ),
-          participants!left(id)
+          participants!left(
+            id,
+            participant_count,
+            package_price,
+            dp_amount,
+            status,
+            parent_participant_id
+          )
         `)
         .in('status', ['active', 'completed', 'cancelled', 'draft']) // Filter out deleted trips by explicitly including active ones
         
@@ -96,7 +113,8 @@ export function useTrips() {
         destinations: trip.trip_destinations?.map(td => td.destinations).filter(Boolean) || [],
         tour_leaders: trip.trip_tour_leaders?.map(ttl => ttl.tour_leaders).filter(Boolean) || [],
         buses: trip.trip_buses?.map(tb => tb.buses).filter(Boolean) || [],
-        drivers: trip.trip_drivers?.map(td => td.drivers).filter(Boolean) || []
+        drivers: trip.trip_drivers?.map(td => td.drivers).filter(Boolean) || [],
+        payment_summary: calculatePaymentSummary(trip.participants || [])
       })) || []
 
       setTrips(tripsWithCount)
@@ -112,6 +130,58 @@ export function useTrips() {
   }, [])
 
   return { trips, loading, error, refetch: fetchTrips }
+}
+
+// Helper function to calculate payment summary for a trip
+function calculatePaymentSummary(participants: any[]) {
+  const summary = {
+    pending_count: 0,
+    dp_paid_count: 0,
+    paid_in_full_count: 0,
+    cancelled_count: 0,
+    total_participants: 0,
+    total_revenue: 0,
+    total_dp: 0,
+    remaining_payment: 0
+  }
+
+  participants.forEach(participant => {
+    const participantCount = participant.participant_count || 1
+    const packagePrice = participant.package_price || 0
+    const dpAmount = participant.dp_amount || 0
+    
+    // Count by status
+    switch (participant.status) {
+      case 'pending':
+        summary.pending_count += participantCount
+        break
+      case 'dp_paid':
+        summary.dp_paid_count += participantCount
+        break
+      case 'paid_in_full':
+        summary.paid_in_full_count += participantCount
+        break
+      case 'cancelled':
+        summary.cancelled_count += participantCount
+        break
+      default:
+        // For backward compatibility, treat 'confirmed' as dp_paid
+        if (participant.status === 'confirmed') {
+          summary.dp_paid_count += participantCount
+        } else {
+          summary.pending_count += participantCount
+        }
+    }
+    
+    // Calculate financial totals
+    summary.total_participants += participantCount
+    summary.total_revenue += packagePrice
+    summary.total_dp += dpAmount
+  })
+
+  summary.remaining_payment = summary.total_revenue - summary.total_dp
+
+  return summary
 }
 
 type TripInsert = Database['public']['Tables']['trips']['Insert'] & {

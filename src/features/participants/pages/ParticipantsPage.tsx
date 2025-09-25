@@ -42,8 +42,8 @@ export function ParticipantsPage() {
 
   const handleSubmit = async (data: any, file?: File | null) => {
     const { error } = editingParticipant
-      ? await updateParticipant(editingParticipant, data, file)
-      : await createParticipant(data, file)
+      ? await updateParticipant(editingParticipant, data)
+      : await createParticipant(data)
 
     if (!error) {
       setEditingParticipant(null)
@@ -117,7 +117,7 @@ export function ParticipantsPage() {
   }
 
   const handleGroupSubmit = async (data: any, file?: File | null) => {
-    const { error } = await createParticipant(data, file)
+    const { error } = await createParticipant(data)
     if (!error) {
       refetch()
     }

@@ -8,6 +8,8 @@ type Participant = Database['public']['Tables']['participants']['Row'] & {
     destinations?: Database['public']['Tables']['destinations']['Row'][]
   }
   sales?: Database['public']['Tables']['sales']['Row']
+  parent_participant?: Participant | null
+  group_members?: Participant[]
 }
 
 interface ParticipantFilters {
@@ -110,7 +112,6 @@ export function useCreateParticipant() {
 
   const createParticipant = async (
     participantData: Database['public']['Tables']['participants']['Insert'],
-    proofOfTransferFile?: File | null // Keep for backward compatibility but won't be used
   ) => {
     try {
       setLoading(true)
@@ -123,8 +124,6 @@ export function useCreateParticipant() {
         .single()
 
       if (participantError) throw participantError
-
-      // Note: proof_of_transfer_url is now included in participantData directly
 
       return { data: newParticipant, error: null }
     } catch (err) {
@@ -145,14 +144,11 @@ export function useUpdateParticipant() {
 
   const updateParticipant = async (
     id: string, 
-    participantData: Database['public']['Tables']['participants']['Update'],
-    proofOfTransferFile?: File | null // Keep for backward compatibility but won't be used
+    participantData: Database['public']['Tables']['participants']['Update']
   ) => {
     try {
       setLoading(true)
       setError(null)
-
-      // Note: proof_of_transfer_url is now included in participantData directly
 
       const { data, error } = await supabase
         .from('participants')
@@ -366,6 +362,8 @@ export function useDeletedParticipants() {
           deleted_at,
           deleted_by_user_name,
           deletion_reason,
+          parent_participant_id,
+          parent_participant_id,
           trips (
             id,
             name,
@@ -396,6 +394,72 @@ export function useDeletedParticipants() {
   }, [])
 
   return { deletedParticipants, loading, error, refetch: fetchDeletedParticipants }
+}
+
+// Hook to get group members for a specific group leader
+export function useGroupMembers(groupLeaderId: string) {
+  const [groupMembers, setGroupMembers] = useState<Participant[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const fetchGroupMembers = async () => {
+    try {
+      setLoading(true)
+      
+      const { data, error } = await supabase
+        .from('participants')
+        .select(`
+          id,
+          trip_id,
+          sales_id,
+          full_name,
+          email,
+          phone,
+          address,
+          participant_count,
+          package_price,
+          dp_amount,
+          dp_transfer_date,
+          status,
+          additional_requests,
+          created_at,
+          updated_at,
+          proof_of_transfer_url,
+          meeting_point_details,
+          parent_participant_id,
+          trips (
+            id,
+            name,
+            departure_date,
+            meeting_point,
+            trip_type
+          ),
+          sales (
+            id,
+            name
+          )
+        `)
+        .eq('parent_participant_id', groupLeaderId)
+        .is('deleted_at', null)
+        .order('created_at', { ascending: true })
+
+      if (error) throw error
+
+      setGroupMembers(data || [])
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (groupLeaderId) {
+      fetchGroupMembers()
+    }
+  }, [groupLeaderId])
+
+  return { groupMembers, loading, error, refetch: fetchGroupMembers }
 }
 
 // Hook to get participant audit log

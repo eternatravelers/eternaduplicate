@@ -4,8 +4,9 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, CreditCard as Edit, Search } from 'lucide-react';
+import { Trash2, CreditCard as Edit, Search, Users, Crown } from 'lucide-react';
 import { ParticipantPermissionsGuard } from './ParticipantPermissionsGuard';
+import { DeleteParticipantDialog } from './DeleteParticipantDialog';
 
 interface Participant {
   id: string;
@@ -21,6 +22,7 @@ interface Participant {
   additional_requests?: string;
   trip_id?: string;
   sales_id?: string;
+  parent_participant_id?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -48,10 +50,13 @@ export function ParticipantHistoryTable({
 }: ParticipantHistoryTableProps) {
   const getStatusBadgeVariant = (status: string) => {
     switch (status.toLowerCase()) {
-      case 'confirmed':
+      case 'confirmed': // Backward compatibility
+      case 'dp_paid':
+        return 'secondary';
+      case 'paid_in_full':
         return 'default';
       case 'pending':
-        return 'secondary';
+        return 'outline';
       case 'cancelled':
         return 'destructive';
       default:
@@ -101,7 +106,8 @@ export function ParticipantHistoryTable({
           <SelectContent>
             <SelectItem value="all">All Status</SelectItem>
             <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="confirmed">Confirmed</SelectItem>
+            <SelectItem value="dp_paid">DP Paid</SelectItem>
+            <SelectItem value="paid_in_full">Paid in Full</SelectItem>
             <SelectItem value="cancelled">Cancelled</SelectItem>
           </SelectContent>
         </Select>
@@ -114,6 +120,7 @@ export function ParticipantHistoryTable({
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Contact</TableHead>
+              <TableHead>Group Info</TableHead>
               <TableHead>Participants</TableHead>
               <TableHead>Package Price</TableHead>
               <TableHead>DP Amount</TableHead>
@@ -135,6 +142,18 @@ export function ParticipantHistoryTable({
                   <TableCell>
                     <div>
                       <div className="font-medium">{participant.full_name}</div>
+                      {participant.parent_participant_id && (
+                        <div className="flex items-center space-x-1 mt-1">
+                          <Users className="h-3 w-3 text-blue-600" />
+                          <span className="text-xs text-blue-600">Anggota Grup</span>
+                        </div>
+                      )}
+                      {!participant.parent_participant_id && participant.additional_requests?.includes('Group Leader') && (
+                        <div className="flex items-center space-x-1 mt-1">
+                          <Crown className="h-3 w-3 text-yellow-600" />
+                          <span className="text-xs text-yellow-600">Ketua Grup</span>
+                        </div>
+                      )}
                       <div className="text-sm text-gray-500 truncate max-w-48">
                         {participant.address}
                       </div>
@@ -145,6 +164,23 @@ export function ParticipantHistoryTable({
                       <div>{participant.email}</div>
                       <div className="text-gray-500">{participant.phone}</div>
                     </div>
+                  </TableCell>
+                  <TableCell>
+                    {participant.parent_participant_id ? (
+                      <Badge variant="outline" className="text-blue-600 border-blue-200">
+                        <Users className="h-3 w-3 mr-1" />
+                        Anggota
+                      </Badge>
+                    ) : participant.additional_requests?.includes('Group Leader') ? (
+                      <Badge variant="outline" className="text-yellow-600 border-yellow-200">
+                        <Crown className="h-3 w-3 mr-1" />
+                        Ketua
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-gray-600">
+                        Individual
+                      </Badge>
+                    )}
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline">
@@ -164,7 +200,11 @@ export function ParticipantHistoryTable({
                   </TableCell>
                   <TableCell>
                     <Badge variant={getStatusBadgeVariant(participant.status)}>
-                      {participant.status}
+                      {participant.status === 'dp_paid' ? 'DP Paid' :
+                       participant.status === 'paid_in_full' ? 'Paid in Full' :
+                       participant.status === 'pending' ? 'Pending' :
+                       participant.status === 'cancelled' ? 'Cancelled' :
+                       participant.status}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -181,14 +221,11 @@ export function ParticipantHistoryTable({
                         <Edit className="h-4 w-4" />
                       </Button>
                       <ParticipantPermissionsGuard requiredRole="admin">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => onDelete(participant.id)}
-                          disabled={deleting}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <DeleteParticipantDialog
+                          participant={participant}
+                          onDelete={onDelete}
+                          deleting={deleting}
+                        />
                       </ParticipantPermissionsGuard>
                     </div>
                   </TableCell>

@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
-import { FileSpreadsheet, Upload, Download, AlertCircle, CheckCircle, X } from 'lucide-react'
+import { FileSpreadsheet, Upload, Download, AlertCircle, CheckCircle, X, Users } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 
 interface CSVImportModalProps {
@@ -17,6 +17,7 @@ interface CSVImportModalProps {
   trips: any[]
   sales: any[]
   importing: boolean
+  parentParticipantId?: string | null
 }
 
 interface ParsedParticipant {
@@ -41,7 +42,8 @@ export function CSVImportModal({
   onImport,
   trips,
   sales,
-  importing
+  importing,
+  parentParticipantId
 }: CSVImportModalProps) {
   const [csvFile, setCsvFile] = useState<File | null>(null)
   const [parsedData, setParsedData] = useState<ParsedParticipant[]>([])
@@ -220,7 +222,8 @@ export function CSVImportModal({
       trip_id: defaultTripId || null,
       sales_id: defaultSalesId || null,
       dp_transfer_date: new Date().toISOString().split('T')[0],
-      status: 'pending'
+      status: 'pending',
+      parent_participant_id: parentParticipantId || null
     }))
 
     try {
@@ -269,11 +272,23 @@ export function CSVImportModal({
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
             <FileSpreadsheet className="h-5 w-5" />
-            <span>Import Peserta dari CSV</span>
+            <span>
+              {parentParticipantId ? 'Import Anggota Grup dari CSV' : 'Import Peserta dari CSV'}
+            </span>
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6">
+          {parentParticipantId && (
+            <Alert>
+              <Users className="h-4 w-4" />
+              <AlertDescription>
+                Peserta yang diimpor akan ditambahkan sebagai anggota grup. 
+                Trip dan sales akan mengikuti pengaturan ketua grup.
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Step 1: Upload */}
           {step === 'upload' && (
             <div className="space-y-4">
@@ -282,9 +297,10 @@ export function CSVImportModal({
                 <ul className="text-sm text-blue-700 space-y-1">
                   <li>• File harus berformat CSV dengan encoding UTF-8</li>
                   <li>• Kolom yang wajib: nama_lengkap, email, telepon, alamat, harga_paket</li>
-                  <li>• Kolom opsional: jumlah_peserta, dp_amount, nama_trip, nama_sales, permintaan_tambahan</li>
+                  <li>• Kolom opsional: jumlah_peserta, dp_amount{parentParticipantId ? '' : ', nama_trip, nama_sales'}, permintaan_tambahan</li>
                   <li>• Gunakan template yang disediakan untuk memastikan format yang benar</li>
-                  <li>• Nama trip dan sales akan dicocokkan otomatis dengan data yang ada</li>
+                  {!parentParticipantId && <li>• Nama trip dan sales akan dicocokkan otomatis dengan data yang ada</li>}
+                  {parentParticipantId && <li>• Semua peserta akan ditambahkan ke grup yang sama</li>}
                 </ul>
               </div>
 
@@ -349,6 +365,7 @@ export function CSVImportModal({
               </div>
 
               {/* Default Trip and Sales Selection */}
+              {!parentParticipantId && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
                 <div className="space-y-2">
                   <Label htmlFor="default_trip">Trip Default (Opsional)</Label>
@@ -384,6 +401,7 @@ export function CSVImportModal({
                   </Select>
                 </div>
               </div>
+              )}
 
               {/* Preview Table */}
               <div className="border rounded-lg max-h-96 overflow-auto">
