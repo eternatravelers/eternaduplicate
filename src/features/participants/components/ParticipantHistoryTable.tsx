@@ -1,3 +1,4 @@
+```tsx
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,9 +34,10 @@ interface ParticipantHistoryTableProps {
   setSearchTerm: (term: string) => void;
   filterStatus: string;
   setFilterStatus: (status: string) => void;
-  onEdit: (participant: Participant) => void;
+  onEdit: (participantId: string) => void;
   onDelete: (id: string, reason?: string, permanent?: boolean) => Promise<void>;
   deleting: boolean;
+  historyFilter: 'all' | 'individual' | 'group_leader' | 'group_member';
 }
 
 export function ParticipantHistoryTable({
@@ -46,7 +48,8 @@ export function ParticipantHistoryTable({
   setFilterStatus,
   onEdit,
   onDelete,
-  deleting
+  deleting,
+  historyFilter
 }: ParticipantHistoryTableProps) {
   const getStatusBadgeVariant = (status: string) => {
     switch (status.toLowerCase()) {
@@ -76,15 +79,9 @@ export function ParticipantHistoryTable({
     return new Date(dateString).toLocaleDateString('id-ID');
   };
 
-  const filteredParticipants = participants.filter(participant => {
-    const matchesSearch = participant.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         participant.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         participant.phone.includes(searchTerm);
-    
-    const matchesStatus = filterStatus === 'all' || participant.status === filterStatus;
-    
-    return matchesSearch && matchesStatus;
-  });
+  // The participants array passed to this component is already filtered by the parent
+  // based on searchTerm, filterStatus, and historyFilter.
+  // So, no further filtering is needed here.
 
   const getFilterTitle = () => {
     switch (historyFilter) {
@@ -104,7 +101,7 @@ export function ParticipantHistoryTable({
       <div className="flex items-center space-x-2">
         <Users className="h-5 w-5 text-blue-600" />
         <h3 className="text-lg font-semibold">{getFilterTitle()}</h3>
-        <Badge variant="outline">{filteredParticipants.length} peserta</Badge>
+        <Badge variant="outline">{participants.length} peserta</Badge>
       </div>
 
       {/* Search and Filter Controls */}
@@ -149,14 +146,14 @@ export function ParticipantHistoryTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredParticipants.length === 0 ? (
+            {participants.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8 text-gray-500">
+                <TableCell colSpan={9} className="text-center py-8 text-gray-500">
                   No participants found
                 </TableCell>
               </TableRow>
             ) : (
-              filteredParticipants.map((participant) => (
+              participants.map((participant) => (
                 <TableRow key={participant.id}>
                   <TableCell>
                     <div>
@@ -257,7 +254,7 @@ export function ParticipantHistoryTable({
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => onEdit(participant)}
+                        onClick={() => onEdit(participant.id)}
                         disabled={deleting}
                       >
                         <Edit className="h-4 w-4" />
@@ -285,3 +282,4 @@ export function ParticipantHistoryTable({
     </div>
   );
 }
+```

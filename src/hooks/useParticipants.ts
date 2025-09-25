@@ -1,3 +1,4 @@
+```tsx
 import { useState, useEffect } from 'react'
 import { supabase, uploadProofOfTransfer } from '@/lib/supabase'
 import { useAuth } from './useAuth'
@@ -143,6 +144,34 @@ export function useParticipants(filters?: ParticipantFilters) {
   }, [filters?.startDate, filters?.endDate, filters?.tripId, filters?.typeFilter, filters?.searchTerm, filters?.statusFilter])
 
   return { participants, loading, error, refetch: fetchParticipants }
+}
+
+export function useTransactionSummary(filters?: ParticipantFilters) {
+  const [summary, setSummary] = useState<TransactionSummary>({
+    totalIncome: 0,
+    totalExpense: 0,
+    netBalance: 0
+  })
+
+  const { transactions } = useTransactions(filters)
+
+  useEffect(() => {
+    const income = transactions
+      .filter(t => t.transaction_type === 'Pemasukan')
+      .reduce((sum, t) => sum + t.amount, 0)
+
+    const expense = transactions
+      .filter(t => t.transaction_type === 'Pengeluaran')
+      .reduce((sum, t) => sum + t.amount, 0)
+
+    setSummary({
+      totalIncome: income,
+      totalExpense: expense,
+      netBalance: income - expense
+    })
+  }, [transactions])
+
+  return summary
 }
 
 export function useCreateParticipant() {
@@ -419,7 +448,7 @@ export function useRestoreParticipant() {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error'
       setError(errorMessage)
-      return { error: errorMessage }
+      return { data: null, error: errorMessage }
     } finally {
       setLoading(false)
     }
@@ -598,3 +627,4 @@ export function useParticipantAuditLog(participantId?: string) {
 
   return { auditLog, loading, error, refetch: fetchAuditLog }
 }
+```

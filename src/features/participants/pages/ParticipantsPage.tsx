@@ -1,9 +1,8 @@
-import React, { useState } from 'react'
+```tsx
+import React, { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Users, Plus, Upload, UserPlus, Trash2, History } from 'lucide-react'
-import { ParticipantForm } from '../components/ParticipantForm'
-import { GroupRegistrationForm } from '../components/GroupRegistrationForm'
+import { Users, Plus, Upload, UserPlus, Trash2, History, FileSpreadsheet, AlertCircle } from 'lucide-react'
 import { ParticipantHistoryTable } from '../components/ParticipantHistoryTable'
 import { DeletedParticipantsTable } from '../components/DeletedParticipantsTable'
 import { ParticipantAuditLog } from '../components/ParticipantAuditLog'
@@ -13,73 +12,57 @@ import { useSales } from '@/hooks/useSales'
 import { CSVImportModal } from '../components/CSVImportModal'
 import { ParticipantStatsCards } from '../components/ParticipantStatsCards'
 import { ParticipantDeletionSummary } from '../components/ParticipantDeletionSummary'
-import { FileSpreadsheet, AlertCircle } from 'lucide-react'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Alert } from '@/components/ui/alert'
 import { useAuth } from '@/hooks/useAuth'
 import { Label } from '@/components/ui/label'
+import { IndividualRegistrationPage } from './IndividualRegistrationPage'
+import { GroupRegistrationPage } from './GroupRegistrationPage'
 
 export function ParticipantsPage() {
-  const [editingParticipant, setEditingParticipant] = useState<string | null>(null)
+  const [editingParticipantId, setEditingParticipantId] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [importError, setImportError] = useState<string>('')
   const [showCSVImport, setShowCSVImport] = useState(false)
-  const [activeTab, setActiveTab] = useState('individual')
-  
-  const { participants, loading, refetch } = useParticipants()
+  const [activeTab, setActiveTab] = useState('individual-registration') // Default to individual registration
+  const [historyFilter, setHistoryFilter] = useState<'all' | 'individual' | 'group_leader' | 'group_member'>('all')
+
+  const { participants, loading, refetch } = useParticipants({
+    searchTerm,
+    statusFilter: filterStatus,
+    typeFilter: historyFilter
+  })
   const { deletedParticipants, loading: deletedLoading, refetch: refetchDeleted } = useDeletedParticipants()
   const { trips } = useTrips()
   const { sales } = useSales()
   const { createParticipant, loading: creating } = useCreateParticipant()
-  const { updateParticipant, loading: updating } = useUpdateParticipant()
   const { deleteParticipant, loading: deleting } = useDeleteParticipant()
   const { restoreParticipant, loading: restoring } = useRestoreParticipant()
   const { isAdmin, isSuperAdmin } = useAuth()
 
   // Calculate stats
-  // Only count participants where parent_participant_id is null to avoid double-counting groups
   const consolidatedParticipants = participants.filter(p => !p.parent_participant_id)
   const totalParticipants = consolidatedParticipants.reduce((sum, p) => sum + (p.participant_count || 1), 0)
   const totalRevenue = consolidatedParticipants.reduce((sum, p) => sum + (p.package_price || 0), 0)
   const totalDP = consolidatedParticipants.reduce((sum, p) => sum + (p.dp_amount || 0), 0)
 
-  const handleSubmit = async (data: any, file?: File | null) => {
-    const { error } = editingParticipant
-      ? await updateParticipant(editingParticipant, data)
-      : await createParticipant(data)
-
-    if (!error) {
-      setEditingParticipant(null)
-      refetch()
-    }
+  const handleParticipantSaved = () => {
+    refetch()
   }
 
-  const handleEdit = (participant: any) => {
-    const formData = {
-      trip_id: participant.trip_id || '',
-      sales_id: participant.sales_id || '',
-      full_name: participant.full_name,
-      email: participant.email,
-      phone: participant.phone,
-      address: participant.address,
-      participant_count: participant.participant_count || '',
-      package_price: participant.package_price || '',
-      dp_amount: participant.dp_amount || '',
-      dp_transfer_date: participant.dp_transfer_date,
-      additional_requests: participant.additional_requests || '',
-      meeting_point_details: participant.meeting_point_details || ''
-    }
-    setEditingParticipant(participant.id)
-    setActiveTab('individual')
+  const handleGroupSaved = () => {
+    refetch()
+    setActiveTab('history') // Navigate to history after group is saved
+    setHistoryFilter('group_leader') // Show group leaders in history
   }
 
-  const handleAddNew = () => {
-    setEditingParticipant(null)
-    setActiveTab('individual')
+  const handleEdit = (participantId: string) => {
+    setEditingParticipantId(participantId)
+    setActiveTab('individual-registration') // Switch to individual registration page for editing
   }
 
-  const handleCancel = () => {
-    setEditingParticipant(null)
+  const handleCancelEdit = () => {
+    setEditingParticipantId(null)
   }
 
   const handleDelete = async (id: string, reason?: string, permanent: boolean = false) => {
@@ -88,7 +71,7 @@ export function ParticipantsPage() {
       if (!error) {
         refetch()
         if (!permanent) {
-          refetchDeleted() // Refresh deleted participants list
+          refetchDeleted()
         }
       }
     } catch (error) {
@@ -119,20 +102,14 @@ export function ParticipantsPage() {
     }
   }
 
-  const handleGroupSubmit = async (data: any, file?: File | null) => {
-    const { error } = await createParticipant(data)
-    if (!error) {
-      refetch()
-    }
-  }
-
   const handleBulkImport = async (participantsData: any[]) => {
     try {
-      // Import participants one by one
       for (const participantData of participantsData) {
         await createParticipant(participantData)
       }
       refetch()
+      setShowCSVImport(false)
+      setActiveTab('history') // Navigate to history after import
     } catch (error) {
       setImportError('Gagal mengimpor beberapa peserta. Silakan coba lagi.')
       setTimeout(() => setImportError(''), 5000)
@@ -159,9 +136,16 @@ export function ParticipantsPage() {
             <FileSpreadsheet className="h-4 w-4 mr-2" />
             Import CSV
           </Button>
-          <Button onClick={handleAddNew}>
+          <Button onClick={() => {
+            setEditingParticipantId(null)
+            setActiveTab('individual-registration')
+          }}>
             <Plus className="h-4 w-4 mr-2" />
-            Tambah Peserta
+            Tambah Peserta Individual
+          </Button>
+          <Button onClick={() => setActiveTab('group-registration')}>
+            <UserPlus className="h-4 w-4 mr-2" />
+            Tambah Grup
           </Button>
         </div>
       </div>
@@ -182,8 +166,8 @@ export function ParticipantsPage() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="grid w-full grid-cols-5 max-w-4xl">
-          <TabsTrigger value="individual">Pendaftaran Individual</TabsTrigger>
-          <TabsTrigger value="group">Pendaftaran Group</TabsTrigger>
+          <TabsTrigger value="individual-registration">Pendaftaran Individual</TabsTrigger>
+          <TabsTrigger value="group-registration">Pendaftaran Grup</TabsTrigger>
           <TabsTrigger value="history">Riwayat Pendaftaran</TabsTrigger>
           <TabsTrigger value="deleted">
             <div className="flex items-center space-x-1">
@@ -204,62 +188,21 @@ export function ParticipantsPage() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="individual" className="space-y-6">
-          <ParticipantForm
-            initialData={editingParticipant ? participants.find(p => p.id === editingParticipant) : undefined}
-            onSubmit={handleSubmit}
-            onCancel={handleCancel}
-            trips={trips}
-            sales={sales}
-            creating={creating}
-            updating={updating}
-            editingParticipant={editingParticipant}
+        <TabsContent value="individual-registration" className="space-y-6">
+          <IndividualRegistrationPage
+            editingParticipantId={editingParticipantId}
+            onCancelEdit={handleCancelEdit}
+            onParticipantSaved={handleParticipantSaved}
           />
         </TabsContent>
 
-        <TabsContent value="group" className="space-y-6">
-          <GroupRegistrationForm
-            onSubmit={handleGroupSubmit}
-            trips={trips}
-            sales={sales}
-            creating={creating}
+        <TabsContent value="group-registration" className="space-y-6">
+          <GroupRegistrationPage
+            onGroupSaved={handleGroupSaved}
           />
         </TabsContent>
 
         <TabsContent value="history" className="space-y-6">
-          <div className="flex items-center space-x-4 mb-4">
-            <Label className="text-sm font-medium">Filter Riwayat:</Label>
-            <div className="flex space-x-2">
-              <Button
-                variant={historyFilter === 'all' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setHistoryFilter('all')}
-              >
-                Semua Peserta
-              </Button>
-              <Button
-                variant={historyFilter === 'individual' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setHistoryFilter('individual')}
-              >
-                Individual
-              </Button>
-              <Button
-                variant={historyFilter === 'group_leader' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setHistoryFilter('group_leader')}
-              >
-                Ketua Grup
-              </Button>
-              <Button
-                variant={historyFilter === 'group_member' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setHistoryFilter('group_member')}
-              >
-                Anggota Grup
-              </Button>
-            </div>
-          </div>
           <div className="flex items-center space-x-4 mb-4">
             <Label className="text-sm font-medium">Filter Riwayat:</Label>
             <div className="flex space-x-2">
@@ -302,7 +245,6 @@ export function ParticipantsPage() {
             onEdit={handleEdit}
             onDelete={handleDelete}
             deleting={deleting}
-            historyFilter={historyFilter}
             historyFilter={historyFilter}
           />
         </TabsContent>
@@ -361,3 +303,4 @@ export function ParticipantsPage() {
     </div>
   )
 }
+```
