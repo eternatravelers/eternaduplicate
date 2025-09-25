@@ -7,7 +7,6 @@ type Participant = Database['public']['Tables']['participants']['Row'] & {
   trips?: Database['public']['Tables']['trips']['Row'] & {
     destinations?: Database['public']['Tables']['destinations']['Row'][]
   }
-  sales?: Database['public']['Tables']['sales']['Row']
 }
 
 interface ParticipantFilters {
@@ -57,10 +56,6 @@ export function useParticipants(filters?: ParticipantFilters) {
                 name
               )
             )
-          ),
-          sales!participants_sales_id_fkey (
-            id,
-            name
           )
         `)
 
@@ -412,10 +407,6 @@ export function useDeletedParticipants() {
             departure_date,
             meeting_point,
             trip_type
-          ),
-          sales!participants_sales_id_fkey (
-            id,
-            name
           )
         `)
         .not('deleted_at', 'is', null)
