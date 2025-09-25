@@ -121,6 +121,26 @@ export function useCreateParticipant() {
         .insert([participantData])
         .select()
         .single()
+        .select(`
+          id,
+          trip_id,
+          sales_id,
+          full_name,
+          email,
+          phone,
+          address,
+          participant_count,
+          package_price,
+          dp_amount,
+          dp_transfer_date,
+          status,
+          additional_requests,
+          created_at,
+          updated_at,
+          proof_of_transfer_url,
+          meeting_point_details
+        `)
+        .single()
 
       if (participantError) throw participantError
 
@@ -159,6 +179,26 @@ export function useUpdateParticipant() {
         .update(participantData)
         .eq('id', id)
         .select()
+        .single()
+        .select(`
+          id,
+          trip_id,
+          sales_id,
+          full_name,
+          email,
+          phone,
+          address,
+          participant_count,
+          package_price,
+          dp_amount,
+          dp_transfer_date,
+          status,
+          additional_requests,
+          created_at,
+          updated_at,
+          proof_of_transfer_url,
+          meeting_point_details
+        `)
         .single()
 
       if (error) throw error
