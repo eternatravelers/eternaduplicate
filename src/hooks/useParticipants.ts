@@ -121,7 +121,7 @@ export function useParticipants(filters?: ParticipantFilters) {
 
       // Apply search filter
       if (filters?.searchTerm) {
-        query = query.or(\`full_name.ilike.%${filters.searchTerm}%,email.ilike.%${filters.searchTerm}%,phone.ilike.%${filters.searchTerm}%`)
+        query = query.or(`full_name.ilike.%${filters.searchTerm}%,email.ilike.%${filters.searchTerm}%,phone.ilike.%${filters.searchTerm}%`)
       }
 
       // Apply status filter
