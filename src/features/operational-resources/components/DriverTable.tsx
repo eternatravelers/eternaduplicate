@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
-import { UserCheck, Search, Edit, Trash2 } from 'lucide-react'
+import { UserCheck, Search, CreditCard as Edit, Trash2 } from 'lucide-react'
 import { formatShortDate } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 
@@ -87,7 +87,6 @@ export function DriverTable({
                 <TableHead>Nama</TableHead>
                 <TableHead>Telepon</TableHead>
                 <TableHead>Nomor SIM</TableHead>
-                <TableHead>Assignment Trip</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Dibuat</TableHead>
                 <TableHead>Aksi</TableHead>
@@ -104,24 +103,6 @@ export function DriverTable({
                     <div className="font-mono text-sm">
                       {driver.license_number || '-'}
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    {driver.assignedTrips && driver.assignedTrips.length > 0 ? (
-                      <div className="space-y-1">
-                        {driver.assignedTrips.slice(0, 2).map((trip: any) => (
-                          <Badge key={trip.id} variant="outline" className="mr-1 mb-1 text-xs">
-                            {trip.name}
-                          </Badge>
-                        ))}
-                        {driver.assignedTrips.length > 2 && (
-                          <Badge variant="outline" className="text-xs">
-                            +{driver.assignedTrips.length - 2} lainnya
-                          </Badge>
-                        )}
-                      </div>
-                    ) : (
-                      <span className="text-gray-400 text-sm">Belum ada assignment</span>
-                    )}
                   </TableCell>
                   <TableCell>{getStatusBadge(driver.status)}</TableCell>
                   <TableCell>
