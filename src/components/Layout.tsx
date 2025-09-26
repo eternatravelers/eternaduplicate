@@ -83,15 +83,6 @@ const menuItems: MenuItem[] = [
       { id: 'trash', label: 'Sampah', icon: Trash2, type: 'item' }
     ]
   },
-  {
-    id: 'system-management',
-    label: 'Manajemen Sistem',
-    icon: UserCog,
-    type: 'category',
-    children: [
-      { id: 'user-management', label: 'Manajemen Pengguna', icon: Users, type: 'item' }
-    ]
-  },
   { 
     id: 'operations', 
     label: 'Operasional', 
@@ -148,7 +139,6 @@ export function Layout({ children, activeTab, onTabChange, onViewTripParticipant
         if (item.id === 'customer-management') return true
         if (item.id === 'operations') return false // Hide operations for admin
         if (item.id === 'finance-reports') return false // Hide finance & reports for admin
-        if (item.id === 'system-management') return false // Hide system management for admin
         return false
       })
     }
