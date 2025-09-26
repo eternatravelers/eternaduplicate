@@ -224,6 +224,8 @@ export function OperationalResourcesPage() {
       refetchTourLeaders()
       refetchBuses() 
       refetchDrivers()
+      // Close the assignment modal after successful assignment
+      setShowAssignmentModal(false)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Terjadi kesalahan')
     }
