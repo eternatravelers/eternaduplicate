@@ -122,9 +122,18 @@ export function useCreateParticipant() {
       setLoading(true)
       setError(null)
 
-      const { data: newParticipant, error: participantError } = await supabase
+      // Step 1: Insert participant and get only the ID
+      const { data: insertResult, error: participantError } = await supabase
         .from('participants')
         .insert([participantData])
+        .select('id')
+        .single()
+
+      if (participantError) throw participantError
+
+      // Step 2: Fetch the complete participant data separately
+      const { data: newParticipant, error: fetchError } = await supabase
+        .from('participants')
         .select(`
           id,
           trip_id,
@@ -144,46 +153,42 @@ export function useCreateParticipant() {
           proof_of_transfer_url,
           meeting_point_details
         `)
+        .eq('id', insertResult.id)
         .single()
 
-      if (participantError) throw participantError
+      if (fetchError) throw fetchError
 
-      // Fetch trip data separately if participant has trip_id
+      // Step 3: Fetch trips data separately
+      const { data: tripsData, error: tripsError } = await supabase
+        .from('trips')
+        .select('id, name, departure_date, meeting_point, trip_type')
+
+      if (tripsError) throw tripsError
+
+      // Step 4: Fetch sales data separately
+      const { data: salesData, error: salesError } = await supabase
+        .from('sales')
+        .select('id, name, email, phone')
+
+      if (salesError) throw salesError
+
+      // Step 5: Manually join participant with trip and sales data
       let tripData = null
       if (newParticipant.trip_id) {
-        const { data: trip, error: tripError } = await supabase
-          .from('trips')
-          .select('id, name, departure_date, meeting_point, trip_type')
-          .eq('id', newParticipant.trip_id)
-          .single()
-
-        if (!tripError) {
-          tripData = trip
-        }
+        tripData = tripsData?.find(t => t.id === newParticipant.trip_id) || null
       }
 
-      // Fetch sales data separately if participant has sales_id
       let salesData = null
       if (newParticipant.sales_id) {
-        const { data: sales, error: salesError } = await supabase
-          .from('sales')
-          .select('id, name, email, phone')
-          .eq('id', newParticipant.sales_id)
-          .single()
-
-        if (!salesError) {
-          salesData = sales
-        }
+        salesData = salesData?.find(s => s.id === newParticipant.sales_id) || null
       }
 
-      // Combine participant with trip data
+      // Step 6: Combine participant with trip and sales data
       const participantWithTripAndSales = {
         ...newParticipant,
         trips: tripData || undefined,
         sales: salesData || undefined
       }
-
-      // Note: proof_of_transfer_url is now included in participantData directly
 
       return { data: participantWithTripAndSales, error: null }
     } catch (err) {
@@ -211,12 +216,19 @@ export function useUpdateParticipant() {
       setLoading(true)
       setError(null)
 
-      // Note: proof_of_transfer_url is now included in participantData directly
-
-      const { data, error } = await supabase
+      // Step 1: Update participant and get only the ID
+      const { data: updateResult, error: updateError } = await supabase
         .from('participants')
         .update(participantData)
         .eq('id', id)
+        .select('id')
+        .single()
+
+      if (updateError) throw updateError
+
+      // Step 2: Fetch the complete participant data separately
+      const { data: updatedParticipant, error: fetchError } = await supabase
+        .from('participants')
         .select(`
           id,
           trip_id,
@@ -236,41 +248,39 @@ export function useUpdateParticipant() {
           proof_of_transfer_url,
           meeting_point_details
         `)
+        .eq('id', id)
         .single()
 
-      if (error) throw error
+      if (fetchError) throw fetchError
 
-      // Fetch trip data separately if participant has trip_id
+      // Step 3: Fetch trips data separately
+      const { data: tripsData, error: tripsError } = await supabase
+        .from('trips')
+        .select('id, name, departure_date, meeting_point, trip_type')
+
+      if (tripsError) throw tripsError
+
+      // Step 4: Fetch sales data separately
+      const { data: salesData, error: salesError } = await supabase
+        .from('sales')
+        .select('id, name, email, phone')
+
+      if (salesError) throw salesError
+
+      // Step 5: Manually join participant with trip and sales data
       let tripData = null
-      if (data.trip_id) {
-        const { data: trip, error: tripError } = await supabase
-          .from('trips')
-          .select('id, name, departure_date, meeting_point, trip_type')
-          .eq('id', data.trip_id)
-          .single()
-
-        if (!tripError) {
-          tripData = trip
-        }
+      if (updatedParticipant.trip_id) {
+        tripData = tripsData?.find(t => t.id === updatedParticipant.trip_id) || null
       }
 
-      // Fetch sales data separately if participant has sales_id
       let salesData = null
-      if (data.sales_id) {
-        const { data: sales, error: salesError } = await supabase
-          .from('sales')
-          .select('id, name, email, phone')
-          .eq('id', data.sales_id)
-          .single()
-
-        if (!salesError) {
-          salesData = sales
-        }
+      if (updatedParticipant.sales_id) {
+        salesData = salesData?.find(s => s.id === updatedParticipant.sales_id) || null
       }
 
-      // Combine participant with trip data
+      // Step 6: Combine participant with trip and sales data
       const participantWithTripAndSales = {
-        ...data,
+        ...updatedParticipant,
         trips: tripData || undefined,
         sales: salesData || undefined
       }
