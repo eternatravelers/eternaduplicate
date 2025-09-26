@@ -68,9 +68,9 @@ export function TripFormModal({
         quota: initialData.quota || '',
         price: initialData.price || '',
         additional_facilities: initialData.additional_facilities || '',
-        tour_leader_ids: initialData.tour_leader_ids || [],
-        bus_ids: initialData.bus_ids || [],
-        driver_ids: initialData.driver_ids || [],
+        tour_leader_ids: initialData.tour_leaders?.map((tl: any) => tl.id) || initialData.tour_leader_ids || [],
+        bus_ids: initialData.buses?.map((bus: any) => bus.id) || initialData.bus_ids || [],
+        driver_ids: initialData.drivers?.map((driver: any) => driver.id) || initialData.driver_ids || [],
         pricing_type: initialData.pricing_type || 'per_person',
         cost_plan_id: initialData.cost_plan_id || '',
         status: initialData.status || 'active'
