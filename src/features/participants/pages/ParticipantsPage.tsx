@@ -24,6 +24,7 @@ export function ParticipantsPage() {
   const [importError, setImportError] = useState<string>('')
   const [showCSVImport, setShowCSVImport] = useState(false)
   const [activeTab, setActiveTab] = useState('individual')
+  const [operationError, setOperationError] = useState<string>('')
   
   const { participants, loading, refetch } = useParticipants()
   const { deletedParticipants, loading: deletedLoading, refetch: refetchDeleted } = useDeletedParticipants()
@@ -41,13 +42,21 @@ export function ParticipantsPage() {
   const totalDP = participants.reduce((sum, p) => sum + (p.dp_amount || 0), 0)
 
   const handleSubmit = async (data: any, file?: File | null) => {
-    const { error } = editingParticipant
-      ? await updateParticipant(editingParticipant, data, file)
-      : await createParticipant(data, file)
+    try {
+      setOperationError('')
+      const { error } = editingParticipant
+        ? await updateParticipant(editingParticipant, data, file)
+        : await createParticipant(data, file)
 
-    if (!error) {
+      if (error) {
+        setOperationError(error)
+        return
+      }
+
       setEditingParticipant(null)
       refetch()
+    } catch (err) {
+      setOperationError(err instanceof Error ? err.message : 'Terjadi kesalahan saat menyimpan data peserta')
     }
   }
 
@@ -81,45 +90,69 @@ export function ParticipantsPage() {
 
   const handleDelete = async (id: string, reason?: string, permanent: boolean = false) => {
     try {
+      setOperationError('')
       const { error } = await deleteParticipant(id, reason, permanent)
-      if (!error) {
-        refetch()
-        if (!permanent) {
-          refetchDeleted() // Refresh deleted participants list
-        }
+      
+      if (error) {
+        setOperationError(error)
+        return
+      }
+      
+      refetch()
+      if (!permanent) {
+        refetchDeleted() // Refresh deleted participants list
       }
     } catch (error) {
-      console.error('Error deleting participant:', error)
+      setOperationError(error instanceof Error ? error.message : 'Terjadi kesalahan saat menghapus peserta')
     }
   }
 
   const handleRestore = async (id: string) => {
     try {
+      setOperationError('')
       const { error } = await restoreParticipant(id)
-      if (!error) {
-        refetch()
-        refetchDeleted()
+      
+      if (error) {
+        setOperationError(error)
+        return
       }
+      
+      refetch()
+      refetchDeleted()
     } catch (error) {
-      console.error('Error restoring participant:', error)
+      setOperationError(error instanceof Error ? error.message : 'Terjadi kesalahan saat memulihkan peserta')
     }
   }
 
   const handlePermanentDelete = async (id: string, reason?: string) => {
     try {
+      setOperationError('')
       const { error } = await deleteParticipant(id, reason, true)
-      if (!error) {
-        refetchDeleted()
+      
+      if (error) {
+        setOperationError(error)
+        return
       }
+      
+      refetchDeleted()
     } catch (error) {
-      console.error('Error permanently deleting participant:', error)
+      setOperationError(error instanceof Error ? error.message : 'Terjadi kesalahan saat menghapus peserta secara permanen')
     }
   }
 
   const handleGroupSubmit = async (data: any, file?: File | null) => {
-    const { error } = await createParticipant(data, file)
-    if (!error) {
+    try {
+      setOperationError('')
+      const { error } = await createParticipant(data, file)
+      
+      if (error) {
+        setOperationError(error)
+        return
+      }
+      
       refetch()
+    } catch (err) {
+      setOperationError(err instanceof Error ? err.message : 'Terjadi kesalahan saat mendaftarkan group')
     }
   }
 
@@ -167,6 +200,13 @@ export function ParticipantsPage() {
         <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{importError}</AlertDescription>
+        </Alert>
+      )}
+
+      {operationError && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{operationError}</AlertDescription>
         </Alert>
       )}
 

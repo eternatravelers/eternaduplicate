@@ -7,7 +7,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge'
 import { Trash2, AlertTriangle, Users, Loader2 } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
-import { useAuth } from '@/hooks/useAuth'
 
 interface BulkDeleteDialogProps {
   selectedParticipants: any[]
@@ -25,7 +24,6 @@ export function BulkDeleteDialog({
   const [deleteType, setDeleteType] = useState<'soft' | 'permanent'>('soft')
   const [reason, setReason] = useState('')
   const [isOpen, setIsOpen] = useState(false)
-  const { isSuperAdmin } = useAuth()
 
   const handleBulkDelete = async () => {
     try {
@@ -113,14 +111,12 @@ export function BulkDeleteDialog({
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="soft">
-                        <div className="flex flex-col items-start">
-                          <span>Hapus Sementara</span>
-                          <span className="text-xs text-gray-500">Data dapat dipulihkan nanti</span>
-                        </div>
-                      </SelectItem>
-                      {isSuperAdmin && (
+                    <SelectItem value="permanent">
+                      <div className="flex flex-col items-start">
+                        <span className="text-red-600">Hapus Permanen</span>
+                        <span className="text-xs text-red-500">Data akan hilang selamanya</span>
+                      </div>
+                    </SelectItem>
                         <SelectItem value="permanent">
                           <div className="flex flex-col items-start">
                             <span className="text-red-600">Hapus Permanen</span>

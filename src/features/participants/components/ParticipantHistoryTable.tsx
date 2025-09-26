@@ -116,16 +116,14 @@ export function ParticipantHistoryTable({
               <TableHead>Contact</TableHead>
               <TableHead>Participants</TableHead>
               <TableHead>Package Price</TableHead>
-              <TableHead>DP Amount</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Registration Date</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredParticipants.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={8} className="text-center py-8 text-gray-500">
+                     <Button
+                       variant="outline"
+                       size="sm"
+                       onClick={() => onDelete(participant.id)}
+                       disabled={deleting}
+                     >
+                       <Trash2 className="h-4 w-4" />
+                     </Button>
                   No participants found
                 </TableCell>
               </TableRow>

@@ -9,7 +9,6 @@ import { Badge } from '@/components/ui/badge'
 import { Trash2, AlertTriangle, UserX, Loader2 } from 'lucide-react'
 import { formatCurrency, formatShortDate } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
-import { validateParticipantDeletion, getParticipantDeletionReason } from '../utils/participantValidation'
 
 interface DeleteParticipantDialogProps {
   participant: any
@@ -28,12 +27,7 @@ export function DeleteParticipantDialog({
   const [reason, setReason] = useState('')
   const [confirmText, setConfirmText] = useState('')
   const [isOpen, setIsOpen] = useState(false)
-  const { isSuperAdmin } = useAuth()
-  const { userRole } = useAuth()
-
-  // Validate deletion
-  const validation = validateParticipantDeletion(participant, userRole || '')
-  const suggestedReasons = getParticipantDeletionReason(participant)
+  const { isSuperAdmin, userRole } = useAuth()
 
   const handleDelete = async () => {
     if (deleteType === 'permanent' && confirmText !== participant.full_name) {
@@ -59,6 +53,17 @@ export function DeleteParticipantDialog({
 
   const canPermanentDelete = isSuperAdmin
   const requiresConfirmation = deleteType === 'permanent'
+
+  // Simple suggested reasons without complex validation
+  const suggestedReasons = [
+    'Peserta membatalkan pendaftaran',
+    'Tidak ada bukti pembayaran',
+    'Belum melakukan pembayaran DP',
+    'Pembersihan data',
+    'Duplikasi data',
+    'Data tidak valid',
+    'Permintaan peserta'
+  ]
 
   return (
     <AlertDialog open={isOpen} onOpenChange={(open) => {
@@ -228,34 +233,6 @@ export function DeleteParticipantDialog({
                 )}
               </div>
             </div>
-              {/* Validation Warnings */}
-              {validation.warnings.length > 0 && (
-                <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <div className="flex items-start space-x-2">
-                    <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5" />
-                    <div className="text-sm text-yellow-800">
-                      <p className="font-medium mb-1">Peringatan:</p>
-                      <ul className="list-disc list-inside space-y-1">
-                        {validation.warnings.map((warning, index) => (
-                          <li key={index}>{warning}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Impact Analysis */}
-              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <h5 className="font-medium text-blue-800 mb-2">Analisis Dampak:</h5>
-                <div className="text-sm text-blue-700 space-y-1">
-                  <p>• Peserta terpengaruh: {validation.impactAnalysis.participantCount} orang</p>
-                  <p>• Dampak finansial: {formatCurrency(validation.impactAnalysis.financialImpact)}</p>
-                  {validation.impactAnalysis.affectedTrips.length > 0 && (
-                    <p>• Trip terpengaruh: {validation.impactAnalysis.affectedTrips.join(', ')}</p>
-                  )}
-                </div>
-              </div>
 
           </AlertDialogDescription>
         </AlertDialogHeader>
@@ -266,8 +243,7 @@ export function DeleteParticipantDialog({
           <AlertDialogAction 
             onClick={handleDelete}
             disabled={
-              deleting || 
-              !validation.canDelete ||
+              deleting ||
               (requiresConfirmation && confirmText !== participant.full_name)
             }
             className={deleteType === 'permanent' ? 'bg-red-600 hover:bg-red-700' : 'bg-orange-600 hover:bg-orange-700'}
