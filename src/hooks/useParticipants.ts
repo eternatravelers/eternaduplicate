@@ -7,6 +7,7 @@ type Participant = Database['public']['Tables']['participants']['Row'] & {
   trips?: Database['public']['Tables']['trips']['Row'] & {
     destinations?: Database['public']['Tables']['destinations']['Row'][]
   }
+  sales?: Database['public']['Tables']['sales']['Row']
 }
 
 interface ParticipantFilters {
@@ -71,19 +72,30 @@ export function useParticipants(filters?: ParticipantFilters) {
 
       if (tripsError) throw tripsError
 
+      // Fetch sales data separately
+      const { data: salesData, error: salesError } = await supabase
+        .from('sales')
+        .select('id, name, email, phone')
+
+      if (salesError) throw salesError
+
       // Manually join participants with trips
-      const participantsWithTrips = participantsData?.map(participant => {
+      const participantsWithTripsAndSales = participantsData?.map(participant => {
         const trip = participant.trip_id 
           ? tripsData?.find(t => t.id === participant.trip_id)
+          : null
+        const sales = participant.sales_id 
+          ? salesData?.find(s => s.id === participant.sales_id)
           : null
         
         return {
           ...participant,
-          trips: trip || undefined
+          trips: trip || undefined,
+          sales: sales || undefined
         }
       }) || []
 
-      setParticipants(participantsWithTrips)
+      setParticipants(participantsWithTripsAndSales)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error')
     } finally {
@@ -150,15 +162,30 @@ export function useCreateParticipant() {
         }
       }
 
+      // Fetch sales data separately if participant has sales_id
+      let salesData = null
+      if (newParticipant.sales_id) {
+        const { data: sales, error: salesError } = await supabase
+          .from('sales')
+          .select('id, name, email, phone')
+          .eq('id', newParticipant.sales_id)
+          .single()
+
+        if (!salesError) {
+          salesData = sales
+        }
+      }
+
       // Combine participant with trip data
-      const participantWithTrip = {
+      const participantWithTripAndSales = {
         ...newParticipant,
-        trips: tripData || undefined
+        trips: tripData || undefined,
+        sales: salesData || undefined
       }
 
       // Note: proof_of_transfer_url is now included in participantData directly
 
-      return { data: participantWithTrip, error: null }
+      return { data: participantWithTripAndSales, error: null }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error'
       setError(errorMessage)
@@ -227,13 +254,28 @@ export function useUpdateParticipant() {
         }
       }
 
-      // Combine participant with trip data
-      const participantWithTrip = {
-        ...data,
-        trips: tripData || undefined
+      // Fetch sales data separately if participant has sales_id
+      let salesData = null
+      if (data.sales_id) {
+        const { data: sales, error: salesError } = await supabase
+          .from('sales')
+          .select('id, name, email, phone')
+          .eq('id', data.sales_id)
+          .single()
+
+        if (!salesError) {
+          salesData = sales
+        }
       }
 
-      return { data: participantWithTrip, error: null }
+      // Combine participant with trip data
+      const participantWithTripAndSales = {
+        ...data,
+        trips: tripData || undefined,
+        sales: salesData || undefined
+      }
+
+      return { data: participantWithTripAndSales, error: null }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error'
       setError(errorMessage)
@@ -449,19 +491,30 @@ export function useDeletedParticipants() {
 
       if (tripsError) throw tripsError
 
+      // Fetch sales data separately
+      const { data: salesData, error: salesError } = await supabase
+        .from('sales')
+        .select('id, name, email, phone')
+
+      if (salesError) throw salesError
+
       // Manually join deleted participants with trips
-      const deletedParticipantsWithTrips = data?.map(participant => {
+      const deletedParticipantsWithTripsAndSales = data?.map(participant => {
         const trip = participant.trip_id 
           ? tripsData?.find(t => t.id === participant.trip_id)
+          : null
+        const sales = participant.sales_id 
+          ? salesData?.find(s => s.id === participant.sales_id)
           : null
         
         return {
           ...participant,
-          trips: trip || undefined
+          trips: trip || undefined,
+          sales: sales || undefined
         }
       }) || []
 
-      setDeletedParticipants(deletedParticipantsWithTrips)
+      setDeletedParticipants(deletedParticipantsWithTripsAndSales)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error')
     } finally {
