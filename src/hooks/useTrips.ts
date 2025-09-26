@@ -231,19 +231,25 @@ export function useUpdateTrip() {
         restTripData.cost_plan_id = null
       }
 
-      // Update the trip itself
-      const { data: updatedTrip, error: tripError } = await supabase
-        .from('trips')
-        .update(restTripData)
-        .eq('id', id)
-        .select()
-        .single()
+      let updatedTrip: any = { id }
 
-      if (tripError) {
-        if (tripError.code === 'PGRST116') {
-          throw new Error('Trip not found or you do not have permission to update this trip')
+      // Only update the trip itself if there are actual fields to update
+      if (Object.keys(restTripData).length > 0) {
+        const { data: tripUpdateResult, error: tripError } = await supabase
+          .from('trips')
+          .update(restTripData)
+          .eq('id', id)
+          .select()
+          .single()
+
+        if (tripError) {
+          if (tripError.code === 'PGRST116') {
+            throw new Error('Trip not found or you do not have permission to update this trip')
+          }
+          throw tripError
         }
-        throw tripError
+
+        updatedTrip = tripUpdateResult
       }
 
       // Handle trip_destinations updates
