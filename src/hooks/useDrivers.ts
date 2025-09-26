@@ -4,8 +4,17 @@ import type { Database } from '@/lib/supabase'
 
 type Driver = Database['public']['Tables']['drivers']['Row']
 
+type DriverWithAssignments = Driver & {
+  assignedTrips?: Array<{
+    id: string
+    name: string
+    departure_date: string
+    status: string
+  }>
+}
+
 export function useDrivers() {
-  const [drivers, setDrivers] = useState<Driver[]>([])
+  const [drivers, setDrivers] = useState<DriverWithAssignments[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -14,11 +23,33 @@ export function useDrivers() {
       setLoading(true)
       const { data, error } = await supabase
         .from('drivers')
-        .select('id,name,phone,license_number,status,created_at,updated_at')
+        .select(`
+          id,
+          name,
+          phone,
+          license_number,
+          status,
+          created_at,
+          updated_at,
+          trip_drivers!left (
+            trips (
+              id,
+              name,
+              departure_date,
+              status
+            )
+          )
+        `)
 
       if (error) throw error
 
-      setDrivers(data || [])
+      // Process data to include assigned trips
+      const driversWithAssignments = data?.map(driver => ({
+        ...driver,
+        assignedTrips: driver.trip_drivers?.map(td => td.trips).filter(Boolean) || []
+      })) || []
+
+      setDrivers(driversWithAssignments)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error')
     } finally {

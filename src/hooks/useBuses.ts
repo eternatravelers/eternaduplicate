@@ -4,8 +4,17 @@ import type { Database } from '@/lib/supabase'
 
 type Bus = Database['public']['Tables']['buses']['Row']
 
+type BusWithAssignments = Bus & {
+  assignedTrips?: Array<{
+    id: string
+    name: string
+    departure_date: string
+    status: string
+  }>
+}
+
 export function useBuses() {
-  const [buses, setBuses] = useState<Bus[]>([])
+  const [buses, setBuses] = useState<BusWithAssignments[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -14,11 +23,33 @@ export function useBuses() {
       setLoading(true)
       const { data, error } = await supabase
         .from('buses')
-        .select('id,plate_number,model,capacity,status,created_at,updated_at')
+        .select(`
+          id,
+          plate_number,
+          model,
+          capacity,
+          status,
+          created_at,
+          updated_at,
+          trip_buses!left (
+            trips (
+              id,
+              name,
+              departure_date,
+              status
+            )
+          )
+        `)
 
       if (error) throw error
 
-      setBuses(data || [])
+      // Process data to include assigned trips
+      const busesWithAssignments = data?.map(bus => ({
+        ...bus,
+        assignedTrips: bus.trip_buses?.map(tb => tb.trips).filter(Boolean) || []
+      })) || []
+
+      setBuses(busesWithAssignments)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error')
     } finally {

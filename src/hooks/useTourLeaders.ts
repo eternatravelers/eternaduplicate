@@ -4,8 +4,17 @@ import type { Database } from '@/lib/supabase'
 
 type TourLeader = Database['public']['Tables']['tour_leaders']['Row']
 
+type TourLeaderWithAssignments = TourLeader & {
+  assignedTrips?: Array<{
+    id: string
+    name: string
+    departure_date: string
+    status: string
+  }>
+}
+
 export function useTourLeaders() {
-  const [tourLeaders, setTourLeaders] = useState<TourLeader[]>([])
+  const [tourLeaders, setTourLeaders] = useState<TourLeaderWithAssignments[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -14,12 +23,28 @@ export function useTourLeaders() {
       setLoading(true)
       const { data, error } = await supabase
         .from('tour_leaders')
-        .select('*')
+        .select(`
+          *,
+          trip_tour_leaders!left (
+            trips (
+              id,
+              name,
+              departure_date,
+              status
+            )
+          )
+        `)
         .order('name', { ascending: true })
 
       if (error) throw error
 
-      setTourLeaders(data || [])
+      // Process data to include assigned trips
+      const tourLeadersWithAssignments = data?.map(tl => ({
+        ...tl,
+        assignedTrips: tl.trip_tour_leaders?.map(ttl => ttl.trips).filter(Boolean) || []
+      })) || []
+
+      setTourLeaders(tourLeadersWithAssignments)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error')
     } finally {
