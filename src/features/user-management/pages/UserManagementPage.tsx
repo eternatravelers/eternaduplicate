@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Plus, AlertCircle, Users, Search, Edit, Trash2, UserPlus } from 'lucide-react'
+import { Plus, AlertCircle, Users, Search, CreditCard as Edit, Trash2, UserPlus } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 import { formatShortDate } from '@/lib/utils'
