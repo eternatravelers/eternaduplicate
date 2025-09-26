@@ -44,7 +44,7 @@ export function useParticipants(filters?: ParticipantFilters) {
           updated_at,
           proof_of_transfer_url,
           meeting_point_details,
-          trips (
+          trips!trip_id!left (
             id,
             name,
             departure_date,
@@ -125,7 +125,7 @@ export function useCreateParticipant() {
           updated_at,
           proof_of_transfer_url,
           meeting_point_details,
-          trips (
+          trips!trip_id!left (
             id,
             name,
             departure_date,
@@ -189,7 +189,7 @@ export function useUpdateParticipant() {
           updated_at,
           proof_of_transfer_url,
           meeting_point_details,
-          trips (
+          trips!trip_id!left (
             id,
             name,
             departure_date,
