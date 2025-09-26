@@ -92,13 +92,14 @@ export function TripFormModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl pt-6">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-6">
+        <div className="max-h-[calc(90vh-120px)] overflow-y-auto px-4">
+          <form id="trip-form" onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="name">Trip Name</Label>
@@ -270,17 +271,18 @@ export function TripFormModal({
                 />
               </div>
             </div>
-          </div>
-          
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={creating || updating}>
-              {creating || updating ? 'Saving...' : 'Save Trip'}
-            </Button>
-          </DialogFooter>
-        </form>
+            </div>
+          </form>
+        </div>
+        
+        <DialogFooter className="px-4">
+          <Button type="button" variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="submit" form="trip-form" disabled={creating || updating}>
+            {creating || updating ? 'Saving...' : 'Save Trip'}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   )
