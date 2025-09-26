@@ -6,8 +6,10 @@ import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { Users, Search, Edit, Trash2, TrendingUp, Award } from 'lucide-react'
+import { Eye } from 'lucide-react'
 import { formatCurrency, formatShortDate } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
+import { SalesParticipantsModal } from './SalesParticipantsModal'
 
 interface SalesTableProps {
   salesPerformance: any[]
@@ -27,6 +29,16 @@ export function SalesTable({
   deleting
 }: SalesTableProps) {
   const { isSuperAdmin } = useAuth()
+
+  const [showSalesParticipantsModal, setShowSalesParticipantsModal] = useState(false)
+  const [selectedSalesId, setSelectedSalesId] = useState('')
+  const [selectedSalesName, setSelectedSalesName] = useState('')
+
+  const handleViewSalesParticipants = (sales: any) => {
+    setSelectedSalesId(sales.id)
+    setSelectedSalesName(sales.name)
+    setShowSalesParticipantsModal(true)
+  }
 
   const filteredSales = salesPerformance.filter(sales =>
     sales.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -116,8 +128,19 @@ export function SalesTable({
                   </TableCell>
                   <TableCell>
                     <div className="text-center">
-                      <div className="font-medium text-blue-600">{sales.participantCount}</div>
-                      <div className="text-xs text-gray-500">peserta</div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-auto p-2 flex flex-col items-center space-y-1 hover:bg-blue-50"
+                        onClick={() => handleViewSalesParticipants(sales)}
+                        title="Lihat detail peserta"
+                      >
+                        <div className="flex items-center space-x-1">
+                          <div className="font-medium text-blue-600">{sales.participantCount}</div>
+                          <Eye className="h-3 w-3 text-blue-600" />
+                        </div>
+                        <div className="text-xs text-gray-500">peserta</div>
+                      </Button>
                     </div>
                   </TableCell>
                   <TableCell>
@@ -207,6 +230,13 @@ export function SalesTable({
           </Table>
         )}
       </CardContent>
+      
+      <SalesParticipantsModal
+        isOpen={showSalesParticipantsModal}
+        onClose={() => setShowSalesParticipantsModal(false)}
+        salesId={selectedSalesId}
+        salesName={selectedSalesName}
+      />
     </Card>
   )
 }
