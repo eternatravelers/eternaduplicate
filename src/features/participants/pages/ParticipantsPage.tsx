@@ -12,7 +12,7 @@ import { useSales } from '@/hooks/useSales'
 import { CSVImportModal } from '../components/CSVImportModal'
 import { ParticipantStatsCards } from '../components/ParticipantStatsCards'
 import { ParticipantDeletionSummary } from '../components/ParticipantDeletionSummary'
-import { FileSpreadsheet, AlertCircle, History } from 'lucide-react'
+import { FileSpreadsheet, AlertCircle } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useAuth } from '@/hooks/useAuth'
 
