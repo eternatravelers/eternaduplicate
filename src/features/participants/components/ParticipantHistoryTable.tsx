@@ -86,7 +86,8 @@ export function ParticipantHistoryTable({
   });
 
   return (
-    <div className="space-y-4">
+    <>
+      <div className="space-y-4">
       {/* Search and Filter Controls */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
@@ -228,13 +229,14 @@ export function ParticipantHistoryTable({
       <div className="text-sm text-gray-500">
         Showing {filteredParticipants.length} of {participants.length} participants
       </div>
-    </div>
+      </div>
 
-    <GroupMembersModal
-      isOpen={showGroupMembersModal}
-      onClose={() => setShowGroupMembersModal(false)}
-      groupParticipant={selectedGroupParticipant}
-      onRefresh={onRefresh}
-    />
+      <GroupMembersModal
+        isOpen={showGroupMembersModal}
+        onClose={() => setShowGroupMembersModal(false)}
+        groupParticipant={selectedGroupParticipant}
+        onRefresh={onRefresh}
+      />
+    </>
   );
 }
