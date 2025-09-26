@@ -185,7 +185,7 @@ export function TripFormModal({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="tour_leader_ids">Tour Leaders</Label>
-                <div className="relative z-10">
+                <div className="relative z-50 pointer-events-auto">
                   <SimpleMultiSelect
                     options={tourLeaders.filter(leader => leader.status === 'active').map(leader => ({
                       label: leader.name,
@@ -194,6 +194,7 @@ export function TripFormModal({
                     selected={formData.tour_leader_ids}
                     onChange={(selected) => handleInputChange('tour_leader_ids', selected)}
                     placeholder="Select tour leaders"
+                    className="pointer-events-auto"
                   />
                 </div>
               </div>
@@ -250,7 +251,7 @@ export function TripFormModal({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="bus_ids">Kendaraan</Label>
-                <div className="relative z-10">
+                <div className="relative z-50 pointer-events-auto">
                   <SimpleMultiSelect
                     options={buses.filter(bus => bus.status === 'active').map(bus => ({
                       label: `${bus.plate_number} - ${bus.model || 'N/A'} (${bus.capacity || 0} kursi)`,
@@ -259,12 +260,13 @@ export function TripFormModal({
                     selected={formData.bus_ids}
                     onChange={(selected) => handleInputChange('bus_ids', selected)}
                     placeholder="Pilih kendaraan"
+                    className="pointer-events-auto"
                   />
                 </div>
               </div>
               <div>
                 <Label htmlFor="driver_ids">Driver</Label>
-                <div className="relative z-10">
+                <div className="relative z-50 pointer-events-auto">
                   <SimpleMultiSelect
                     options={drivers.filter(driver => driver.status === 'active').map(driver => ({
                       label: `${driver.name} - ${driver.license_number || 'N/A'}`,
@@ -273,6 +275,7 @@ export function TripFormModal({
                     selected={formData.driver_ids}
                     onChange={(selected) => handleInputChange('driver_ids', selected)}
                     placeholder="Pilih driver"
+                    className="pointer-events-auto"
                   />
                 </div>
               </div>

@@ -28,6 +28,14 @@ export function SimpleMultiSelect({
 }: SimpleMultiSelectProps) {
   const [open, setOpen] = React.useState(false)
 
+  // Debug function to check if component is working
+  const handleTriggerClick = (e: React.MouseEvent) => {
+    console.log('SimpleMultiSelect trigger clicked', { open, options: options.length })
+    e.preventDefault()
+    e.stopPropagation()
+    setOpen(!open)
+  }
+
   const handleSelect = (value: string) => {
     if (selected.includes(value)) {
       onChange(selected.filter(item => item !== value))
@@ -44,13 +52,15 @@ export function SimpleMultiSelect({
 
   return (
     <div className={cn("w-full", className)}>
-      <Popover open={open} onOpenChange={setOpen}>
+      <Popover open={open} onOpenChange={setOpen} modal={true}>
         <PopoverTrigger asChild>
           <Button
             variant="outline"
             role="combobox"
             aria-expanded={open}
-            className="w-full justify-between min-h-10 h-auto"
+            className="w-full justify-between min-h-10 h-auto relative z-50"
+            onClick={handleTriggerClick}
+            type="button"
           >
             <div className="flex flex-wrap gap-1 flex-1">
               {selectedOptions.length > 0 ? (
@@ -89,15 +99,26 @@ export function SimpleMultiSelect({
             <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-full p-0" align="start">
+        <PopoverContent 
+          className="w-full p-0 z-[99999]" 
+          align="start"
+          side="bottom"
+          sideOffset={4}
+          avoidCollisions={true}
+          onOpenAutoFocus={(e) => e.preventDefault()}
+        >
           <Command>
             <CommandInput placeholder="Search..." />
             <CommandEmpty>No items found.</CommandEmpty>
-            <CommandGroup className="max-h-64 overflow-auto">
+            <CommandGroup className="max-h-64 overflow-auto relative z-[99999]">
               {options.map((option) => (
                 <CommandItem
                   key={option.value}
-                  onSelect={() => handleSelect(option.value)}
+                  onSelect={() => {
+                    console.log('Option selected:', option.value)
+                    handleSelect(option.value)
+                  }}
+                  className="cursor-pointer hover:bg-accent hover:text-accent-foreground relative z-[99999]"
                 >
                   <Check
                     className={cn(
