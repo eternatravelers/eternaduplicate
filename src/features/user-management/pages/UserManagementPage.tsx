@@ -70,7 +70,7 @@ export function UserManagementPage() {
           tenant_id,
           created_at,
           updated_at,
-          users!user_profiles_user_id_fkey (
+          auth.users!user_profiles_user_id_fkey (
             email
           )
         `)
