@@ -54,11 +54,13 @@ export function GroupRegistrationForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    const processedGroupData = {
-      participantCount: groupData.participantCount === '' ? 1 : Number(groupData.participantCount),
-      package_price: groupData.package_price === '' ? 0 : Number(groupData.package_price),
-      dp_amount: groupData.dp_amount === '' ? 0 : Number(groupData.dp_amount)
-    }
+    const participantCount = groupData.participantCount === '' ? 1 : Number(groupData.participantCount)
+    const pricePerPerson = groupData.package_price === '' ? 0 : Number(groupData.package_price)
+    const dpPerPerson = groupData.dp_amount === '' ? 0 : Number(groupData.dp_amount)
+    
+    // Calculate total prices for the entire group
+    const totalPackagePrice = pricePerPerson * participantCount
+    const totalDpAmount = dpPerPerson * participantCount
     
     const submitData = {
       trip_id: groupData.trip_id,
@@ -67,11 +69,11 @@ export function GroupRegistrationForm({
       email: groupData.groupEmail,
       phone: groupData.groupPhone,
       address: 'Group Registration',
-      participant_count: processedGroupData.participantCount,
-      package_price: processedGroupData.package_price,
-      dp_amount: processedGroupData.dp_amount,
+      participant_count: participantCount,
+      package_price: totalPackagePrice, // Total price for entire group
+      dp_amount: totalDpAmount, // Total DP for entire group
       dp_transfer_date: new Date().toISOString().split('T')[0],
-      additional_requests: `Group registration for ${processedGroupData.participantCount} participants`,
+      additional_requests: `Group registration for ${participantCount} participants. Price per person: ${pricePerPerson.toLocaleString('id-ID')}, DP per person: ${dpPerPerson.toLocaleString('id-ID')}`,
       meeting_point_details: groupData.meeting_point_details,
       proof_of_transfer_url: groupProofOfTransferUrl
     }
