@@ -404,10 +404,10 @@ export function GroupMembersModal({
                   <h3 className="text-lg font-medium mb-2">Belum ada anggota grup</h3>
                   <p className="text-sm mb-4">
                     Tambahkan anggota grup untuk melengkapi daftar peserta
-                  <div className="flex space-x-2">
+                  </p>
+                  <div className="flex justify-center space-x-2">
                     <Button 
                       variant="outline"
-                      size="sm"
                       onClick={handleCSVImport}
                       disabled={remainingSlots <= 0}
                       className="text-blue-600 border-blue-200 hover:bg-blue-50"
@@ -415,23 +415,14 @@ export function GroupMembersModal({
                       <FileSpreadsheet className="h-4 w-4 mr-2" />
                       Import CSV
                     </Button>
-                    <div className="flex justify-center space-x-2">
-                      <Button 
-                        variant="outline"
-                        onClick={handleCSVImport}
-                        className="text-blue-600 border-blue-200 hover:bg-blue-50"
-                      >
-                        <FileSpreadsheet className="h-4 w-4 mr-2" />
-                        Import CSV
-                      </Button>
-                      <Button 
-                        onClick={handleAddMember}
-                        className="bg-green-600 hover:bg-green-700"
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Tambah Manual
-                      </Button>
-                    </div>
+                    <Button 
+                      onClick={handleAddMember}
+                      disabled={remainingSlots <= 0}
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Tambah Manual
+                    </Button>
                   </div>
                 </div>
               ) : (
