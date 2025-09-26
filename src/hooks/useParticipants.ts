@@ -44,7 +44,7 @@ export function useParticipants(filters?: ParticipantFilters) {
           updated_at,
           proof_of_transfer_url,
           meeting_point_details,
-          trips!trip_id (
+          trips (
             id,
             name,
             departure_date,
@@ -107,8 +107,6 @@ export function useCreateParticipant() {
       const { data: newParticipant, error: participantError } = await supabase
         .from('participants')
         .insert([participantData])
-        .select()
-        .single()
         .select(`
           id,
           trip_id,
@@ -126,7 +124,14 @@ export function useCreateParticipant() {
           created_at,
           updated_at,
           proof_of_transfer_url,
-          meeting_point_details
+          meeting_point_details,
+          trips (
+            id,
+            name,
+            departure_date,
+            meeting_point,
+            trip_type
+          )
         `)
         .single()
 
@@ -166,8 +171,6 @@ export function useUpdateParticipant() {
         .from('participants')
         .update(participantData)
         .eq('id', id)
-        .select()
-        .single()
         .select(`
           id,
           trip_id,
@@ -185,7 +188,14 @@ export function useUpdateParticipant() {
           created_at,
           updated_at,
           proof_of_transfer_url,
-          meeting_point_details
+          meeting_point_details,
+          trips (
+            id,
+            name,
+            departure_date,
+            meeting_point,
+            trip_type
+          )
         `)
         .single()
 
