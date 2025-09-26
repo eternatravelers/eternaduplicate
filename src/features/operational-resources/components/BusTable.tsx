@@ -86,6 +86,7 @@ export function BusTable({
                 <TableHead>Nomor Plat</TableHead>
                 <TableHead>Model</TableHead>
                 <TableHead>Kapasitas</TableHead>
+                <TableHead>Assignment Trip</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Dibuat</TableHead>
                 <TableHead>Aksi</TableHead>
@@ -105,6 +106,24 @@ export function BusTable({
                         <div className="text-xs text-gray-500">penumpang</div>
                       )}
                     </div>
+                  </TableCell>
+                  <TableCell>
+                    {bus.assignedTrips && bus.assignedTrips.length > 0 ? (
+                      <div className="space-y-1">
+                        {bus.assignedTrips.slice(0, 2).map((trip: any) => (
+                          <Badge key={trip.id} variant="outline" className="mr-1 mb-1 text-xs">
+                            {trip.name}
+                          </Badge>
+                        ))}
+                        {bus.assignedTrips.length > 2 && (
+                          <Badge variant="outline" className="text-xs">
+                            +{bus.assignedTrips.length - 2} lainnya
+                          </Badge>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-gray-400 text-sm">Belum ada assignment</span>
+                    )}
                   </TableCell>
                   <TableCell>{getStatusBadge(bus.status)}</TableCell>
                   <TableCell>

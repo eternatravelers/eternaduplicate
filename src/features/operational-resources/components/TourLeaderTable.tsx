@@ -101,6 +101,7 @@ export function TourLeaderTable({
                 <TableHead>Spesialisasi</TableHead>
                 <TableHead>Pengalaman</TableHead>
                 <TableHead>Sertifikasi</TableHead>
+                <TableHead>Assignment Trip</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Dibuat</TableHead>
                 <TableHead>Aksi</TableHead>
@@ -155,6 +156,24 @@ export function TourLeaderTable({
                       </div>
                     ) : (
                       <span className="text-gray-400">-</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {tourLeader.assignedTrips && tourLeader.assignedTrips.length > 0 ? (
+                      <div className="space-y-1">
+                        {tourLeader.assignedTrips.slice(0, 2).map((trip: any) => (
+                          <Badge key={trip.id} variant="outline" className="mr-1 mb-1 text-xs">
+                            {trip.name}
+                          </Badge>
+                        ))}
+                        {tourLeader.assignedTrips.length > 2 && (
+                          <Badge variant="outline" className="text-xs">
+                            +{tourLeader.assignedTrips.length - 2} lainnya
+                          </Badge>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-gray-400 text-sm">Belum ada assignment</span>
                     )}
                   </TableCell>
                   <TableCell>{getStatusBadge(tourLeader.status)}</TableCell>
