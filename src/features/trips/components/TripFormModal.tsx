@@ -5,8 +5,8 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
-import { SimpleDropdownSelect } from '@/components/ui/simple-dropdown-select'
-import { Plus } from 'lucide-react'
+import { Plus, Users, Bus, UserCheck } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
 
 interface TripFormModalProps {
   isOpen: boolean
@@ -69,9 +69,9 @@ export function TripFormModal({
         quota: initialData.quota || '',
         price: initialData.price || '',
         additional_facilities: initialData.additional_facilities || '',
-        tour_leader_ids: initialData.tour_leaders?.map((tl: any) => tl.id) || initialData.tour_leader_ids || [],
-        bus_ids: initialData.buses?.map((bus: any) => bus.id) || initialData.bus_ids || [],
-        driver_ids: initialData.drivers?.map((driver: any) => driver.id) || initialData.driver_ids || [],
+        tour_leader_ids: [],
+        bus_ids: [],
+        driver_ids: [],
         pricing_type: initialData.pricing_type || 'per_person',
         cost_plan_id: initialData.cost_plan_id || '',
         status: initialData.status || 'active'
@@ -182,19 +182,73 @@ export function TripFormModal({
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="tour_leader_ids">Tour Leaders</Label>
-                  <SimpleDropdownSelect
-                    options={tourLeaders.filter(leader => leader.status === 'active').map(leader => ({
-                      label: leader.name,
-                      value: leader.id
-                    }))}
-                    selected={formData.tour_leader_ids}
-                    onChange={(selected) => handleInputChange('tour_leader_ids', selected)}
-                    placeholder="Select tour leaders"
-                  />
+              {/* Resource Assignment Display (Read-only) */}
+              {initialData && (
+                <div className="space-y-4 p-4 border rounded-lg bg-gray-50">
+                  <Label className="text-base font-semibold">Sumber Daya yang Ditugaskan</Label>
+                  <div className="text-sm text-gray-600 mb-3">
+                    Assignment sumber daya dilakukan di halaman "Sumber Daya Operasional"
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium flex items-center space-x-1">
+                        <UserCheck className="h-3 w-3" />
+                        <span>Tour Leaders</span>
+                      </Label>
+                      <div className="mt-2 space-y-1">
+                        {initialData.tour_leaders && initialData.tour_leaders.length > 0 ? (
+                          initialData.tour_leaders.map((tl: any) => (
+                            <Badge key={tl.id} variant="outline" className="mr-1 mb-1">
+                              {tl.name}
+                            </Badge>
+                          ))
+                        ) : (
+                          <span className="text-xs text-gray-500">Belum ada assignment</span>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <Label className="text-sm font-medium flex items-center space-x-1">
+                        <Bus className="h-3 w-3" />
+                        <span>Kendaraan</span>
+                      </Label>
+                      <div className="mt-2 space-y-1">
+                        {initialData.buses && initialData.buses.length > 0 ? (
+                          initialData.buses.map((bus: any) => (
+                            <Badge key={bus.id} variant="outline" className="mr-1 mb-1">
+                              {bus.plate_number}
+                            </Badge>
+                          ))
+                        ) : (
+                          <span className="text-xs text-gray-500">Belum ada assignment</span>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <Label className="text-sm font-medium flex items-center space-x-1">
+                        <UserCheck className="h-3 w-3" />
+                        <span>Driver</span>
+                      </Label>
+                      <div className="mt-2 space-y-1">
+                        {initialData.drivers && initialData.drivers.length > 0 ? (
+                          initialData.drivers.map((driver: any) => (
+                            <Badge key={driver.id} variant="outline" className="mr-1 mb-1">
+                              {driver.name}
+                            </Badge>
+                          ))
+                        ) : (
+                          <span className="text-xs text-gray-500">Belum ada assignment</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 </div>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="cost_plan_id">Cost Plan</Label>
                   <Select value={formData.cost_plan_id} onValueChange={(value) => handleInputChange('cost_plan_id', value)}>
@@ -246,32 +300,20 @@ export function TripFormModal({
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="bus_ids">Kendaraan</Label>
-                  <SimpleDropdownSelect
-                    options={buses.filter(bus => bus.status === 'active').map(bus => ({
-                      label: `${bus.plate_number} - ${bus.model || 'N/A'} (${bus.capacity || 0} kursi)`,
-                      value: bus.id
-                    }))}
-                    selected={formData.bus_ids}
-                    onChange={(selected) => handleInputChange('bus_ids', selected)}
-                    placeholder="Pilih kendaraan"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="driver_ids">Driver</Label>
-                  <SimpleDropdownSelect
-                    options={drivers.filter(driver => driver.status === 'active').map(driver => ({
-                      label: `${driver.name} - ${driver.license_number || 'N/A'}`,
-                      value: driver.id
-                    }))}
-                    selected={formData.driver_ids}
-                    onChange={(selected) => handleInputChange('driver_ids', selected)}
-                    placeholder="Pilih driver"
-                  />
+            {!initialData && (
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-start space-x-3">
+                  <Users className="h-5 w-5 text-blue-600 mt-0.5" />
+                  <div className="text-sm text-blue-800">
+                    <p className="font-medium mb-1">Assignment Sumber Daya</p>
+                    <p>
+                      Setelah trip dibuat, Anda dapat melakukan assignment tour leader, kendaraan, dan driver 
+                      di halaman <strong>"Sumber Daya Operasional"</strong> → tombol <strong>"Assignment ke Trip"</strong>.
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </form>
         </div>
         

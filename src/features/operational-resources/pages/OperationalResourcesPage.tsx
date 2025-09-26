@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Plus, Bus, UserCheck, Settings, AlertCircle } from 'lucide-react'
+import { ResourceAssignmentModal } from '../components/ResourceAssignmentModal'
 import { BusForm } from '../components/BusForm'
 import { BusTable } from '../components/BusTable'
 import { DriverForm } from '../components/DriverForm'
@@ -13,6 +14,7 @@ import { TourLeaderTable } from '../components/TourLeaderTable'
 import { useBuses, useCreateBus, useUpdateBus, useDeleteBus } from '@/hooks/useBuses'
 import { useDrivers, useCreateDriver, useUpdateDriver, useDeleteDriver } from '@/hooks/useDrivers'
 import { useTourLeaders, useCreateTourLeader, useUpdateTourLeader, useDeleteTourLeader } from '@/hooks/useTourLeaders'
+import { useTrips, useUpdateTrip } from '@/hooks/useTrips'
 
 export function OperationalResourcesPage() {
   const [activeTab, setActiveTab] = useState('tour-leaders')
@@ -26,6 +28,7 @@ export function OperationalResourcesPage() {
   const [driverSearchTerm, setDriverSearchTerm] = useState('')
   const [tourLeaderSearchTerm, setTourLeaderSearchTerm] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [showAssignmentModal, setShowAssignmentModal] = useState(false)
 
   // Bus hooks
   const { buses, loading: busesLoading, refetch: refetchBuses } = useBuses()
@@ -44,6 +47,10 @@ export function OperationalResourcesPage() {
   const { createTourLeader, loading: creatingTourLeader } = useCreateTourLeader()
   const { updateTourLeader, loading: updatingTourLeader } = useUpdateTourLeader()
   const { deleteTourLeader, loading: deletingTourLeader } = useDeleteTourLeader()
+
+  // Trip hooks for assignment
+  const { trips } = useTrips()
+  const { updateTrip, loading: updatingTrip } = useUpdateTrip()
 
   // Bus handlers
   const handleBusSubmit = async (formData: any) => {
@@ -204,6 +211,24 @@ export function OperationalResourcesPage() {
     setError(null)
   }
 
+  // Assignment handlers
+  const handleResourceAssignment = async (tripId: string, assignments: any) => {
+    try {
+      setError(null)
+      const { error } = await updateTrip(tripId, assignments)
+      if (error) {
+        setError(error)
+        return
+      }
+      // Refresh data after successful assignment
+      refetchTourLeaders()
+      refetchBuses() 
+      refetchDrivers()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Terjadi kesalahan')
+    }
+  }
+
   if (busesLoading || driversLoading || tourLeadersLoading) {
     return (
       <div className="space-y-6">
@@ -342,23 +367,32 @@ export function OperationalResourcesPage() {
             <TabsTrigger value="drivers">Manajemen Driver</TabsTrigger>
           </TabsList>
           
-          <Button 
-            onClick={
-              activeTab === 'tour-leaders' ? handleTourLeaderAddNew :
-              activeTab === 'buses' ? handleBusAddNew : 
-              handleDriverAddNew
-            }
-            className={
-              activeTab === 'tour-leaders' ? 'bg-purple-600 hover:bg-purple-700' :
-              activeTab === 'buses' ? 'bg-blue-600 hover:bg-blue-700' : 
-              'bg-green-600 hover:bg-green-700'
-            }
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            {activeTab === 'tour-leaders' ? 'Tambah Tour Leader' : 
-             activeTab === 'buses' ? 'Tambah Bus' : 
-             'Tambah Driver'}
-          </Button>
+          <div className="flex space-x-2">
+            <Button 
+              onClick={() => setShowAssignmentModal(true)}
+              className="bg-orange-600 hover:bg-orange-700"
+            >
+              <Users className="h-4 w-4 mr-2" />
+              Assignment ke Trip
+            </Button>
+            <Button 
+              onClick={
+                activeTab === 'tour-leaders' ? handleTourLeaderAddNew :
+                activeTab === 'buses' ? handleBusAddNew : 
+                handleDriverAddNew
+              }
+              className={
+                activeTab === 'tour-leaders' ? 'bg-purple-600 hover:bg-purple-700' :
+                activeTab === 'buses' ? 'bg-blue-600 hover:bg-blue-700' : 
+                'bg-green-600 hover:bg-green-700'
+              }
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              {activeTab === 'tour-leaders' ? 'Tambah Tour Leader' : 
+               activeTab === 'buses' ? 'Tambah Bus' : 
+               'Tambah Driver'}
+            </Button>
+          </div>
         </div>
 
         <TabsContent value="tour-leaders" className="space-y-6">
@@ -427,6 +461,17 @@ export function OperationalResourcesPage() {
           />
         </TabsContent>
       </Tabs>
+
+      <ResourceAssignmentModal
+        isOpen={showAssignmentModal}
+        onClose={() => setShowAssignmentModal(false)}
+        trips={trips}
+        tourLeaders={tourLeaders}
+        buses={buses}
+        drivers={drivers}
+        onAssign={handleResourceAssignment}
+        assigning={updatingTrip}
+      />
     </div>
   )
 }
