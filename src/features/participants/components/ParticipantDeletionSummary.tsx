@@ -15,13 +15,6 @@ export function ParticipantDeletionSummary({ deletedParticipants }: ParticipantD
   const totalLostDP = deletedParticipants.reduce((sum, p) => sum + (p.dp_amount || 0), 0)
 
   // Group by deletion reason
-  const deletionReasons = deletedParticipants.reduce((acc, p) => {
-    const reason = p.deletion_reason || 'Tidak ada alasan'
-    acc[reason] = (acc[reason] || 0) + 1
-    return acc
-  }, {} as Record<string, number>)
-
-  // Group by month
   const deletionsByMonth = deletedParticipants.reduce((acc, p) => {
     const month = new Date(p.deleted_at).toLocaleDateString('id-ID', { 
       year: 'numeric', 
@@ -117,23 +110,7 @@ export function ParticipantDeletionSummary({ deletedParticipants }: ParticipantD
       </div>
 
       {/* Deletion Analysis */}
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Alasan Penghapusan</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {Object.entries(deletionReasons).map(([reason, count]) => (
-                <div key={reason} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                  <span className="text-sm text-gray-700 truncate flex-1 mr-2">{reason}</span>
-                  <Badge variant="outline">{count}</Badge>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
+      <div className="grid gap-6 md:grid-cols-1">
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Penghapusan per Bulan</CardTitle>

@@ -11,7 +11,7 @@ import { useAuth } from '@/hooks/useAuth'
 interface DeletedParticipantsTableProps {
   deletedParticipants: any[]
   onRestore: (id: string) => Promise<void>
-  onPermanentDelete: (id: string, reason?: string) => Promise<void>
+  onPermanentDelete: (id: string) => Promise<void>
   restoring: boolean
   permanentDeleting: boolean
 }
@@ -67,7 +67,6 @@ export function DeletedParticipantsTable({
                 <TableHead>Harga</TableHead>
                 <TableHead>Status Asli</TableHead>
                 <TableHead>Dihapus Oleh</TableHead>
-                <TableHead>Alasan</TableHead>
                 <TableHead>Tanggal Hapus</TableHead>
                 <TableHead className="w-40">Aksi</TableHead>
               </TableRow>
@@ -117,17 +116,6 @@ export function DeletedParticipantsTable({
                   <TableCell>
                     <div className="text-sm">
                       <div className="font-medium">{participant.deleted_by_user_name || 'Unknown'}</div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="max-w-xs">
-                      {participant.deletion_reason ? (
-                        <div className="text-sm text-gray-700 truncate" title={participant.deletion_reason}>
-                          {participant.deletion_reason}
-                        </div>
-                      ) : (
-                        <span className="text-gray-400">-</span>
-                      )}
                     </div>
                   </TableCell>
                   <TableCell>
@@ -193,7 +181,7 @@ export function DeletedParticipantsTable({
                             <AlertDialogFooter>
                               <AlertDialogCancel>Batal</AlertDialogCancel>
                               <AlertDialogAction 
-                                onClick={() => onPermanentDelete(participant.id, 'Permanent deletion from trash')}
+                                onClick={() => onPermanentDelete(participant.id)}
                                 disabled={permanentDeleting}
                                 className="bg-red-600 hover:bg-red-700"
                               >

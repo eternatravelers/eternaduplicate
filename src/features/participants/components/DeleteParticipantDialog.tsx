@@ -24,7 +24,6 @@ export function DeleteParticipantDialog({
   trigger
 }: DeleteParticipantDialogProps) {
   const [deleteType, setDeleteType] = useState<'soft' | 'permanent'>('soft')
-  const [reason, setReason] = useState('')
   const [confirmText, setConfirmText] = useState('')
   const [isOpen, setIsOpen] = useState(false)
   const { isSuperAdmin, userRole } = useAuth()
@@ -35,9 +34,8 @@ export function DeleteParticipantDialog({
     }
 
     try {
-      await onDelete(participant.id, reason || undefined, deleteType === 'permanent')
+      await onDelete(participant.id, deleteType === 'permanent')
       setIsOpen(false)
-      setReason('')
       setConfirmText('')
       setDeleteType('soft')
     } catch (error) {
@@ -46,24 +44,12 @@ export function DeleteParticipantDialog({
   }
 
   const resetForm = () => {
-    setReason('')
     setConfirmText('')
     setDeleteType('soft')
   }
 
   const canPermanentDelete = isSuperAdmin
   const requiresConfirmation = deleteType === 'permanent'
-
-  // Simple suggested reasons without complex validation
-  const suggestedReasons = [
-    'Peserta membatalkan pendaftaran',
-    'Tidak ada bukti pembayaran',
-    'Belum melakukan pembayaran DP',
-    'Pembersihan data',
-    'Duplikasi data',
-    'Data tidak valid',
-    'Permintaan peserta'
-  ]
 
   return (
     <AlertDialog open={isOpen} onOpenChange={(open) => {
@@ -170,36 +156,6 @@ export function DeleteParticipantDialog({
                       )}
                     </SelectContent>
                   </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="reason">Alasan Penghapusan (Opsional)</Label>
-                  <Textarea
-                    id="reason"
-                    value={reason}
-                    onChange={(e) => setReason(e.target.value)}
-                    placeholder="Jelaskan alasan penghapusan peserta ini..."
-                    rows={3}
-                  />
-                  {suggestedReasons.length > 0 && (
-                    <div className="mt-2">
-                      <p className="text-xs text-gray-600 mb-1">Alasan yang disarankan:</p>
-                      <div className="flex flex-wrap gap-1">
-                        {suggestedReasons.slice(0, 3).map((suggestedReason, index) => (
-                          <Button
-                            key={index}
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="text-xs h-6"
-                            onClick={() => setReason(suggestedReason)}
-                          >
-                            {suggestedReason}
-                          </Button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
                 </div>
 
                 {requiresConfirmation && (

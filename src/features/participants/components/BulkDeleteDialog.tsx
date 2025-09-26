@@ -10,7 +10,7 @@ import { formatCurrency } from '@/lib/utils'
 
 interface BulkDeleteDialogProps {
   selectedParticipants: any[]
-  onBulkDelete: (participantIds: string[], reason?: string, permanent?: boolean) => Promise<void>
+  onBulkDelete: (participantIds: string[], permanent?: boolean) => Promise<void>
   deleting: boolean
   onClearSelection: () => void
 }
@@ -22,15 +22,13 @@ export function BulkDeleteDialog({
   onClearSelection
 }: BulkDeleteDialogProps) {
   const [deleteType, setDeleteType] = useState<'soft' | 'permanent'>('soft')
-  const [reason, setReason] = useState('')
   const [isOpen, setIsOpen] = useState(false)
 
   const handleBulkDelete = async () => {
     try {
       const participantIds = selectedParticipants.map(p => p.id)
-      await onBulkDelete(participantIds, reason || undefined, deleteType === 'permanent')
+      await onBulkDelete(participantIds, deleteType === 'permanent')
       setIsOpen(false)
-      setReason('')
       setDeleteType('soft')
       onClearSelection()
     } catch (error) {
@@ -39,7 +37,6 @@ export function BulkDeleteDialog({
   }
 
   const resetForm = () => {
-    setReason('')
     setDeleteType('soft')
   }
 
@@ -126,17 +123,6 @@ export function BulkDeleteDialog({
                       )}
                     </SelectContent>
                   </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="bulk_reason">Alasan Penghapusan (Opsional)</Label>
-                  <Textarea
-                    id="bulk_reason"
-                    value={reason}
-                    onChange={(e) => setReason(e.target.value)}
-                    placeholder="Jelaskan alasan penghapusan multiple peserta ini..."
-                    rows={3}
-                  />
                 </div>
 
                 {deleteType === 'permanent' && (

@@ -6,14 +6,13 @@ import { ParticipantForm } from '../components/ParticipantForm'
 import { GroupRegistrationForm } from '../components/GroupRegistrationForm'
 import { ParticipantHistoryTable } from '../components/ParticipantHistoryTable'
 import { DeletedParticipantsTable } from '../components/DeletedParticipantsTable'
-import { ParticipantAuditLog } from '../components/ParticipantAuditLog'
 import { useParticipants, useCreateParticipant, useUpdateParticipant, useDeleteParticipant, useRestoreParticipant, useDeletedParticipants } from '@/hooks/useParticipants'
 import { useTrips } from '@/hooks/useTrips'
 import { useSales } from '@/hooks/useSales'
 import { CSVImportModal } from '../components/CSVImportModal'
 import { ParticipantStatsCards } from '../components/ParticipantStatsCards'
 import { ParticipantDeletionSummary } from '../components/ParticipantDeletionSummary'
-import { FileSpreadsheet, AlertCircle } from 'lucide-react'
+import { FileSpreadsheet, AlertCircle, History } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useAuth } from '@/hooks/useAuth'
 
@@ -91,7 +90,7 @@ export function ParticipantsPage() {
   const handleDelete = async (id: string, reason?: string, permanent: boolean = false) => {
     try {
       setOperationError('')
-      const { error } = await deleteParticipant(id, reason, permanent)
+      const { error } = await deleteParticipant(id, permanent)
       
       if (error) {
         setOperationError(error)
@@ -127,7 +126,7 @@ export function ParticipantsPage() {
   const handlePermanentDelete = async (id: string, reason?: string) => {
     try {
       setOperationError('')
-      const { error } = await deleteParticipant(id, reason, true)
+      const { error } = await deleteParticipant(id, true)
       
       if (error) {
         setOperationError(error)
@@ -218,7 +217,7 @@ export function ParticipantsPage() {
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5 max-w-4xl">
+        <TabsList className="grid w-full grid-cols-4 max-w-3xl">
           <TabsTrigger value="individual">Pendaftaran Individual</TabsTrigger>
           <TabsTrigger value="group">Pendaftaran Group</TabsTrigger>
           <TabsTrigger value="history">Riwayat Pendaftaran</TabsTrigger>
@@ -231,12 +230,6 @@ export function ParticipantsPage() {
                   {deletedParticipants.length}
                 </span>
               )}
-            </div>
-          </TabsTrigger>
-          <TabsTrigger value="audit">
-            <div className="flex items-center space-x-1">
-              <History className="h-3 w-3" />
-              <span>Audit Log</span>
             </div>
           </TabsTrigger>
         </TabsList>
@@ -303,18 +296,6 @@ export function ParticipantsPage() {
                 permanentDeleting={deleting}
               />
             </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="audit" className="space-y-6">
-          {!isSuperAdmin ? (
-            <div className="text-center py-12 text-gray-500">
-              <div className="text-6xl mb-4">🔒</div>
-              <h3 className="text-lg font-medium mb-2">Akses Terbatas</h3>
-              <p className="text-sm">Hanya super admin yang dapat melihat audit log</p>
-            </div>
-          ) : (
-            <ParticipantAuditLog />
           )}
         </TabsContent>
       </Tabs>
