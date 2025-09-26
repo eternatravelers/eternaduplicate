@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
-import { Users, Plus, Edit, Trash2, UserPlus, Mail, Phone, MapPin } from 'lucide-react'
+import { Users, Plus, CreditCard as Edit, Trash2, UserPlus, Mail, Phone, MapPin } from 'lucide-react'
 import { formatCurrency, formatShortDate } from '@/lib/utils'
 import { useParticipants, useCreateParticipant, useUpdateParticipant, useDeleteParticipant } from '@/hooks/useParticipants'
 
