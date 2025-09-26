@@ -23,7 +23,10 @@ interface UserProfile {
   tenant_id: string | null
   created_at: string
   updated_at: string
-  email?: string // Will be populated from auth.users
+  users?: {
+    email: string
+  }
+  email?: string // Computed from users.email
 }
 
 export function UserManagementPage() {
@@ -66,28 +69,21 @@ export function UserManagementPage() {
           role,
           tenant_id,
           created_at,
-          updated_at
+          updated_at,
+          users!user_profiles_user_id_fkey (
+            email
+          )
         `)
         .eq('tenant_id', tenantId)
         .order('created_at', { ascending: false })
 
       if (error) throw error
 
-      // Get emails for each user from auth.users
-      const usersWithEmails = await Promise.all(
-        (data || []).map(async (profile) => {
-          try {
-            // Try to get email from user metadata or use a placeholder
-            const { data: authUser } = await supabase.auth.getUser()
-            if (authUser.user && authUser.user.id === profile.user_id) {
-              return { ...profile, email: authUser.user.email || 'N/A' }
-            }
-            return { ...profile, email: 'N/A' }
-          } catch {
-            return { ...profile, email: 'N/A' }
-          }
-        })
-      )
+      // Map the joined data to include email
+      const usersWithEmails = (data || []).map(profile => ({
+        ...profile,
+        email: profile.users?.email || 'N/A'
+      }))
 
       setUsers(usersWithEmails)
     } catch (err) {
@@ -157,7 +153,7 @@ export function UserManagementPage() {
   const filteredUsers = users.filter(user => {
     const matchesSearch = 
       user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.company_name?.toLowerCase().includes(searchTerm.toLowerCase())
     
     const matchesRole = roleFilter === 'all' || user.role === roleFilter
