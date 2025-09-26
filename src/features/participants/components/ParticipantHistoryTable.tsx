@@ -1,10 +1,13 @@
 import React from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, CreditCard as Edit, Search } from 'lucide-react';
+import { Trash2, CreditCard as Edit, Search, Users, UserPlus } from 'lucide-react';
+import { formatCurrency, formatShortDate } from '@/lib/utils';
+import { GroupMembersModal } from './GroupMembersModal';
 
 interface Participant {
   id: string;
@@ -33,6 +36,7 @@ interface ParticipantHistoryTableProps {
   onEdit: (participant: Participant) => void;
   onDelete: (id: string, reason?: string, permanent?: boolean) => Promise<void>;
   deleting: boolean;
+  onRefresh: () => void;
 }
 
 export function ParticipantHistoryTable({
@@ -44,7 +48,20 @@ export function ParticipantHistoryTable({
   onEdit,
   onDelete,
   deleting
+  onRefresh
 }: ParticipantHistoryTableProps) {
+  const [showGroupMembersModal, setShowGroupMembersModal] = useState(false);
+  const [selectedGroupParticipant, setSelectedGroupParticipant] = useState<any>(null);
+
+  const handleViewGroupMembers = (participant: any) => {
+    setSelectedGroupParticipant(participant);
+    setShowGroupMembersModal(true);
+  };
+
+  const isGroupLeader = (participant: any) => {
+    return participant.participant_count > 1 && !participant.parent_participant_id;
+  };
+
   const getStatusBadgeVariant = (status: string) => {
     switch (status.toLowerCase()) {
       case 'confirmed':
@@ -56,18 +73,6 @@ export function ParticipantHistoryTable({
       default:
         return 'outline';
     }
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('id-ID');
   };
 
   const filteredParticipants = participants.filter(participant => {
@@ -134,6 +139,18 @@ export function ParticipantHistoryTable({
                   <TableCell>
                     <div>
                       <div className="font-medium">{participant.full_name}</div>
+                      {isGroupLeader(participant) && (
+                        <Badge variant="outline" className="mt-1 text-blue-600 border-blue-200">
+                          <Users className="h-3 w-3 mr-1" />
+                          Ketua Grup
+                        </Badge>
+                      )}
+                      {participant.parent_participant_id && (
+                        <Badge variant="outline" className="mt-1 text-green-600 border-green-200">
+                          <UserPlus className="h-3 w-3 mr-1" />
+                          Anggota Grup
+                        </Badge>
+                      )}
                       <div className="text-sm text-gray-500 truncate max-w-48">
                         {participant.address}
                       </div>
@@ -147,7 +164,7 @@ export function ParticipantHistoryTable({
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline">
-                      {participant.participant_count} person{participant.participant_count > 1 ? 's' : ''}
+                      {participant.participant_count} orang
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -157,7 +174,7 @@ export function ParticipantHistoryTable({
                     <div>
                       <div>{formatCurrency(participant.dp_amount)}</div>
                       <div className="text-xs text-gray-500">
-                        {formatDate(participant.dp_transfer_date)}
+                        {formatShortDate(participant.dp_transfer_date)}
                       </div>
                     </div>
                   </TableCell>
@@ -167,10 +184,21 @@ export function ParticipantHistoryTable({
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    {formatDate(participant.created_at)}
+                    {formatShortDate(participant.created_at)}
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
+                      {isGroupLeader(participant) && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleViewGroupMembers(participant)}
+                          title="Kelola anggota grup"
+                          className="text-blue-600 hover:text-blue-700"
+                        >
+                          <Users className="h-4 w-4" />
+                        </Button>
+                      )}
                       <Button
                         variant="outline"
                         size="sm"
@@ -201,5 +229,12 @@ export function ParticipantHistoryTable({
         Showing {filteredParticipants.length} of {participants.length} participants
       </div>
     </div>
+
+    <GroupMembersModal
+      isOpen={showGroupMembersModal}
+      onClose={() => setShowGroupMembersModal(false)}
+      groupParticipant={selectedGroupParticipant}
+      onRefresh={onRefresh}
+    />
   );
 }

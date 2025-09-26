@@ -266,6 +266,7 @@ export function ParticipantsPage() {
             onEdit={handleEdit}
             onDelete={handleDelete}
             deleting={deleting}
+            onRefresh={refetch}
           />
         </TabsContent>
 
