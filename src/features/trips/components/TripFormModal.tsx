@@ -300,20 +300,22 @@ export function TripFormModal({
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {!initialData && (
-              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <div className="flex items-start space-x-3">
-                  <Users className="h-5 w-5 text-blue-600 mt-0.5" />
-                  <div className="text-sm text-blue-800">
-                    <p className="font-medium mb-1">Assignment Sumber Daya</p>
-                    <p>
-                      Setelah trip dibuat, Anda dapat melakukan assignment tour leader, kendaraan, dan driver 
-                      di halaman <strong>"Sumber Daya Operasional"</strong> → tombol <strong>"Assignment ke Trip"</strong>.
-                    </p>
+                {!initialData && (
+                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="flex items-start space-x-3">
+                      <Users className="h-5 w-5 text-blue-600 mt-0.5" />
+                      <div className="text-sm text-blue-800">
+                        <p className="font-medium mb-1">Assignment Sumber Daya</p>
+                        <p>
+                          Setelah trip dibuat, Anda dapat melakukan assignment tour leader, kendaraan, dan driver 
+                          di halaman <strong>"Sumber Daya Operasional"</strong> → tombol <strong>"Assignment ke Trip"</strong>.
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
-            )}
+            </div>
           </form>
         </div>
         
