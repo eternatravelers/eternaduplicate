@@ -178,16 +178,16 @@ export function useCreateParticipant() {
         tripData = tripsData?.find(t => t.id === newParticipant.trip_id) || null
       }
 
-      let salesData = null
+      let participantSalesData = null
       if (newParticipant.sales_id) {
-        salesData = salesData?.find(s => s.id === newParticipant.sales_id) || null
+        participantSalesData = salesData?.find(s => s.id === newParticipant.sales_id) || null
       }
 
       // Step 6: Combine participant with trip and sales data
       const participantWithTripAndSales = {
         ...newParticipant,
         trips: tripData || undefined,
-        sales: salesData || undefined
+        sales: participantSalesData || undefined
       }
 
       return { data: participantWithTripAndSales, error: null }
@@ -273,16 +273,16 @@ export function useUpdateParticipant() {
         tripData = tripsData?.find(t => t.id === updatedParticipant.trip_id) || null
       }
 
-      let salesData = null
+      let participantSalesData = null
       if (updatedParticipant.sales_id) {
-        salesData = salesData?.find(s => s.id === updatedParticipant.sales_id) || null
+        participantSalesData = salesData?.find(s => s.id === updatedParticipant.sales_id) || null
       }
 
       // Step 6: Combine participant with trip and sales data
       const participantWithTripAndSales = {
         ...updatedParticipant,
         trips: tripData || undefined,
-        sales: salesData || undefined
+        sales: participantSalesData || undefined
       }
 
       return { data: participantWithTripAndSales, error: null }
