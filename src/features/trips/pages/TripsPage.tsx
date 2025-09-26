@@ -5,7 +5,6 @@ import { Plus, Calendar, Users, MapPin, DollarSign } from 'lucide-react'
 import { TripFormModal } from '../components/TripFormModal'
 import { TripListTable } from '../components/TripListTable'
 import { TripTypeManagerModal } from '../components/TripTypeManagerModal'
-import { TripParticipantsModal } from '../components/TripParticipantsModal'
 import { useTrips, useCreateTrip, useUpdateTrip, useDeleteTrip } from '@/hooks/useTrips'
 import { useTourLeaders } from '@/hooks/useTourLeaders'
 import { useDestinations } from '@/hooks/useDestinations'
@@ -16,7 +15,11 @@ import { useDrivers } from '@/hooks/useDrivers'
 import { formatCurrency } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 
-export function TripsPage() {
+interface TripsPageProps {
+  onViewTripParticipants?: (trip: {id: string, name: string}) => void
+}
+
+export function TripsPage({ onViewTripParticipants }: TripsPageProps = {}) {
   const { trips, loading, refetch } = useTrips()
   const { tourLeaders } = useTourLeaders()
   const { destinations } = useDestinations()
@@ -35,8 +38,6 @@ export function TripsPage() {
   const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false)
   const [isAddTripTypeModalOpen, setIsAddTripTypeModalOpen] = useState(false)
   const [selectedTrip, setSelectedTrip] = useState<any>(null)
-  const [showParticipantsModal, setShowParticipantsModal] = useState(false)
-  const [selectedTripForParticipants, setSelectedTripForParticipants] = useState<any>(null)
   const { isSuperAdmin } = useAuth()
 
   const handleSubmit = async (formData: any) => {
@@ -120,8 +121,9 @@ export function TripsPage() {
   }
 
   const handleViewParticipants = (trip: any) => {
-    setSelectedTripForParticipants(trip)
-    setShowParticipantsModal(true)
+    if (onViewTripParticipants) {
+      onViewTripParticipants({ id: trip.id, name: trip.name })
+    }
   }
 
   if (loading) {
@@ -267,22 +269,6 @@ export function TripsPage() {
         deletingTripType={deletingTripType}
       />
 
-      <TripParticipantsModal
-        isOpen={showParticipantsModal}
-        onClose={() => {
-          setShowParticipantsModal(false)
-          setSelectedTripForParticipants(null)
-        }}
-        trip={selectedTripForParticipants}
-      />
-      <TripParticipantsModal
-        isOpen={showParticipantsModal}
-        onClose={() => {
-          setShowParticipantsModal(false)
-          setSelectedTripForParticipants(null)
-        }}
-        trip={selectedTripForParticipants}
-      />
     </div>
   )
 }

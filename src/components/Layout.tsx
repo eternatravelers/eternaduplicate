@@ -31,6 +31,7 @@ interface LayoutProps {
   children: React.ReactNode
   activeTab: string
   onTabChange: (tab: string) => void
+  onViewTripParticipants?: (trip: {id: string, name: string}) => void
 }
 
 interface MenuItem {
@@ -100,6 +101,7 @@ const menuItems: MenuItem[] = [
 ]
 
 export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
+export function Layout({ children, activeTab, onTabChange, onViewTripParticipants }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [expandedCategories, setExpandedCategories] = useState<string[]>(['travel-management'])
   const { user, signOut, tenantId, userRole, isAdmin, isSuperAdmin } = useAuth()

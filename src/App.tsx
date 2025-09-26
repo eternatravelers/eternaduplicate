@@ -16,9 +16,11 @@ import { CostPlansPage } from '@/features/cost-plans/pages/CostPlansPage'
 import { TrashTransactionsPage } from '@/features/finance/pages/TrashTransactionsPage'
 import { UserManagementPage } from '@/features/user-management/pages/UserManagementPage'
 import { FinancePage } from '@/features/finance/pages/FinancePage'
+import { TripParticipantsPage } from '@/features/trips/pages/TripParticipantsPage'
 import { useAuth } from '@/hooks/useAuth'
 function AppContent() {
   const [activeTab, setActiveTab] = useState('dashboard')
+  const [selectedTripForParticipants, setSelectedTripForParticipants] = useState<{id: string, name: string} | null>(null)
   const { isSuperAdmin, isAdmin } = useAuth()
 
   const renderContent = () => {
@@ -61,7 +63,10 @@ function AppContent() {
       case 'participants':
         return <ParticipantsPage />
       case 'trips':
-        return <TripsPage />
+        return <TripsPage onViewTripParticipants={(trip) => {
+          setSelectedTripForParticipants(trip)
+          setActiveTab('trip-participants')
+        }} />
       case 'destinations':
         return <Destinations />
       case 'sales':
@@ -82,13 +87,30 @@ function AppContent() {
         return <TrashTransactionsPage />
       case 'user-management':
         return <UserManagementPage />
+      case 'trip-participants':
+        return selectedTripForParticipants ? (
+          <TripParticipantsPage
+            tripId={selectedTripForParticipants.id}
+            tripName={selectedTripForParticipants.name}
+            onBack={() => setActiveTab('trips')}
+          />
+        ) : (
+          <Dashboard />
+        )
       default:
         return <Dashboard />
     }
   }
 
   return (
-    <Layout activeTab={activeTab} onTabChange={setActiveTab}>
+    <Layout 
+      activeTab={activeTab} 
+      onTabChange={setActiveTab}
+      onViewTripParticipants={(trip) => {
+        setSelectedTripForParticipants(trip)
+        setActiveTab('trip-participants')
+      }}
+    >
       {renderContent()}
     </Layout>
   )
