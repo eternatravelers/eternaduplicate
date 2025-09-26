@@ -5,8 +5,9 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
-import { SimpleMultiSelect } from '@/components/ui/simple-multi-select'
-import { Plus } from 'lucide-react'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Badge } from '@/components/ui/badge'
+import { Plus, ChevronDown, ChevronUp } from 'lucide-react'
 
 interface TripFormModalProps {
   isOpen: boolean
@@ -23,6 +24,81 @@ interface TripFormModalProps {
   updating: boolean
   onAddTripType: () => void
   title: string
+}
+
+// Simple multi-select component that works inside modals
+function SimpleCheckboxMultiSelect({
+  options,
+  selected,
+  onChange,
+  placeholder = "Select items...",
+  className = ""
+}: {
+  options: Array<{ label: string; value: string }>
+  selected: string[]
+  onChange: (selected: string[]) => void
+  placeholder?: string
+  className?: string
+}) {
+  const [isOpen, setIsOpen] = useState(false)
+
+  const handleToggle = (value: string) => {
+    if (selected.includes(value)) {
+      onChange(selected.filter(item => item !== value))
+    } else {
+      onChange([...selected, value])
+    }
+  }
+
+  const selectedOptions = options.filter(option => selected.includes(option.value))
+
+  return (
+    <div className={`relative ${className}`}>
+      <Button
+        type="button"
+        variant="outline"
+        className="w-full justify-between min-h-10 h-auto"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <div className="flex flex-wrap gap-1 flex-1">
+          {selectedOptions.length > 0 ? (
+            selectedOptions.map((option) => (
+              <Badge
+                key={option.value}
+                variant="secondary"
+                className="mr-1 mb-1"
+              >
+                {option.label}
+              </Badge>
+            ))
+          ) : (
+            <span className="text-muted-foreground">{placeholder}</span>
+          )}
+        </div>
+        {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+      </Button>
+      
+      {isOpen && (
+        <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-auto">
+          <div className="p-2 space-y-1">
+            {options.map((option) => (
+              <div
+                key={option.value}
+                className="flex items-center space-x-2 p-2 hover:bg-gray-100 rounded cursor-pointer"
+                onClick={() => handleToggle(option.value)}
+              >
+                <Checkbox
+                  checked={selected.includes(option.value)}
+                  onChange={() => {}} // Handled by parent div click
+                />
+                <span className="text-sm">{option.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
 }
 
 export function TripFormModal({
@@ -88,11 +164,28 @@ export function TripFormModal({
     await onSubmit(formData)
   }
 
+  // Close any open dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      // This will help close dropdowns when clicking outside
+      const target = event.target as Element
+      if (!target.closest('.simple-multiselect')) {
+        // Force close any open dropdowns by re-rendering
+        setFormData(prev => ({ ...prev }))
+      }
+    }
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isOpen])
+
   if (!isOpen) return null
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl pt-6">
+      <DialogContent className="max-w-4xl">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
@@ -100,186 +193,183 @@ export function TripFormModal({
         <div className="max-h-[calc(90vh-120px)] overflow-y-auto px-4">
           <form id="trip-form" onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="name">Trip Name</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => handleInputChange('name', e.target.value)}
-                  required
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="name">Trip Name</Label>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => handleInputChange('name', e.target.value)}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="trip_type">Trip Type</Label>
+                  <div className="flex space-x-2">
+                    <Select value={formData.trip_type} onValueChange={(value) => handleInputChange('trip_type', value)}>
+                      <SelectTrigger className="flex-1">
+                        <SelectValue placeholder="Pilih tipe trip" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {tripTypes.map((type) => (
+                          <SelectItem key={type.id} value={type.name}>
+                            {type.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={onAddTripType}
+                      title="Tambah tipe trip baru"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="departure_date">Departure Date</Label>
+                  <Input
+                    id="departure_date"
+                    type="date"
+                    value={formData.departure_date}
+                    onChange={(e) => handleInputChange('departure_date', e.target.value)}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="return_date">Return Date</Label>
+                  <Input
+                    id="return_date"
+                    type="date"
+                    value={formData.return_date}
+                    onChange={(e) => handleInputChange('return_date', e.target.value)}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="quota">Quota</Label>
+                  <Input
+                    id="quota"
+                    type="number"
+                    value={formData.quota}
+                    onChange={(e) => {
+                      const val = e.target.value === '' ? '' : parseInt(e.target.value)
+                      handleInputChange('quota', isNaN(val) ? '' : val)
+                    }}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="price">Price</Label>
+                  <Input
+                    id="price"
+                    type="number"
+                    value={formData.price}
+                    onChange={(e) => {
+                      const val = e.target.value === '' ? '' : parseFloat(e.target.value)
+                      handleInputChange('price', isNaN(val) ? '' : val)
+                    }}
+                  />
+                </div>
               </div>
-              <div>
-                <Label htmlFor="trip_type">Trip Type</Label>
-                <div className="flex space-x-2">
-                  <Select value={formData.trip_type} onValueChange={(value) => handleInputChange('trip_type', value)}>
-                    <SelectTrigger className="flex-1">
-                      <SelectValue placeholder="Pilih tipe trip" />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="tour_leader_ids">Tour Leaders</Label>
+                  <div className="simple-multiselect">
+                    <SimpleCheckboxMultiSelect
+                      options={tourLeaders.filter(leader => leader.status === 'active').map(leader => ({
+                        label: leader.name,
+                        value: leader.id
+                      }))}
+                      selected={formData.tour_leader_ids}
+                      onChange={(selected) => handleInputChange('tour_leader_ids', selected)}
+                      placeholder="Select tour leaders"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="cost_plan_id">Cost Plan</Label>
+                  <Select value={formData.cost_plan_id} onValueChange={(value) => handleInputChange('cost_plan_id', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select cost plan" />
                     </SelectTrigger>
                     <SelectContent>
-                      {tripTypes.map((type) => (
-                        <SelectItem key={type.id} value={type.name}>
-                          {type.name}
+                      {costPlans.map((plan) => (
+                        <SelectItem key={plan.id} value={plan.id}>
+                          {plan.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    onClick={onAddTripType}
-                    title="Tambah tipe trip baru"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
+                </div>
+                <div>
+                  <Label htmlFor="status">Status</Label>
+                  <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Pilih status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="active">Aktif</SelectItem>
+                      <SelectItem value="draft">Draft</SelectItem>
+                      <SelectItem value="completed">Selesai</SelectItem>
+                      <SelectItem value="cancelled">Dibatalkan</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
+              
               <div>
-                <Label htmlFor="departure_date">Departure Date</Label>
+                <Label htmlFor="meeting_point">Meeting Point</Label>
                 <Input
-                  id="departure_date"
-                  type="date"
-                  value={formData.departure_date}
-                  onChange={(e) => handleInputChange('departure_date', e.target.value)}
+                  id="meeting_point"
+                  value={formData.meeting_point}
+                  onChange={(e) => handleInputChange('meeting_point', e.target.value)}
                   required
                 />
               </div>
+              
               <div>
-                <Label htmlFor="return_date">Return Date</Label>
-                <Input
-                  id="return_date"
-                  type="date"
-                  value={formData.return_date}
-                  onChange={(e) => handleInputChange('return_date', e.target.value)}
-                  required
+                <Label htmlFor="additional_facilities">Additional Facilities</Label>
+                <Textarea
+                  id="additional_facilities"
+                  value={formData.additional_facilities}
+                  onChange={(e) => handleInputChange('additional_facilities', e.target.value)}
                 />
               </div>
-              <div>
-                <Label htmlFor="quota">Quota</Label>
-                <Input
-                  id="quota"
-                  type="number"
-                  value={formData.quota}
-                  onChange={(e) => {
-                    const val = e.target.value === '' ? '' : parseInt(e.target.value)
-                    handleInputChange('quota', isNaN(val) ? '' : val)
-                  }}
-                />
-              </div>
-              <div>
-                <Label htmlFor="price">Price</Label>
-                <Input
-                  id="price"
-                  type="number"
-                  value={formData.price}
-                  onChange={(e) => {
-                    const val = e.target.value === '' ? '' : parseFloat(e.target.value)
-                    handleInputChange('price', isNaN(val) ? '' : val)
-                  }}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="tour_leader_ids">Tour Leaders</Label>
-                <div className="relative z-50 pointer-events-auto">
-                  <SimpleMultiSelect
-                    options={tourLeaders.filter(leader => leader.status === 'active').map(leader => ({
-                      label: leader.name,
-                      value: leader.id
-                    }))}
-                    selected={formData.tour_leader_ids}
-                    onChange={(selected) => handleInputChange('tour_leader_ids', selected)}
-                    placeholder="Select tour leaders"
-                    className="pointer-events-auto"
-                  />
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="bus_ids">Kendaraan</Label>
+                  <div className="simple-multiselect">
+                    <SimpleCheckboxMultiSelect
+                      options={buses.filter(bus => bus.status === 'active').map(bus => ({
+                        label: `${bus.plate_number} - ${bus.model || 'N/A'} (${bus.capacity || 0} kursi)`,
+                        value: bus.id
+                      }))}
+                      selected={formData.bus_ids}
+                      onChange={(selected) => handleInputChange('bus_ids', selected)}
+                      placeholder="Pilih kendaraan"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="driver_ids">Driver</Label>
+                  <div className="simple-multiselect">
+                    <SimpleCheckboxMultiSelect
+                      options={drivers.filter(driver => driver.status === 'active').map(driver => ({
+                        label: `${driver.name} - ${driver.license_number || 'N/A'}`,
+                        value: driver.id
+                      }))}
+                      selected={formData.driver_ids}
+                      onChange={(selected) => handleInputChange('driver_ids', selected)}
+                      placeholder="Pilih driver"
+                    />
+                  </div>
                 </div>
               </div>
-              <div>
-                <Label htmlFor="cost_plan_id">Cost Plan</Label>
-                <Select value={formData.cost_plan_id} onValueChange={(value) => handleInputChange('cost_plan_id', value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select cost plan" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {costPlans.map((plan) => (
-                      <SelectItem key={plan.id} value={plan.id}>
-                        {plan.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="status">Status</Label>
-                <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Pilih status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="active">Aktif</SelectItem>
-                    <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="completed">Selesai</SelectItem>
-                    <SelectItem value="cancelled">Dibatalkan</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            
-            <div>
-              <Label htmlFor="meeting_point">Meeting Point</Label>
-              <Input
-                id="meeting_point"
-                value={formData.meeting_point}
-                onChange={(e) => handleInputChange('meeting_point', e.target.value)}
-                required
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="additional_facilities">Additional Facilities</Label>
-              <Textarea
-                id="additional_facilities"
-                value={formData.additional_facilities}
-                onChange={(e) => handleInputChange('additional_facilities', e.target.value)}
-              />
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="bus_ids">Kendaraan</Label>
-                <div className="relative z-50 pointer-events-auto">
-                  <SimpleMultiSelect
-                    options={buses.filter(bus => bus.status === 'active').map(bus => ({
-                      label: `${bus.plate_number} - ${bus.model || 'N/A'} (${bus.capacity || 0} kursi)`,
-                      value: bus.id
-                    }))}
-                    selected={formData.bus_ids}
-                    onChange={(selected) => handleInputChange('bus_ids', selected)}
-                    placeholder="Pilih kendaraan"
-                    className="pointer-events-auto"
-                  />
-                </div>
-              </div>
-              <div>
-                <Label htmlFor="driver_ids">Driver</Label>
-                <div className="relative z-50 pointer-events-auto">
-                  <SimpleMultiSelect
-                    options={drivers.filter(driver => driver.status === 'active').map(driver => ({
-                      label: `${driver.name} - ${driver.license_number || 'N/A'}`,
-                      value: driver.id
-                    }))}
-                    selected={formData.driver_ids}
-                    onChange={(selected) => handleInputChange('driver_ids', selected)}
-                    placeholder="Pilih driver"
-                    className="pointer-events-auto"
-                  />
-                </div>
-              </div>
-            </div>
             </div>
           </form>
         </div>
