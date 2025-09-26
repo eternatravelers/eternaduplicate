@@ -42,7 +42,8 @@ export function ParticipantForm({
     dp_amount: '' as number | '',
     dp_transfer_date: '',
     additional_requests: '',
-    meeting_point_details: ''
+    meeting_point_details: '',
+    status: 'pending'
   })
 
   const [proofOfTransferUrl, setProofOfTransferUrl] = useState<string | null>(null)
@@ -50,7 +51,21 @@ export function ParticipantForm({
 
   useEffect(() => {
     if (initialData) {
-      setFormData(initialData)
+      setFormData({
+        trip_id: initialData.trip_id || '',
+        sales_id: initialData.sales_id || '',
+        full_name: initialData.full_name || '',
+        email: initialData.email || '',
+        phone: initialData.phone || '',
+        address: initialData.address || '',
+        participant_count: initialData.participant_count || '',
+        package_price: initialData.package_price || '',
+        dp_amount: initialData.dp_amount || '',
+        dp_transfer_date: initialData.dp_transfer_date || '',
+        additional_requests: initialData.additional_requests || '',
+        meeting_point_details: initialData.meeting_point_details || '',
+        status: initialData.status || 'pending'
+      })
       setProofOfTransferUrl(initialData.proof_of_transfer_url || null)
     }
   }, [initialData])
@@ -220,6 +235,23 @@ export function ParticipantForm({
                 value={formData.dp_transfer_date}
                 onChange={(e) => setFormData(prev => ({ ...prev, dp_transfer_date: e.target.value }))}
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="status">Status Peserta</Label>
+              <Select 
+                value={formData.status} 
+                onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="confirmed">Dikonfirmasi</SelectItem>
+                  <SelectItem value="cancelled">Dibatalkan</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
