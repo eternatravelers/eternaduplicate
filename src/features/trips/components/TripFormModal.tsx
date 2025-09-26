@@ -185,15 +185,17 @@ export function TripFormModal({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="tour_leader_ids">Tour Leaders</Label>
-                <SimpleMultiSelect
-                  options={tourLeaders.filter(leader => leader.status === 'active').map(leader => ({
-                    label: leader.name,
-                    value: leader.id
-                  }))}
-                  selected={formData.tour_leader_ids}
-                  onChange={(selected) => handleInputChange('tour_leader_ids', selected)}
-                  placeholder="Select tour leaders"
-                />
+                <div className="relative z-10">
+                  <SimpleMultiSelect
+                    options={tourLeaders.filter(leader => leader.status === 'active').map(leader => ({
+                      label: leader.name,
+                      value: leader.id
+                    }))}
+                    selected={formData.tour_leader_ids}
+                    onChange={(selected) => handleInputChange('tour_leader_ids', selected)}
+                    placeholder="Select tour leaders"
+                  />
+                </div>
               </div>
               <div>
                 <Label htmlFor="cost_plan_id">Cost Plan</Label>
@@ -248,27 +250,31 @@ export function TripFormModal({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="bus_ids">Kendaraan</Label>
-                <SimpleMultiSelect
-                  options={buses.filter(bus => bus.status === 'active').map(bus => ({
-                    label: `${bus.plate_number} - ${bus.model || 'N/A'} (${bus.capacity || 0} kursi)`,
-                    value: bus.id
-                  }))}
-                  selected={formData.bus_ids}
-                  onChange={(selected) => handleInputChange('bus_ids', selected)}
-                  placeholder="Pilih kendaraan"
-                />
+                <div className="relative z-10">
+                  <SimpleMultiSelect
+                    options={buses.filter(bus => bus.status === 'active').map(bus => ({
+                      label: `${bus.plate_number} - ${bus.model || 'N/A'} (${bus.capacity || 0} kursi)`,
+                      value: bus.id
+                    }))}
+                    selected={formData.bus_ids}
+                    onChange={(selected) => handleInputChange('bus_ids', selected)}
+                    placeholder="Pilih kendaraan"
+                  />
+                </div>
               </div>
               <div>
                 <Label htmlFor="driver_ids">Driver</Label>
-                <SimpleMultiSelect
-                  options={drivers.filter(driver => driver.status === 'active').map(driver => ({
-                    label: `${driver.name} - ${driver.license_number || 'N/A'}`,
-                    value: driver.id
-                  }))}
-                  selected={formData.driver_ids}
-                  onChange={(selected) => handleInputChange('driver_ids', selected)}
-                  placeholder="Pilih driver"
-                />
+                <div className="relative z-10">
+                  <SimpleMultiSelect
+                    options={drivers.filter(driver => driver.status === 'active').map(driver => ({
+                      label: `${driver.name} - ${driver.license_number || 'N/A'}`,
+                      value: driver.id
+                    }))}
+                    selected={formData.driver_ids}
+                    onChange={(selected) => handleInputChange('driver_ids', selected)}
+                    placeholder="Pilih driver"
+                  />
+                </div>
               </div>
             </div>
             </div>
