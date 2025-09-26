@@ -50,6 +50,7 @@ export function TripFormModal({
     quota: '',
     price: '',
     additional_facilities: '',
+    destination_ids: [],
     tour_leader_ids: [],
     bus_ids: [],
     driver_ids: [],
@@ -69,6 +70,7 @@ export function TripFormModal({
         quota: initialData.quota || '',
         price: initialData.price || '',
         additional_facilities: initialData.additional_facilities || '',
+        destination_ids: initialData.destinations?.map((dest: any) => dest.id) || initialData.destination_ids || [],
         tour_leader_ids: initialData.tour_leaders?.map((tl: any) => tl.id) || initialData.tour_leader_ids || [],
         bus_ids: initialData.buses?.map((bus: any) => bus.id) || initialData.bus_ids || [],
         driver_ids: initialData.drivers?.map((driver: any) => driver.id) || initialData.driver_ids || [],
@@ -195,20 +197,24 @@ export function TripFormModal({
                 />
               </div>
               <div>
+                <Label htmlFor="destination_ids">Destinations</Label>
+                <SimpleMultiSelect
+                  options={destinations.map(destination => ({
+                    label: destination.name,
+                    value: destination.id
+                  }))}
+                  selected={formData.destination_ids || []}
+                  onChange={(selected) => handleInputChange('destination_ids', selected)}
+                  placeholder="Select destinations"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
                 <Label htmlFor="cost_plan_id">Cost Plan</Label>
                 <Select value={formData.cost_plan_id} onValueChange={(value) => handleInputChange('cost_plan_id', value)}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select cost plan" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {costPlans.map((plan) => (
-                      <SelectItem key={plan.id} value={plan.id}>
-                        {plan.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
               <div>
                 <Label htmlFor="status">Status</Label>
                 <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)}>
