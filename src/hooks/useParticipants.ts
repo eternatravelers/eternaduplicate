@@ -24,7 +24,8 @@ export function useParticipants(filters?: ParticipantFilters) {
     try {
       setLoading(true)
       
-      let query = supabase
+      // Fetch participants without trips join
+      let participantsQuery = supabase
         .from('participants')
         .select(`
           id,
@@ -43,39 +44,44 @@ export function useParticipants(filters?: ParticipantFilters) {
           created_at,
           updated_at,
           proof_of_transfer_url,
-          meeting_point_details,
-          trips!participants_trip_id_fkey!left (
-            id,
-            name,
-            departure_date,
-            meeting_point,
-            trip_type
-          )
+          meeting_point_details
         `)
 
       // Apply date filters
       if (filters?.startDate) {
-        query = query.gte('created_at', filters.startDate)
+        participantsQuery = participantsQuery.gte('created_at', filters.startDate)
       }
       if (filters?.endDate) {
-        query = query.lte('created_at', filters.endDate)
+        participantsQuery = participantsQuery.lte('created_at', filters.endDate)
       }
 
       // Apply trip filter
       if (filters?.tripId) {
-        query = query.eq('trip_id', filters.tripId)
+        participantsQuery = participantsQuery.eq('trip_id', filters.tripId)
       }
 
-      const { data, error } = await query.order('created_at', { ascending: false })
+      const { data: participantsData, error: participantsError } = await participantsQuery.order('created_at', { ascending: false })
 
-      if (error) throw error
+      if (participantsError) throw participantsError
 
-      const participantsWithTrips = data?.map(p => ({
-        ...p,
-        trips: p.trips ? {
-          ...p.trips,
-        } : undefined
-      })) || []
+      // Fetch trips data separately
+      const { data: tripsData, error: tripsError } = await supabase
+        .from('trips')
+        .select('id, name, departure_date, meeting_point, trip_type')
+
+      if (tripsError) throw tripsError
+
+      // Manually join participants with trips
+      const participantsWithTrips = participantsData?.map(participant => {
+        const trip = participant.trip_id 
+          ? tripsData?.find(t => t.id === participant.trip_id)
+          : null
+        
+        return {
+          ...participant,
+          trips: trip || undefined
+        }
+      }) || []
 
       setParticipants(participantsWithTrips)
     } catch (err) {
@@ -124,22 +130,35 @@ export function useCreateParticipant() {
           created_at,
           updated_at,
           proof_of_transfer_url,
-          meeting_point_details,
-          trips!participants_trip_id_fkey!left (
-            id,
-            name,
-            departure_date,
-            meeting_point,
-            trip_type
-          )
+          meeting_point_details
         `)
         .single()
 
       if (participantError) throw participantError
 
+      // Fetch trip data separately if participant has trip_id
+      let tripData = null
+      if (newParticipant.trip_id) {
+        const { data: trip, error: tripError } = await supabase
+          .from('trips')
+          .select('id, name, departure_date, meeting_point, trip_type')
+          .eq('id', newParticipant.trip_id)
+          .single()
+
+        if (!tripError) {
+          tripData = trip
+        }
+      }
+
+      // Combine participant with trip data
+      const participantWithTrip = {
+        ...newParticipant,
+        trips: tripData || undefined
+      }
+
       // Note: proof_of_transfer_url is now included in participantData directly
 
-      return { data: newParticipant, error: null }
+      return { data: participantWithTrip, error: null }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error'
       setError(errorMessage)
@@ -188,20 +207,33 @@ export function useUpdateParticipant() {
           created_at,
           updated_at,
           proof_of_transfer_url,
-          meeting_point_details,
-          trips!participants_trip_id_fkey!left (
-            id,
-            name,
-            departure_date,
-            meeting_point,
-            trip_type
-          )
+          meeting_point_details
         `)
         .single()
 
       if (error) throw error
 
-      return { data, error: null }
+      // Fetch trip data separately if participant has trip_id
+      let tripData = null
+      if (data.trip_id) {
+        const { data: trip, error: tripError } = await supabase
+          .from('trips')
+          .select('id, name, departure_date, meeting_point, trip_type')
+          .eq('id', data.trip_id)
+          .single()
+
+        if (!tripError) {
+          tripData = trip
+        }
+      }
+
+      // Combine participant with trip data
+      const participantWithTrip = {
+        ...data,
+        trips: tripData || undefined
+      }
+
+      return { data: participantWithTrip, error: null }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error'
       setError(errorMessage)
@@ -403,21 +435,33 @@ export function useDeletedParticipants() {
           meeting_point_details,
           deleted_at,
           deleted_by_user_name,
-          deletion_reason,
-          trips!participants_trip_id_fkey!left (
-            id,
-            name,
-            departure_date,
-            meeting_point,
-            trip_type
-          )
+          deletion_reason
         `)
         .not('deleted_at', 'is', null)
         .order('deleted_at', { ascending: false })
 
       if (error) throw error
 
-      setDeletedParticipants(data || [])
+      // Fetch trips data separately
+      const { data: tripsData, error: tripsError } = await supabase
+        .from('trips')
+        .select('id, name, departure_date, meeting_point, trip_type')
+
+      if (tripsError) throw tripsError
+
+      // Manually join deleted participants with trips
+      const deletedParticipantsWithTrips = data?.map(participant => {
+        const trip = participant.trip_id 
+          ? tripsData?.find(t => t.id === participant.trip_id)
+          : null
+        
+        return {
+          ...participant,
+          trips: trip || undefined
+        }
+      }) || []
+
+      setDeletedParticipants(deletedParticipantsWithTrips)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error')
     } finally {
