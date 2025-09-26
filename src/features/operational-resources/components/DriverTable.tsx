@@ -89,6 +89,7 @@ export function DriverTable({
                 <TableHead>Nomor SIM</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Dibuat</TableHead>
+                <TableHead>Trip Assignment</TableHead>
                 <TableHead>Aksi</TableHead>
               </TableRow>
             </TableHeader>
@@ -108,6 +109,24 @@ export function DriverTable({
                   <TableCell>
                     <div className="text-sm text-gray-500">
                       {formatShortDate(driver.created_at)}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="space-y-1">
+                      {driver.assignedTrips && driver.assignedTrips.length > 0 ? (
+                        driver.assignedTrips.slice(0, 2).map((trip: any) => (
+                          <Badge key={trip.id} variant="outline" className="text-xs mr-1 mb-1">
+                            {trip.name}
+                          </Badge>
+                        ))
+                      ) : (
+                        <span className="text-gray-400 text-xs">Belum ada assignment</span>
+                      )}
+                      {driver.assignedTrips && driver.assignedTrips.length > 2 && (
+                        <Badge variant="outline" className="text-xs">
+                          +{driver.assignedTrips.length - 2} lainnya
+                        </Badge>
+                      )}
                     </div>
                   </TableCell>
                   <TableCell>
