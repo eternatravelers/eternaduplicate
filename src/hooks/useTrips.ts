@@ -237,9 +237,13 @@ export function useUpdateTrip() {
         .update(restTripData)
         .eq('id', id)
         .select()
-        .single()
+        .maybeSingle()
 
       if (tripError) throw tripError
+      
+      if (!updatedTrip) {
+        throw new Error('Trip not found or you do not have permission to update this trip')
+      }
 
       // Handle trip_destinations updates
       if (updatedTrip) {
