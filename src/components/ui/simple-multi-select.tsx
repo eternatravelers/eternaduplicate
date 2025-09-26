@@ -105,7 +105,6 @@ export function SimpleMultiSelect({
           side="bottom"
           sideOffset={4}
           avoidCollisions={true}
-          onOpenAutoFocus={(e) => e.preventDefault()}
         >
           <Command>
             <CommandInput placeholder="Search..." />
