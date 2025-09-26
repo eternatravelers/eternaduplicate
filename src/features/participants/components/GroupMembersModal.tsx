@@ -432,7 +432,6 @@ export function GroupMembersModal({
                         Tambah Manual
                       </Button>
                     </div>
-                    </Button>
                   </div>
                 </div>
               ) : (
