@@ -394,7 +394,7 @@ export function useDeletedParticipants() {
           deleted_at,
           deleted_by_user_name,
           deletion_reason,
-          trip_id!trips (
+          trips (
             id,
             name,
             departure_date,
