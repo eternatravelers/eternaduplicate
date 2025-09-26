@@ -9,8 +9,10 @@ import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { Users, Plus, CreditCard as Edit, Trash2, UserPlus, Mail, Phone, MapPin } from 'lucide-react'
+import { FileSpreadsheet } from 'lucide-react'
 import { formatCurrency, formatShortDate } from '@/lib/utils'
 import { useParticipants, useCreateParticipant, useUpdateParticipant, useDeleteParticipant } from '@/hooks/useParticipants'
+import { GroupMembersCSVImportModal } from './GroupMembersCSVImportModal'
 
 interface GroupMembersModalProps {
   isOpen: boolean
@@ -27,6 +29,7 @@ export function GroupMembersModal({
 }: GroupMembersModalProps) {
   const [showAddMemberForm, setShowAddMemberForm] = useState(false)
   const [editingMember, setEditingMember] = useState<string | null>(null)
+  const [showCSVImport, setShowCSVImport] = useState(false)
   const [memberFormData, setMemberFormData] = useState({
     full_name: '',
     email: '',
@@ -66,6 +69,23 @@ export function GroupMembersModal({
     setEditingMember(null)
     resetMemberForm()
     setShowAddMemberForm(true)
+  }
+
+  const handleCSVImport = () => {
+    setShowCSVImport(true)
+  }
+
+  const handleBulkImport = async (membersData: any[]) => {
+    try {
+      // Import members one by one
+      for (const memberData of membersData) {
+        await createParticipant(memberData)
+      }
+      refetch()
+      onRefresh()
+    } catch (error) {
+      console.error('Error importing group members:', error)
+    }
   }
 
   const handleEditMember = (member: any) => {
@@ -134,6 +154,7 @@ export function GroupMembersModal({
     setShowAddMemberForm(false)
     setEditingMember(null)
     resetMemberForm()
+    setShowCSVImport(false)
   }
 
   if (!groupParticipant) return null
@@ -383,14 +404,36 @@ export function GroupMembersModal({
                   <h3 className="text-lg font-medium mb-2">Belum ada anggota grup</h3>
                   <p className="text-sm mb-4">
                     Tambahkan anggota grup untuk melengkapi daftar peserta
-                  </p>
-                  <Button 
-                    onClick={handleAddMember}
-                    className="bg-green-600 hover:bg-green-700"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Tambah Anggota Pertama
-                  </Button>
+                  <div className="flex space-x-2">
+                    <Button 
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCSVImport}
+                      disabled={remainingSlots <= 0}
+                      className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                    >
+                      <FileSpreadsheet className="h-4 w-4 mr-2" />
+                      Import CSV
+                    </Button>
+                    <div className="flex justify-center space-x-2">
+                      <Button 
+                        variant="outline"
+                        onClick={handleCSVImport}
+                        className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                      >
+                        <FileSpreadsheet className="h-4 w-4 mr-2" />
+                        Import CSV
+                      </Button>
+                      <Button 
+                        onClick={handleAddMember}
+                        className="bg-green-600 hover:bg-green-700"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Tambah Manual
+                      </Button>
+                    </div>
+                    </Button>
+                  </div>
                 </div>
               ) : (
                 <Table>
@@ -518,6 +561,14 @@ export function GroupMembersModal({
             </CardContent>
           </Card>
         </div>
+
+        <GroupMembersCSVImportModal
+          isOpen={showCSVImport}
+          onClose={() => setShowCSVImport(false)}
+          onImport={handleBulkImport}
+          groupParticipant={groupParticipant}
+          importing={creating}
+        />
       </DialogContent>
     </Dialog>
   )
