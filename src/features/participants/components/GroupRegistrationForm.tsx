@@ -37,7 +37,6 @@ export function GroupRegistrationForm({
 
   const [groupProofOfTransferUrl, setGroupProofOfTransferUrl] = useState<string | null>(null)
   const [groupSelectedTripMeetingPoint, setGroupSelectedTripMeetingPoint] = useState<string>('')
-  const csvFileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (groupData.trip_id) {
@@ -100,12 +99,23 @@ export function GroupRegistrationForm({
     setGroupProofOfTransferUrl(url)
   }
 
-  const handleCsvFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      console.log('File CSV dipilih:', file)
-      alert(`File CSV "${file.name}" berhasil dipilih. Fitur parsing akan diimplementasikan selanjutnya.`)
-    }
+  const downloadTemplate = () => {
+    const template = [
+      'nama_lengkap,email,telepon,alamat,jumlah_peserta,harga_paket,dp_amount,nama_trip,nama_sales,permintaan_tambahan',
+      'John Doe,john@example.com,08123456789,"Jl. Sudirman No. 123, Jakarta",2,1500000,500000,"Bali Adventure 3D2N","Ahmad Wijaya","Makanan vegetarian"',
+      'Jane Smith,jane@example.com,08198765432,"Jl. Thamrin No. 456, Jakarta",1,1500000,500000,"Yogyakarta Cultural Tour","Siti Nurhaliza",""',
+      'Bob Wilson,bob@example.com,08111222333,"Jl. Gatot Subroto No. 789, Jakarta",3,1500000,500000,"Lombok Beach Holiday","Ahmad Wijaya","Kursi roda untuk lansia"'
+    ].join('\n')
+
+    const blob = new Blob([template], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+    link.setAttribute('href', url)
+    link.setAttribute('download', 'template-import-peserta.csv')
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
   }
 
   return (
@@ -298,20 +308,13 @@ export function GroupRegistrationForm({
             <Button type="submit" disabled={creating}>
               {creating ? 'Menyimpan...' : 'Daftar Group'}
             </Button>
-            <input
-              type="file"
-              ref={csvFileInputRef}
-              accept=".csv"
-              style={{ display: 'none' }}
-              onChange={handleCsvFileChange}
-            />
             <Button 
               type="button" 
               variant="outline"
-              onClick={() => csvFileInputRef.current?.click()}
+              onClick={downloadTemplate}
             >
               <FileSpreadsheet className="h-4 w-4 mr-2" />
-              Import Detail Peserta
+              Download Template CSV
             </Button>
           </div>
         </form>
