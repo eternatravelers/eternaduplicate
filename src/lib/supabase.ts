@@ -321,6 +321,11 @@ export type Database = {
           meeting_point_details: string | null
           created_at: string
           updated_at: string
+          deleted_at: string | null
+          deleted_by_user_id: string | null
+          deleted_by_user_name: string | null
+          deletion_reason: string | null
+          parent_participant_id: string | null
         }
         Insert: {
           id?: string
@@ -344,6 +349,7 @@ export type Database = {
           deleted_by_user_id?: string | null
           deleted_by_user_name?: string | null
           deletion_reason?: string | null
+          parent_participant_id?: string | null
         }
         Update: {
           id?: string
@@ -367,6 +373,7 @@ export type Database = {
           deleted_by_user_id?: string | null
           deleted_by_user_name?: string | null
           deletion_reason?: string | null
+          parent_participant_id?: string | null
         }
       }
       transactions: {
