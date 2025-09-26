@@ -75,6 +75,8 @@ export function ParticipantForm({
     
     const submitData = {
       ...formData,
+      sales_id: formData.sales_id === '' ? null : formData.sales_id,
+      trip_id: formData.trip_id === '' ? null : formData.trip_id,
       participant_count: formData.participant_count === '' ? 1 : Number(formData.participant_count),
       package_price: formData.package_price === '' ? 0 : Number(formData.package_price),
       dp_amount: formData.dp_amount === '' ? 0 : Number(formData.dp_amount),
