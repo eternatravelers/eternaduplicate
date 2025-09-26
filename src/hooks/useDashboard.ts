@@ -33,7 +33,7 @@ export function useDashboard() {
         { data: transactions },
         { data: trips }
       ] = await Promise.all([
-        supabase.from('participants').select('*'),
+        supabase.from('participants').select('id'),
         supabase.from('transactions').select('*').eq('status', 'active'),
         supabase
           .from('trips')
