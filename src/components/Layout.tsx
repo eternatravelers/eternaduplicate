@@ -100,7 +100,6 @@ const menuItems: MenuItem[] = [
   }
 ]
 
-export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
 export function Layout({ children, activeTab, onTabChange, onViewTripParticipants }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [expandedCategories, setExpandedCategories] = useState<string[]>(['travel-management'])
