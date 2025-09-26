@@ -5,9 +5,8 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Badge } from '@/components/ui/badge'
-import { Plus, ChevronDown, ChevronUp } from 'lucide-react'
+import { SimpleMultiSelect } from '@/components/ui/simple-multi-select'
+import { Plus } from 'lucide-react'
 
 interface TripFormModalProps {
   isOpen: boolean
@@ -24,81 +23,6 @@ interface TripFormModalProps {
   updating: boolean
   onAddTripType: () => void
   title: string
-}
-
-// Simple multi-select component that works inside modals
-function SimpleCheckboxMultiSelect({
-  options,
-  selected,
-  onChange,
-  placeholder = "Select items...",
-  className = ""
-}: {
-  options: Array<{ label: string; value: string }>
-  selected: string[]
-  onChange: (selected: string[]) => void
-  placeholder?: string
-  className?: string
-}) {
-  const [isOpen, setIsOpen] = useState(false)
-
-  const handleToggle = (value: string) => {
-    if (selected.includes(value)) {
-      onChange(selected.filter(item => item !== value))
-    } else {
-      onChange([...selected, value])
-    }
-  }
-
-  const selectedOptions = options.filter(option => selected.includes(option.value))
-
-  return (
-    <div className={`relative ${className}`}>
-      <Button
-        type="button"
-        variant="outline"
-        className="w-full justify-between min-h-10 h-auto"
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        <div className="flex flex-wrap gap-1 flex-1">
-          {selectedOptions.length > 0 ? (
-            selectedOptions.map((option) => (
-              <Badge
-                key={option.value}
-                variant="secondary"
-                className="mr-1 mb-1"
-              >
-                {option.label}
-              </Badge>
-            ))
-          ) : (
-            <span className="text-muted-foreground">{placeholder}</span>
-          )}
-        </div>
-        {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-      </Button>
-      
-      {isOpen && (
-        <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-auto">
-          <div className="p-2 space-y-1">
-            {options.map((option) => (
-              <div
-                key={option.value}
-                className="flex items-center space-x-2 p-2 hover:bg-gray-100 rounded cursor-pointer"
-                onClick={() => handleToggle(option.value)}
-              >
-                <Checkbox
-                  checked={selected.includes(option.value)}
-                  onChange={() => {}} // Handled by parent div click
-                />
-                <span className="text-sm">{option.label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  )
 }
 
 export function TripFormModal({
@@ -163,23 +87,6 @@ export function TripFormModal({
     e.preventDefault()
     await onSubmit(formData)
   }
-
-  // Close any open dropdowns when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      // This will help close dropdowns when clicking outside
-      const target = event.target as Element
-      if (!target.closest('.simple-multiselect')) {
-        // Force close any open dropdowns by re-rendering
-        setFormData(prev => ({ ...prev }))
-      }
-    }
-
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside)
-      return () => document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [isOpen])
 
   if (!isOpen) return null
 
@@ -278,17 +185,15 @@ export function TripFormModal({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="tour_leader_ids">Tour Leaders</Label>
-                  <div className="simple-multiselect">
-                    <SimpleCheckboxMultiSelect
-                      options={tourLeaders.filter(leader => leader.status === 'active').map(leader => ({
-                        label: leader.name,
-                        value: leader.id
-                      }))}
-                      selected={formData.tour_leader_ids}
-                      onChange={(selected) => handleInputChange('tour_leader_ids', selected)}
-                      placeholder="Select tour leaders"
-                    />
-                  </div>
+                  <SimpleMultiSelect
+                    options={tourLeaders.filter(leader => leader.status === 'active').map(leader => ({
+                      label: leader.name,
+                      value: leader.id
+                    }))}
+                    selected={formData.tour_leader_ids}
+                    onChange={(selected) => handleInputChange('tour_leader_ids', selected)}
+                    placeholder="Select tour leaders"
+                  />
                 </div>
                 <div>
                   <Label htmlFor="cost_plan_id">Cost Plan</Label>
@@ -343,31 +248,27 @@ export function TripFormModal({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="bus_ids">Kendaraan</Label>
-                  <div className="simple-multiselect">
-                    <SimpleCheckboxMultiSelect
-                      options={buses.filter(bus => bus.status === 'active').map(bus => ({
-                        label: `${bus.plate_number} - ${bus.model || 'N/A'} (${bus.capacity || 0} kursi)`,
-                        value: bus.id
-                      }))}
-                      selected={formData.bus_ids}
-                      onChange={(selected) => handleInputChange('bus_ids', selected)}
-                      placeholder="Pilih kendaraan"
-                    />
-                  </div>
+                  <SimpleMultiSelect
+                    options={buses.filter(bus => bus.status === 'active').map(bus => ({
+                      label: `${bus.plate_number} - ${bus.model || 'N/A'} (${bus.capacity || 0} kursi)`,
+                      value: bus.id
+                    }))}
+                    selected={formData.bus_ids}
+                    onChange={(selected) => handleInputChange('bus_ids', selected)}
+                    placeholder="Pilih kendaraan"
+                  />
                 </div>
                 <div>
                   <Label htmlFor="driver_ids">Driver</Label>
-                  <div className="simple-multiselect">
-                    <SimpleCheckboxMultiSelect
-                      options={drivers.filter(driver => driver.status === 'active').map(driver => ({
-                        label: `${driver.name} - ${driver.license_number || 'N/A'}`,
-                        value: driver.id
-                      }))}
-                      selected={formData.driver_ids}
-                      onChange={(selected) => handleInputChange('driver_ids', selected)}
-                      placeholder="Pilih driver"
-                    />
-                  </div>
+                  <SimpleMultiSelect
+                    options={drivers.filter(driver => driver.status === 'active').map(driver => ({
+                      label: `${driver.name} - ${driver.license_number || 'N/A'}`,
+                      value: driver.id
+                    }))}
+                    selected={formData.driver_ids}
+                    onChange={(selected) => handleInputChange('driver_ids', selected)}
+                    placeholder="Pilih driver"
+                  />
                 </div>
               </div>
             </div>
