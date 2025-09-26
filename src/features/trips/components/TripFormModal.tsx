@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
-import { MultiSelect } from '@/components/ui/multi-select'
+import { SimpleMultiSelect } from '@/components/ui/simple-multi-select'
 import { Plus } from 'lucide-react'
 
 interface TripFormModalProps {
@@ -184,7 +184,7 @@ export function TripFormModal({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="tour_leader_ids">Tour Leaders</Label>
-                <MultiSelect
+                <SimpleMultiSelect
                   options={tourLeaders.filter(leader => leader.status === 'active').map(leader => ({
                     label: leader.name,
                     value: leader.id
@@ -247,7 +247,7 @@ export function TripFormModal({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="bus_ids">Kendaraan</Label>
-                <MultiSelect
+                <SimpleMultiSelect
                   options={buses.filter(bus => bus.status === 'active').map(bus => ({
                     label: `${bus.plate_number} - ${bus.model || 'N/A'} (${bus.capacity || 0} kursi)`,
                     value: bus.id
@@ -259,7 +259,7 @@ export function TripFormModal({
               </div>
               <div>
                 <Label htmlFor="driver_ids">Driver</Label>
-                <MultiSelect
+                <SimpleMultiSelect
                   options={drivers.filter(driver => driver.status === 'active').map(driver => ({
                     label: `${driver.name} - ${driver.license_number || 'N/A'}`,
                     value: driver.id
