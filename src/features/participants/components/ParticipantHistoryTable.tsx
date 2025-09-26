@@ -47,7 +47,7 @@ export function ParticipantHistoryTable({
   setFilterStatus,
   onEdit,
   onDelete,
-  deleting
+  deleting,
   onRefresh
 }: ParticipantHistoryTableProps) {
   const [showGroupMembersModal, setShowGroupMembersModal] = useState(false);
