@@ -1,13 +1,15 @@
 import React from 'react'
+import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
-import { UserCheck, Search, CreditCard as Edit, Trash2, Award } from 'lucide-react'
+import { UserCheck, Search, CreditCard as Edit, Trash2, Award, Eye } from 'lucide-react'
 import { formatShortDate } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
+import { AssignedTripsModal } from './AssignedTripsModal'
 
 interface TourLeaderTableProps {
   tourLeaders: any[]
@@ -27,6 +29,15 @@ export function TourLeaderTable({
   deleting
 }: TourLeaderTableProps) {
   const { isSuperAdmin } = useAuth()
+  const [showAssignedTripsModal, setShowAssignedTripsModal] = useState(false)
+  const [selectedTourLeaderTrips, setSelectedTourLeaderTrips] = useState<any[]>([])
+  const [selectedTourLeaderName, setSelectedTourLeaderName] = useState('')
+
+  const handleViewAssignedTrips = (tourLeader: any) => {
+    setSelectedTourLeaderTrips(tourLeader.assignedTrips || [])
+    setSelectedTourLeaderName(tourLeader.name)
+    setShowAssignedTripsModal(true)
+  }
 
   const filteredTourLeaders = tourLeaders.filter(tourLeader =>
     tourLeader.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -167,18 +178,31 @@ export function TourLeaderTable({
                   <TableCell>
                     <div className="space-y-1">
                       {tourLeader.assignedTrips && tourLeader.assignedTrips.length > 0 ? (
-                        tourLeader.assignedTrips.slice(0, 2).map((trip: any) => (
-                          <Badge key={trip.id} variant="outline" className="text-xs mr-1 mb-1">
-                            {trip.name}
-                          </Badge>
-                        ))
+                        <div className="flex items-center space-x-2">
+                          <div className="flex flex-wrap gap-1">
+                            {tourLeader.assignedTrips.slice(0, 2).map((trip: any) => (
+                              <Badge key={trip.id} variant="outline" className="text-xs">
+                                {trip.name}
+                              </Badge>
+                            ))}
+                            {tourLeader.assignedTrips.length > 2 && (
+                              <Badge variant="outline" className="text-xs">
+                                +{tourLeader.assignedTrips.length - 2} lainnya
+                              </Badge>
+                            )}
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-6 w-6 p-0"
+                            onClick={() => handleViewAssignedTrips(tourLeader)}
+                            title="Lihat detail assignment"
+                          >
+                            <Eye className="h-3 w-3 text-blue-600" />
+                          </Button>
+                        </div>
                       ) : (
                         <span className="text-gray-400 text-xs">Belum ada assignment</span>
-                      )}
-                      {tourLeader.assignedTrips && tourLeader.assignedTrips.length > 2 && (
-                        <Badge variant="outline" className="text-xs">
-                          +{tourLeader.assignedTrips.length - 2} lainnya
-                        </Badge>
                       )}
                     </div>
                   </TableCell>
@@ -242,6 +266,15 @@ export function TourLeaderTable({
           </Table>
         )}
       </CardContent>
+      
+      <AssignedTripsModal
+        isOpen={showAssignedTripsModal}
+        onClose={() => setShowAssignedTripsModal(false)}
+        title="Trip Assignment"
+        assignedTrips={selectedTourLeaderTrips}
+        resourceName={selectedTourLeaderName}
+        resourceType="Tour Leader"
+      />
     </Card>
   )
 }

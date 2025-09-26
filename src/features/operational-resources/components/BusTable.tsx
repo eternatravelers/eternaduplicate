@@ -1,13 +1,15 @@
 import React from 'react'
+import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
-import { Bus, Search, CreditCard as Edit, Trash2 } from 'lucide-react'
+import { Bus, Search, CreditCard as Edit, Trash2, Eye } from 'lucide-react'
 import { formatShortDate } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
+import { AssignedTripsModal } from './AssignedTripsModal'
 
 interface BusTableProps {
   buses: any[]
@@ -27,6 +29,15 @@ export function BusTable({
   deleting
 }: BusTableProps) {
   const { isSuperAdmin } = useAuth()
+  const [showAssignedTripsModal, setShowAssignedTripsModal] = useState(false)
+  const [selectedBusTrips, setSelectedBusTrips] = useState<any[]>([])
+  const [selectedBusName, setSelectedBusName] = useState('')
+
+  const handleViewAssignedTrips = (bus: any) => {
+    setSelectedBusTrips(bus.assignedTrips || [])
+    setSelectedBusName(bus.plate_number)
+    setShowAssignedTripsModal(true)
+  }
 
   const filteredBuses = buses.filter(bus =>
     bus.plate_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -116,18 +127,31 @@ export function BusTable({
                   <TableCell>
                     <div className="space-y-1">
                       {bus.assignedTrips && bus.assignedTrips.length > 0 ? (
-                        bus.assignedTrips.slice(0, 2).map((trip: any) => (
-                          <Badge key={trip.id} variant="outline" className="text-xs mr-1 mb-1">
-                            {trip.name}
-                          </Badge>
-                        ))
+                        <div className="flex items-center space-x-2">
+                          <div className="flex flex-wrap gap-1">
+                            {bus.assignedTrips.slice(0, 2).map((trip: any) => (
+                              <Badge key={trip.id} variant="outline" className="text-xs">
+                                {trip.name}
+                              </Badge>
+                            ))}
+                            {bus.assignedTrips.length > 2 && (
+                              <Badge variant="outline" className="text-xs">
+                                +{bus.assignedTrips.length - 2} lainnya
+                              </Badge>
+                            )}
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-6 w-6 p-0"
+                            onClick={() => handleViewAssignedTrips(bus)}
+                            title="Lihat detail assignment"
+                          >
+                            <Eye className="h-3 w-3 text-blue-600" />
+                          </Button>
+                        </div>
                       ) : (
                         <span className="text-gray-400 text-xs">Belum ada assignment</span>
-                      )}
-                      {bus.assignedTrips && bus.assignedTrips.length > 2 && (
-                        <Badge variant="outline" className="text-xs">
-                          +{bus.assignedTrips.length - 2} lainnya
-                        </Badge>
                       )}
                     </div>
                   </TableCell>
@@ -189,6 +213,15 @@ export function BusTable({
           </Table>
         )}
       </CardContent>
+      
+      <AssignedTripsModal
+        isOpen={showAssignedTripsModal}
+        onClose={() => setShowAssignedTripsModal(false)}
+        title="Trip Assignment"
+        assignedTrips={selectedBusTrips}
+        resourceName={selectedBusName}
+        resourceType="Bus"
+      />
     </Card>
   )
 }
