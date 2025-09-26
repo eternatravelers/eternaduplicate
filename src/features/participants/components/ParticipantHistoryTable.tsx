@@ -5,7 +5,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Trash2, CreditCard as Edit, Search } from 'lucide-react';
-import { ParticipantPermissionsGuard } from './ParticipantPermissionsGuard';
 
 interface Participant {
   id: string;
@@ -180,16 +179,14 @@ export function ParticipantHistoryTable({
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
-                      <ParticipantPermissionsGuard requiredRole="admin">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => onDelete(participant.id)}
-                          disabled={deleting}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </ParticipantPermissionsGuard>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onDelete(participant.id)}
+                        disabled={deleting}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>
