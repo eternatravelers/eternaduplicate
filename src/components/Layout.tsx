@@ -137,8 +137,8 @@ export function Layout({ children, activeTab, onTabChange, onViewTripParticipant
         if (item.id === 'dashboard') return true
         if (item.id === 'travel-management') return true
         if (item.id === 'customer-management') return true
-        if (item.id === 'operations') return false // Hide operations for admin
-        if (item.id === 'finance-reports') return false // Hide finance & reports for admin
+        if (item.id === 'operations') return true // Show operations for admin
+        if (item.id === 'finance-reports') return true // Show finance & reports for admin
         return false
       })
     }
