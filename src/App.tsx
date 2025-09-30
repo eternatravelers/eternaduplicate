@@ -39,8 +39,14 @@ function AppContent() {
           'finance',
           'operations',
           'reports',
+          'operational-resources',
+          'finance',
+          'operations',
+          'reports',
           'analytics',
-          'cost-plans'
+          'cost-plans',
+          'trash',
+          'trip-participants'
         ]
         return adminAllowedTabs.includes(activeTab)
       }
