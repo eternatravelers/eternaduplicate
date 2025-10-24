@@ -14,10 +14,6 @@ interface UserProfile {
   company_name: string | null;
   phone: string | null;
   role: string;
-  is_active: boolean;
-  deactivated_at: string | null;
-  deactivated_by: string | null;
-  reactivated_at: string | null;
   created_at: string;
 }
 
@@ -64,7 +60,7 @@ Deno.serve(async (req: Request) => {
 
     const { data: users, error: usersError } = await supabaseClient
       .from("user_profiles")
-      .select("id, email, full_name, company_name, phone, role, is_active, deactivated_at, deactivated_by, reactivated_at, created_at")
+      .select("id, email, full_name, company_name, phone, role, created_at")
       .order("created_at", { ascending: false });
 
     if (usersError) {

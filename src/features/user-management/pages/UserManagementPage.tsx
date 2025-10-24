@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
-import { Plus, AlertCircle, Users, Search, CreditCard as Edit, Trash2, UserPlus, UserX, UserCheck, Ban } from 'lucide-react'
+import { Plus, AlertCircle, Users, Search, CreditCard as Edit, Trash2, UserPlus } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 import { formatShortDate } from '@/lib/utils'
@@ -21,10 +21,6 @@ interface UserProfile {
   company_name: string | null
   phone: string | null
   role: string
-  is_active: boolean
-  deactivated_at: string | null
-  deactivated_by: string | null
-  reactivated_at: string | null
   created_at: string
 }
 
@@ -34,7 +30,6 @@ export function UserManagementPage() {
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [roleFilter, setRoleFilter] = useState('all')
-  const [statusFilter, setStatusFilter] = useState('all')
   const [showInviteForm, setShowInviteForm] = useState(false)
   const [inviteData, setInviteData] = useState({
     email: '',
@@ -48,9 +43,6 @@ export function UserManagementPage() {
   const [showEditForm, setShowEditForm] = useState(false)
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
-  const [deactivatingUserId, setDeactivatingUserId] = useState<string | null>(null)
-  const [showDeactivateDialog, setShowDeactivateDialog] = useState(false)
-  const [actionLoading, setActionLoading] = useState(false)
 
   const { isSuperAdmin, user: currentUser } = useAuth()
 
@@ -181,87 +173,10 @@ export function UserManagementPage() {
     }
   }
 
-  const handleDeactivateUser = async () => {
-    if (!deactivatingUserId) return
-
-    try {
-      setActionLoading(true)
-      setError(null)
-
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) {
-        throw new Error('No active session')
-      }
-
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/deactivate-user`
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ userId: deactivatingUserId }),
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to deactivate user')
-      }
-
-      alert('Pengguna berhasil dinonaktifkan!')
-      setShowDeactivateDialog(false)
-      setDeactivatingUserId(null)
-      fetchUsers()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Gagal menonaktifkan pengguna')
-    } finally {
-      setActionLoading(false)
-    }
-  }
-
-  const handleReactivateUser = async (userId: string) => {
-    if (!confirm('Apakah Anda yakin ingin mengaktifkan kembali pengguna ini?')) {
-      return
-    }
-
-    try {
-      setActionLoading(true)
-      setError(null)
-
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) {
-        throw new Error('No active session')
-      }
-
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/reactivate-user`
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ userId }),
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to reactivate user')
-      }
-
-      alert('Pengguna berhasil diaktifkan kembali!')
-      fetchUsers()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Gagal mengaktifkan pengguna')
-    } finally {
-      setActionLoading(false)
-    }
-  }
-
   const handleDeleteUser = async () => {
     if (!deletingUserId) return
 
     try {
-      setActionLoading(true)
       setError(null)
 
       const { data: { session } } = await supabase.auth.getSession()
@@ -275,14 +190,12 @@ export function UserManagementPage() {
 
       if (deleteError) throw deleteError
 
-      alert('Pengguna berhasil dihapus secara permanen!')
+      alert('Pengguna berhasil dihapus!')
       setShowDeleteDialog(false)
       setDeletingUserId(null)
       fetchUsers()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Gagal menghapus pengguna')
-    } finally {
-      setActionLoading(false)
     }
   }
 
@@ -291,43 +204,28 @@ export function UserManagementPage() {
     setShowDeleteDialog(true)
   }
 
-  const openDeactivateDialog = (userId: string) => {
-    setDeactivatingUserId(userId)
-    setShowDeactivateDialog(true)
-  }
-
   const filteredUsers = users.filter(user => {
-    const matchesSearch =
+    const matchesSearch = 
       user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.company_name?.toLowerCase().includes(searchTerm.toLowerCase())
-
+    
     const matchesRole = roleFilter === 'all' || user.role === roleFilter
-    const matchesStatus = statusFilter === 'all' ||
-      (statusFilter === 'active' && user.is_active) ||
-      (statusFilter === 'inactive' && !user.is_active)
-
-    return matchesSearch && matchesRole && matchesStatus
+    
+    return matchesSearch && matchesRole
   })
 
   const getRoleBadge = (role: string) => {
     switch (role) {
       case 'super_admin':
-        return <Badge className="bg-blue-100 text-blue-800">Super Admin</Badge>
+        return <Badge className="bg-purple-100 text-purple-800">Super Admin</Badge>
       case 'admin':
-        return <Badge className="bg-green-100 text-green-800">Admin</Badge>
+        return <Badge className="bg-blue-100 text-blue-800">Admin</Badge>
       case 'user':
         return <Badge variant="outline">User</Badge>
       default:
         return <Badge variant="secondary">{role}</Badge>
     }
-  }
-
-  const getStatusBadge = (isActive: boolean) => {
-    if (isActive) {
-      return <Badge className="bg-green-100 text-green-800">Aktif</Badge>
-    }
-    return <Badge className="bg-gray-100 text-gray-800">Nonaktif</Badge>
   }
 
   useEffect(() => {
@@ -366,7 +264,7 @@ export function UserManagementPage() {
         </div>
         <Dialog open={showInviteForm} onOpenChange={setShowInviteForm}>
           <DialogTrigger asChild>
-            <Button className="bg-blue-600 hover:bg-blue-700">
+            <Button className="bg-purple-600 hover:bg-purple-700">
               <Plus className="h-4 w-4 mr-2" />
               Undang Pengguna
             </Button>
@@ -449,7 +347,7 @@ export function UserManagementPage() {
       )}
 
       {/* Stats Cards */}
-      <div className="grid gap-6 md:grid-cols-4">
+      <div className="grid gap-6 md:grid-cols-3">
         <Card className="hover:shadow-lg transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-gray-600">
@@ -468,16 +366,16 @@ export function UserManagementPage() {
         <Card className="hover:shadow-lg transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-gray-600">
-              Pengguna Aktif
+              Admin
             </CardTitle>
-            <UserCheck className="h-4 w-4 text-green-600" />
+            <Users className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {users.filter(u => u.is_active).length}
+              {users.filter(u => u.role === 'admin').length}
             </div>
             <p className="text-xs text-gray-500">
-              Pengguna yang aktif
+              Administrator
             </p>
           </CardContent>
         </Card>
@@ -485,16 +383,16 @@ export function UserManagementPage() {
         <Card className="hover:shadow-lg transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-gray-600">
-              Pengguna Nonaktif
+              Super Admin
             </CardTitle>
-            <UserX className="h-4 w-4 text-gray-600" />
+            <Users className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {users.filter(u => !u.is_active).length}
+              {users.filter(u => u.role === 'super_admin').length}
             </div>
             <p className="text-xs text-gray-500">
-              Pengguna dinonaktifkan
+              Super Administrator
             </p>
           </CardContent>
         </Card>
@@ -527,16 +425,6 @@ export function UserManagementPage() {
                 <SelectItem value="super_admin">Super Admin</SelectItem>
                 <SelectItem value="admin">Admin</SelectItem>
                 <SelectItem value="user">User</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-48">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Semua Status</SelectItem>
-                <SelectItem value="active">Aktif</SelectItem>
-                <SelectItem value="inactive">Nonaktif</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -577,7 +465,6 @@ export function UserManagementPage() {
                   <TableHead>Perusahaan</TableHead>
                   <TableHead>Telepon</TableHead>
                   <TableHead>Peran</TableHead>
-                  <TableHead>Status</TableHead>
                   <TableHead>Bergabung</TableHead>
                   <TableHead>Aksi</TableHead>
                 </TableRow>
@@ -595,7 +482,6 @@ export function UserManagementPage() {
                     <TableCell>{user.company_name || '-'}</TableCell>
                     <TableCell>{user.phone || '-'}</TableCell>
                     <TableCell>{getRoleBadge(user.role)}</TableCell>
-                    <TableCell>{getStatusBadge(user.is_active)}</TableCell>
                     <TableCell>{formatShortDate(user.created_at)}</TableCell>
                     <TableCell>
                       <div className="flex space-x-2">
@@ -605,48 +491,19 @@ export function UserManagementPage() {
                           className="h-8 w-8 p-0"
                           onClick={() => handleEditUser(user)}
                           title="Edit pengguna"
-                          disabled={actionLoading}
                         >
                           <Edit className="h-3 w-3" />
                         </Button>
-                        {user.id !== currentUser?.id && (
-                          <>
-                            {user.is_active ? (
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="h-8 w-8 p-0 text-orange-600 hover:text-orange-700"
-                                onClick={() => openDeactivateDialog(user.id)}
-                                title="Nonaktifkan pengguna"
-                                disabled={actionLoading}
-                              >
-                                <Ban className="h-3 w-3" />
-                              </Button>
-                            ) : (
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="h-8 w-8 p-0 text-green-600 hover:text-green-700"
-                                onClick={() => handleReactivateUser(user.id)}
-                                title="Aktifkan kembali pengguna"
-                                disabled={actionLoading}
-                              >
-                                <UserCheck className="h-3 w-3" />
-                              </Button>
-                            )}
-                            {user.role !== 'super_admin' && (
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-                                onClick={() => openDeleteDialog(user.id)}
-                                title="Hapus pengguna permanent"
-                                disabled={actionLoading}
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
-                            )}
-                          </>
+                        {user.role !== 'super_admin' && user.id !== currentUser?.id && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                            onClick={() => openDeleteDialog(user.id)}
+                            title="Hapus pengguna"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
                         )}
                       </div>
                     </TableCell>
@@ -736,59 +593,27 @@ export function UserManagementPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Deactivate User Alert Dialog */}
-      <AlertDialog open={showDeactivateDialog} onOpenChange={setShowDeactivateDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Nonaktifkan Pengguna</AlertDialogTitle>
-            <AlertDialogDescription>
-              Apakah Anda yakin ingin menonaktifkan pengguna ini? Pengguna tidak akan dapat login, tetapi data mereka akan tetap tersimpan dan dapat diaktifkan kembali kapan saja.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => {
-              setShowDeactivateDialog(false)
-              setDeactivatingUserId(null)
-            }} disabled={actionLoading}>
-              Batal
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeactivateUser}
-              className="bg-orange-600 hover:bg-orange-700"
-              disabled={actionLoading}
-            >
-              {actionLoading ? 'Menonaktifkan...' : 'Nonaktifkan'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
       {/* Delete User Alert Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Hapus Pengguna Permanen</AlertDialogTitle>
+            <AlertDialogTitle>Hapus Pengguna</AlertDialogTitle>
             <AlertDialogDescription>
-              <strong className="text-red-600">PERINGATAN:</strong> Tindakan ini tidak dapat dibatalkan!
-              <br /><br />
-              Anda akan menghapus pengguna ini secara permanen dari sistem. Semua data terkait pengguna akan hilang selamanya.
-              <br /><br />
-              Jika Anda hanya ingin menangguhkan akses sementara, gunakan opsi "Nonaktifkan" sebagai gantinya.
+              Apakah Anda yakin ingin menghapus pengguna ini? Tindakan ini tidak dapat dibatalkan dan akan menghapus semua data terkait pengguna.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => {
               setShowDeleteDialog(false)
               setDeletingUserId(null)
-            }} disabled={actionLoading}>
+            }}>
               Batal
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteUser}
               className="bg-red-600 hover:bg-red-700"
-              disabled={actionLoading}
             >
-              {actionLoading ? 'Menghapus...' : 'Hapus Permanen'}
+              Hapus
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
