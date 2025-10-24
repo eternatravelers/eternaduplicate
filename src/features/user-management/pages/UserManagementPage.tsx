@@ -15,18 +15,12 @@ import { formatShortDate } from '@/lib/utils'
 
 interface UserProfile {
   id: string
-  user_id: string
+  email: string
   full_name: string | null
   company_name: string | null
   phone: string | null
   role: string
-  tenant_id: string | null
   created_at: string
-  updated_at: string
-  users?: {
-    email: string
-  }
-  email?: string // Computed from users.email
 }
 
 export function UserManagementPage() {
@@ -45,7 +39,7 @@ export function UserManagementPage() {
   })
   const [inviting, setInviting] = useState(false)
   
-  const { isSuperAdmin, user: currentUser, tenantId } = useAuth()
+  const { isSuperAdmin, user: currentUser } = useAuth()
 
   const fetchUsers = async () => {
     try {
@@ -57,35 +51,21 @@ export function UserManagementPage() {
         return
       }
 
-      // Fetch user profiles with email from auth.users
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select(`
-          id,
-          user_id,
-          full_name,
-          company_name,
-          phone,
-          role,
-          tenant_id,
-          created_at,
-          updated_at,
-          auth.users!user_profiles_user_id_fkey (
-            email
-          )
-        `)
-        .eq('tenant_id', tenantId)
-        .order('created_at', { ascending: false })
+      const { data: { users: authUsers }, error } = await supabase.auth.admin.listUsers()
 
       if (error) throw error
 
-      // Map the joined data to include email
-      const usersWithEmails = (data || []).map(profile => ({
-        ...profile,
-        email: profile.users?.email || 'N/A'
+      const mappedUsers: UserProfile[] = (authUsers || []).map(user => ({
+        id: user.id,
+        email: user.email || 'N/A',
+        full_name: user.user_metadata?.full_name || null,
+        company_name: user.user_metadata?.company_name || null,
+        phone: user.user_metadata?.phone || null,
+        role: user.user_metadata?.role || user.app_metadata?.role || 'admin',
+        created_at: user.created_at
       }))
 
-      setUsers(usersWithEmails)
+      setUsers(mappedUsers)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Terjadi kesalahan')
     } finally {
@@ -100,39 +80,25 @@ export function UserManagementPage() {
       setInviting(true)
       setError(null)
 
-      // Create user account
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      const temporaryPassword = 'TempPass' + Math.random().toString(36).slice(-8) + '!'
+
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
         email: inviteData.email,
-        password: 'TempPassword123!', // Temporary password - user should change this
-        options: {
-          data: {
-            full_name: inviteData.fullName,
-            company_name: inviteData.companyName,
-            phone: inviteData.phone,
-            tenant_id: tenantId,
-            role: inviteData.role
-          }
+        password: temporaryPassword,
+        email_confirm: true,
+        user_metadata: {
+          full_name: inviteData.fullName,
+          company_name: inviteData.companyName,
+          phone: inviteData.phone,
+          role: inviteData.role
         }
       })
 
       if (authError) throw authError
 
       if (authData.user) {
-        // Create user profile
-        const { error: profileError } = await supabase
-          .from('user_profiles')
-          .insert([{
-            user_id: authData.user.id,
-            full_name: inviteData.fullName,
-            company_name: inviteData.companyName,
-            phone: inviteData.phone,
-            role: inviteData.role,
-            tenant_id: tenantId
-          }])
+        alert(`Pengguna berhasil diundang!\n\nEmail: ${inviteData.email}\nPassword Sementara: ${temporaryPassword}\n\nSilakan bagikan informasi ini kepada pengguna.`)
 
-        if (profileError) throw profileError
-
-        // Reset form and refresh users
         setInviteData({
           email: '',
           fullName: '',
@@ -176,7 +142,7 @@ export function UserManagementPage() {
 
   useEffect(() => {
     fetchUsers()
-  }, [isSuperAdmin, tenantId])
+  }, [isSuperAdmin])
 
   if (!isSuperAdmin) {
     return (
@@ -266,8 +232,8 @@ export function UserManagementPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="super_admin">Super Admin</SelectItem>
                       <SelectItem value="admin">Admin</SelectItem>
-                      <SelectItem value="user">User</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -421,7 +387,7 @@ export function UserManagementPage() {
                     <TableCell>
                       <div>
                         <div className="font-medium">{user.full_name || 'N/A'}</div>
-                        <div className="text-sm text-gray-500">ID: {user.user_id.slice(0, 8)}...</div>
+                        <div className="text-sm text-gray-500">ID: {user.id.slice(0, 8)}...</div>
                       </div>
                     </TableCell>
                     <TableCell>{user.email}</TableCell>

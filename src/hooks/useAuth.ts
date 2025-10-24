@@ -8,20 +8,11 @@ interface AuthContextType {
   loading: boolean
   error: string | null
   signIn: (email: string, password: string) => Promise<void>
-  signUp: (data: SignUpData) => Promise<void>
   signOut: () => Promise<void>
-  tenantId: string | null
+  resetPassword: (email: string) => Promise<void>
   userRole: string | null
   isAdmin: boolean
   isSuperAdmin: boolean
-}
-
-interface SignUpData {
-  email: string
-  password: string
-  fullName: string
-  companyName: string
-  phone: string
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -39,32 +30,19 @@ export function useAuthProvider(): AuthContextType {
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [tenantId, setTenantId] = useState<string | null>(null)
   const [userRole, setUserRole] = useState<string | null>(null)
 
-  // Get tenant ID from user metadata
-  const getTenantId = (user: User): string | null => {
-    return user.user_metadata?.tenant_id || user.app_metadata?.tenant_id || null
-  }
-
-  // Get user role from user metadata with robust fallback
   const getUserRole = (user: User): string => {
     const role = user.user_metadata?.role || user.app_metadata?.role
 
-    // Only allow valid roles, default to 'admin'
     if (role === 'super_admin' || role === 'admin') {
       return role
     }
 
-    // Default to admin for any other value
     return 'admin'
   }
 
-  // Check if user is admin (has basic access)
-  // Note: Both admin and super_admin have admin access
   const isAdmin = userRole === 'admin' || userRole === 'super_admin'
-
-  // Check if user is super admin (has full access including financial data)
   const isSuperAdmin = userRole === 'super_admin'
 
   const signIn = async (email: string, password: string) => {
@@ -80,17 +58,8 @@ export function useAuthProvider(): AuthContextType {
       if (error) throw error
 
       if (data.user) {
-        const userTenantId = getTenantId(data.user)
         const role = getUserRole(data.user)
         setUserRole(role)
-        if (userTenantId) {
-          setTenantId(userTenantId)
-        } else {
-          // For now, create a default tenant ID if none exists
-          const defaultTenantId = crypto.randomUUID()
-          setTenantId(defaultTenantId)
-          console.log('Created default tenant ID:', defaultTenantId)
-        }
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Terjadi kesalahan saat login'
@@ -101,39 +70,18 @@ export function useAuthProvider(): AuthContextType {
     }
   }
 
-  const signUp = async (signUpData: SignUpData) => {
+  const resetPassword = async (email: string) => {
     try {
       setLoading(true)
       setError(null)
 
-      // Generate a tenant ID for the new user
-      const newTenantId = crypto.randomUUID()
-
-      // Create the user with tenant_id in metadata
-      const { data, error } = await supabase.auth.signUp({
-        email: signUpData.email,
-        password: signUpData.password,
-        options: {
-          data: {
-            full_name: signUpData.fullName,
-            company_name: signUpData.companyName,
-            phone: signUpData.phone,
-            tenant_id: newTenantId,
-            role: 'super_admin' // First user becomes super admin
-          }
-        }
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`
       })
 
       if (error) throw error
-
-      if (data.user) {
-        setTenantId(newTenantId)
-        setUserRole('super_admin')
-        console.log('User registered with tenant ID:', newTenantId)
-      }
-
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Terjadi kesalahan saat mendaftar'
+      const errorMessage = err instanceof Error ? err.message : 'Terjadi kesalahan saat reset password'
       setError(errorMessage)
       throw err
     } finally {
@@ -149,7 +97,6 @@ export function useAuthProvider(): AuthContextType {
       const { error } = await supabase.auth.signOut()
       if (error) throw error
 
-      setTenantId(null)
       setUserRole(null)
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Terjadi kesalahan saat logout'
@@ -161,27 +108,18 @@ export function useAuthProvider(): AuthContextType {
   }
 
   useEffect(() => {
-    // Get initial session
     const getInitialSession = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession()
-        
+
         if (error) throw error
 
         setSession(session)
         setUser(session?.user ?? null)
 
         if (session?.user) {
-          const userTenantId = getTenantId(session.user)
           const role = getUserRole(session.user)
           setUserRole(role)
-          if (userTenantId) {
-            setTenantId(userTenantId)
-          } else {
-            // Create a default tenant ID if none exists
-            const defaultTenantId = crypto.randomUUID()
-            setTenantId(defaultTenantId)
-          }
         }
       } catch (err) {
         console.error('Error getting initial session:', err)
@@ -193,25 +131,15 @@ export function useAuthProvider(): AuthContextType {
 
     getInitialSession()
 
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         setSession(session)
         setUser(session?.user ?? null)
 
         if (session?.user) {
-          const userTenantId = getTenantId(session.user)
           const role = getUserRole(session.user)
           setUserRole(role)
-          if (userTenantId) {
-            setTenantId(userTenantId)
-          } else {
-            // Create a default tenant ID if none exists
-            const defaultTenantId = crypto.randomUUID()
-            setTenantId(defaultTenantId)
-          }
         } else {
-          setTenantId(null)
           setUserRole(null)
         }
 
@@ -228,14 +156,12 @@ export function useAuthProvider(): AuthContextType {
     loading,
     error,
     signIn,
-    signUp,
     signOut,
-    tenantId,
+    resetPassword,
     userRole,
     isAdmin,
     isSuperAdmin
   }
 }
 
-// Export the context for provider usage
 export { AuthContext }

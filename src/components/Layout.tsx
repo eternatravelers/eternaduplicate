@@ -94,7 +94,7 @@ const menuItems: MenuItem[] = [
 export function Layout({ children, activeTab, onTabChange, onViewTripParticipants }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [expandedCategories, setExpandedCategories] = useState<string[]>(['travel-management'])
-  const { user, signOut, tenantId, userRole, isAdmin, isSuperAdmin } = useAuth()
+  const { user, signOut, userRole, isAdmin, isSuperAdmin } = useAuth()
 
   const handleSignOut = async () => {
     try {
@@ -262,11 +262,6 @@ export function Layout({ children, activeTab, onTabChange, onViewTripParticipant
               </div>
             </div>
           </div>
-          {tenantId && (
-            <Badge variant="outline" className="mt-2 text-xs">
-              ID: {tenantId.slice(0, 8)}...
-            </Badge>
-          )}
         </div>
 
         <nav className="flex-grow overflow-y-auto py-4">
