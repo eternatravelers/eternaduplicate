@@ -47,7 +47,10 @@ export function useParticipants(filters?: ParticipantFilters) {
           updated_at,
           proof_of_transfer_url,
           meeting_point_details,
-          parent_participant_id
+          parent_participant_id,
+          payment_status,
+          total_paid,
+          remaining_payment
         `)
         .is('parent_participant_id', null)
         .is('deleted_at', null)
@@ -416,7 +419,10 @@ export function useDeletedParticipants() {
           meeting_point_details,
           parent_participant_id,
           deleted_at,
-          deleted_by_user_name
+          deleted_by_user_name,
+          payment_status,
+          total_paid,
+          remaining_payment
         `)
         .not('deleted_at', 'is', null)
         .is('parent_participant_id', null)
@@ -498,7 +504,10 @@ export function useAllParticipants() {
           updated_at,
           proof_of_transfer_url,
           meeting_point_details,
-          parent_participant_id
+          parent_participant_id,
+          payment_status,
+          total_paid,
+          remaining_payment
         `)
         .is('deleted_at', null)
         .order('created_at', { ascending: false })
