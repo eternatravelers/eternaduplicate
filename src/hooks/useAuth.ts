@@ -75,21 +75,6 @@ export function useAuthProvider(): AuthContextType {
       if (error) throw error
 
       if (data.user) {
-        const { data: userProfile, error: profileError } = await supabase
-          .from('user_profiles')
-          .select('is_active')
-          .eq('id', data.user.id)
-          .maybeSingle()
-
-        if (profileError) {
-          console.error('[useAuth] Error checking user status:', profileError)
-        }
-
-        if (userProfile && !userProfile.is_active) {
-          await supabase.auth.signOut()
-          throw new Error('Akun Anda telah dinonaktifkan. Silakan hubungi administrator.')
-        }
-
         const role = getUserRole(data.user)
         setUserRole(role)
       }
@@ -140,27 +125,6 @@ export function useAuthProvider(): AuthContextType {
   }
 
   useEffect(() => {
-    const checkUserStatus = async (userId: string) => {
-      const { data: userProfile, error: profileError } = await supabase
-        .from('user_profiles')
-        .select('is_active')
-        .eq('id', userId)
-        .maybeSingle()
-
-      if (profileError) {
-        console.error('[useAuth] Error checking user status:', profileError)
-        return true
-      }
-
-      if (userProfile && !userProfile.is_active) {
-        await supabase.auth.signOut()
-        setError('Akun Anda telah dinonaktifkan. Silakan hubungi administrator.')
-        return false
-      }
-
-      return true
-    }
-
     const getInitialSession = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession()
@@ -171,11 +135,8 @@ export function useAuthProvider(): AuthContextType {
         setUser(session?.user ?? null)
 
         if (session?.user) {
-          const isActive = await checkUserStatus(session.user.id)
-          if (isActive) {
-            const role = getUserRole(session.user)
-            setUserRole(role)
-          }
+          const role = getUserRole(session.user)
+          setUserRole(role)
         }
       } catch (err) {
         console.error('Error getting initial session:', err)
@@ -193,11 +154,8 @@ export function useAuthProvider(): AuthContextType {
         setUser(session?.user ?? null)
 
         if (session?.user) {
-          const isActive = await checkUserStatus(session.user.id)
-          if (isActive) {
-            const role = getUserRole(session.user)
-            setUserRole(role)
-          }
+          const role = getUserRole(session.user)
+          setUserRole(role)
         } else {
           setUserRole(null)
         }
