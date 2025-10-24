@@ -199,16 +199,16 @@ export function TransportationAssignmentModal({
           <div className="space-y-2">
             <Label htmlFor="driver_id">Pilih Driver (Opsional)</Label>
             <Select
-              value={formData.driver_id}
+              value={formData.driver_id || 'none'}
               onValueChange={(value) =>
-                setFormData({ ...formData, driver_id: value })
+                setFormData({ ...formData, driver_id: value === 'none' ? '' : value })
               }
             >
               <SelectTrigger id="driver_id">
                 <SelectValue placeholder="Pilih driver..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Belum ditentukan</SelectItem>
+                <SelectItem value="none">Belum ditentukan</SelectItem>
                 {drivers.map((driver) => (
                   <SelectItem key={driver.id} value={driver.id}>
                     <div className="flex items-center space-x-2">
