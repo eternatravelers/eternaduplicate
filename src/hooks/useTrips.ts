@@ -65,7 +65,7 @@ export function useTrips() {
               bio
             )
           ),
-          buses(
+          buses!trips_bus_id_fkey(
             id,
             bus_number,
             plate_number,
@@ -74,7 +74,7 @@ export function useTrips() {
             capacity,
             status
           ),
-          drivers(
+          drivers!trips_driver_id_fkey(
             id,
             name,
             phone,
