@@ -33,7 +33,6 @@ function AppContent() {
       if (isSuperAdmin) return true // Super admin has access to everything
 
       if (isAdmin) {
-        // Admin has access to operational tabs but NOT financial tabs
         const adminAllowedTabs = [
           'dashboard',
           'participants',
@@ -43,8 +42,7 @@ function AppContent() {
           'operational-resources',
           'cost-plans',
           'operations',
-          'trip-participants',
-          'user-management' // Will be further restricted in the page itself
+          'trip-participants'
         ]
         return adminAllowedTabs.includes(activeTab)
       }

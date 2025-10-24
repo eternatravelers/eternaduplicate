@@ -43,11 +43,11 @@ interface MenuItem {
 }
 
 const menuItems: MenuItem[] = [
-  { 
-    id: 'dashboard', 
-    label: 'Dashboard', 
-    icon: LayoutDashboard, 
-    type: 'item' 
+  {
+    id: 'dashboard',
+    label: 'Dashboard',
+    icon: LayoutDashboard,
+    type: 'item'
   },
   {
     id: 'travel-management',
@@ -83,11 +83,17 @@ const menuItems: MenuItem[] = [
       { id: 'trash', label: 'Sampah', icon: Trash2, type: 'item' }
     ]
   },
-  { 
-    id: 'operations', 
-    label: 'Operasional', 
-    icon: CheckSquare, 
-    type: 'item' 
+  {
+    id: 'operations',
+    label: 'Operasional',
+    icon: CheckSquare,
+    type: 'item'
+  },
+  {
+    id: 'user-management',
+    label: 'Manajemen Pengguna',
+    icon: UserCog,
+    type: 'item'
   }
 ]
 
@@ -128,23 +134,22 @@ export function Layout({ children, activeTab, onTabChange, onViewTripParticipant
   // Filter menu items based on user role
   const getFilteredMenuItems = () => {
     if (isSuperAdmin) {
-      return menuItems // Super admin sees everything
+      return menuItems
     }
 
     if (isAdmin) {
-      // Admin sees operational features but NOT finance/reports/analytics
       return menuItems.filter(item => {
         if (item.id === 'dashboard') return true
         if (item.id === 'travel-management') return true
         if (item.id === 'customer-management') return true
         if (item.id === 'operations') return true
-        // HIDE finance-reports from regular admin
         if (item.id === 'finance-reports') return false
+        if (item.id === 'user-management') return false
         return false
       })
     }
 
-    return [] // No access for other roles
+    return []
   }
 
   const filteredMenuItems = getFilteredMenuItems()
