@@ -28,7 +28,12 @@ export function useDrivers() {
           name,
           phone,
           license_number,
+          license_type,
+          license_expiry,
           status,
+          emergency_contact,
+          emergency_phone,
+          notes,
           created_at,
           updated_at,
           trip_drivers!left (

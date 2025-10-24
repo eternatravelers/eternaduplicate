@@ -25,10 +25,13 @@ export function useBuses() {
         .from('buses')
         .select(`
           id,
+          bus_number,
           plate_number,
+          type,
           model,
           capacity,
           status,
+          notes,
           created_at,
           updated_at,
           trip_buses!left (
