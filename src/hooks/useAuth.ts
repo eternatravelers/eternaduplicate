@@ -33,12 +33,29 @@ export function useAuthProvider(): AuthContextType {
   const [userRole, setUserRole] = useState<string | null>(null)
 
   const getUserRole = (user: User): string => {
-    const role = user.user_metadata?.role || user.app_metadata?.role
+    const userMetaRole = user.user_metadata?.role
+    const appMetaRole = user.app_metadata?.role
+
+    console.log('[useAuth] Getting user role:', {
+      userMetaRole,
+      appMetaRole,
+      userId: user.id,
+      email: user.email
+    })
+
+    const role = userMetaRole || appMetaRole
+
+    if (!role) {
+      console.warn('[useAuth] No role found in user metadata, defaulting to admin')
+      return 'admin'
+    }
 
     if (role === 'super_admin' || role === 'admin') {
+      console.log('[useAuth] Role assigned:', role)
       return role
     }
 
+    console.warn('[useAuth] Unknown role detected:', role, '- defaulting to admin')
     return 'admin'
   }
 

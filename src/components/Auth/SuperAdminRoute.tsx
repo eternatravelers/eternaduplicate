@@ -11,6 +11,12 @@ interface SuperAdminRouteProps {
 export function SuperAdminRoute({ children }: SuperAdminRouteProps) {
   const { isSuperAdmin, loading, userRole } = useAuth()
 
+  console.log('[SuperAdminRoute] Access check:', {
+    isSuperAdmin,
+    loading,
+    userRole
+  })
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">

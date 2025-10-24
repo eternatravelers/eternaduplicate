@@ -22,50 +22,16 @@ import { useAuth } from '@/hooks/useAuth'
 function AppContent() {
   const [activeTab, setActiveTab] = useState('dashboard')
   const [selectedTripForParticipants, setSelectedTripForParticipants] = useState<{id: string, name: string} | null>(null)
-  const { isSuperAdmin, isAdmin } = useAuth()
+  const { isSuperAdmin, isAdmin, userRole } = useAuth()
+
+  console.log('[AppContent] Auth state:', {
+    isSuperAdmin,
+    isAdmin,
+    userRole,
+    activeTab
+  })
 
   const renderContent = () => {
-    // Financial pages that require Super Admin access
-    const financialPages = ['finance', 'reports', 'analytics', 'trash']
-
-    // Check if user has access to the requested tab
-    const hasAccess = () => {
-      if (isSuperAdmin) return true // Super admin has access to everything
-
-      if (isAdmin) {
-        const adminAllowedTabs = [
-          'dashboard',
-          'participants',
-          'trips',
-          'destinations',
-          'sales',
-          'operational-resources',
-          'cost-plans',
-          'operations',
-          'trip-participants'
-        ]
-        return adminAllowedTabs.includes(activeTab)
-      }
-
-      return false
-    }
-
-    if (!hasAccess()) {
-      return (
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <div className="text-6xl mb-4">🔒</div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Akses Terbatas</h2>
-            <p className="text-gray-600">
-              {financialPages.includes(activeTab)
-                ? 'Halaman keuangan hanya dapat diakses oleh Super Admin.'
-                : 'Anda tidak memiliki izin untuk mengakses halaman ini.'}
-            </p>
-          </div>
-        </div>
-      )
-    }
-
     switch (activeTab) {
       case 'dashboard':
         return <Dashboard />
