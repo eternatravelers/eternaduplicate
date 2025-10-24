@@ -255,6 +255,9 @@ export function MeetingPointOperationsPage() {
                       handleAssignTransport(mp, item.participant_count)
                     }
                     onViewParticipants={handleViewParticipants}
+                    onEditAssignment={(mp) =>
+                      handleAssignTransport(mp, item.participant_count)
+                    }
                   />
                 ))}
               </div>

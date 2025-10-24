@@ -2,7 +2,7 @@ import React from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { MapPin, Users, Bus, Clock, CheckCircle2, AlertCircle, UserPlus } from 'lucide-react'
+import { MapPin, Users, Bus, Clock, CheckCircle2, AlertCircle, UserPlus, Edit } from 'lucide-react'
 import type { MeetingPointSummary } from '@/hooks/useMeetingPointSummary'
 
 interface MeetingPointSummaryCardProps {
@@ -10,13 +10,15 @@ interface MeetingPointSummaryCardProps {
   onSchedulePickup: (meetingPointName: string) => void
   onAssignTransport: (meetingPointName: string) => void
   onViewParticipants: (meetingPointName: string) => void
+  onEditAssignment?: (meetingPointName: string) => void
 }
 
 export function MeetingPointSummaryCard({
   summary,
   onSchedulePickup,
   onAssignTransport,
-  onViewParticipants
+  onViewParticipants,
+  onEditAssignment
 }: MeetingPointSummaryCardProps) {
   const hasNoParticipants = summary.participant_count === 0
 
@@ -133,7 +135,7 @@ export function MeetingPointSummaryCard({
                 </Button>
               )}
 
-              {!summary.has_transportation_assigned && (
+              {!summary.has_transportation_assigned ? (
                 <Button
                   size="sm"
                   variant="outline"
@@ -142,6 +144,16 @@ export function MeetingPointSummaryCard({
                 >
                   <Bus className="h-4 w-4 mr-2" />
                   Assign Bus & Driver
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="w-full justify-start text-blue-600 hover:text-blue-700"
+                  onClick={() => onEditAssignment?.(summary.meeting_point_name)}
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit Bus & Driver
                 </Button>
               )}
             </>

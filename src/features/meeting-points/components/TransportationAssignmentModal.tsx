@@ -6,8 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge'
 import { Bus, User, MapPin, Users, AlertTriangle, CheckCircle2 } from 'lucide-react'
 import { useCreateMeetingPointAssignment, useUpdateMeetingPointAssignment } from '@/hooks/useMeetingPointAssignments'
-import { useBuses } from '@/hooks/useBuses'
-import { useDrivers } from '@/hooks/useDrivers'
+import { useTrips } from '@/hooks/useTrips'
 import type { MeetingPointSummary } from '@/hooks/useMeetingPointSummary'
 
 interface TransportationAssignmentModalProps {
@@ -35,35 +34,36 @@ export function TransportationAssignmentModal({
     assignment_status: 'pending'
   })
 
-  const { buses, loading: loadingBuses } = useBuses()
-  const { drivers, loading: loadingDrivers } = useDrivers()
+  const { trips } = useTrips()
+  const selectedTripData = trips.find(t => t.id === tripId)
+
+  const assignedBus = selectedTripData?.buses
+  const assignedDriver = selectedTripData?.drivers
+
   const { createAssignment, loading: creating } = useCreateMeetingPointAssignment()
   const { updateAssignment, loading: updating } = useUpdateMeetingPointAssignment()
-
-  const selectedBus = buses.find(b => b.id === formData.bus_id)
-  const availableBuses = buses.filter(b => b.status === 'active')
 
   useEffect(() => {
     if (initialData) {
       setFormData({
-        bus_id: initialData.bus_id || '',
-        driver_id: initialData.driver_id || '',
+        bus_id: initialData.bus_id || assignedBus?.id || '',
+        driver_id: initialData.driver_id || assignedDriver?.id || '',
         assignment_status: initialData.assignment_status || 'pending'
       })
-    } else {
+    } else if (assignedBus) {
       setFormData({
-        bus_id: '',
-        driver_id: '',
+        bus_id: assignedBus.id,
+        driver_id: assignedDriver?.id || '',
         assignment_status: 'pending'
       })
     }
-  }, [initialData, isOpen])
+  }, [initialData, isOpen, assignedBus, assignedDriver])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!formData.bus_id) {
-      alert('Pilih bus terlebih dahulu')
+    if (!assignedBus) {
+      alert('Trip ini belum memiliki bus yang di-assign. Silakan assign bus di halaman Manajemen Perjalanan terlebih dahulu.')
       return
     }
 
@@ -75,10 +75,10 @@ export function TransportationAssignmentModal({
     const assignmentData = {
       trip_id: tripId,
       meeting_point_name: meetingPointName,
-      bus_id: formData.bus_id || null,
-      driver_id: formData.driver_id || null,
+      bus_id: assignedBus.id,
+      driver_id: assignedDriver?.id || null,
       capacity_used: participantCount,
-      capacity_available: selectedBus?.capacity || 0,
+      capacity_available: assignedBus.capacity,
       assignment_status: formData.assignment_status,
       pickup_schedule_id: null
     }
@@ -93,11 +93,11 @@ export function TransportationAssignmentModal({
     }
   }
 
-  const isCapacitySufficient = selectedBus
-    ? selectedBus.capacity >= participantCount
+  const isCapacitySufficient = assignedBus
+    ? assignedBus.capacity >= participantCount
     : false
 
-  const isLoading = creating || updating || loadingBuses || loadingDrivers
+  const isLoading = creating || updating
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -130,101 +130,80 @@ export function TransportationAssignmentModal({
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="bus_id">Pilih Bus *</Label>
-            <Select
-              value={formData.bus_id}
-              onValueChange={(value) =>
-                setFormData({ ...formData, bus_id: value })
-              }
-            >
-              <SelectTrigger id="bus_id">
-                <SelectValue placeholder="Pilih bus..." />
-              </SelectTrigger>
-              <SelectContent>
-                {availableBuses.map((bus) => {
-                  const isSufficient = bus.capacity >= participantCount
-                  return (
-                    <SelectItem key={bus.id} value={bus.id}>
-                      <div className="flex items-center justify-between w-full">
-                        <span>
-                          {bus.bus_number} - {bus.type || 'Bus'}
-                        </span>
-                        <span className="ml-2 text-xs text-gray-500">
-                          (Kapasitas: {bus.capacity})
-                        </span>
-                        {!isSufficient && (
-                          <AlertTriangle className="h-3 w-3 text-orange-500 ml-1" />
-                        )}
-                      </div>
-                    </SelectItem>
-                  )
-                })}
-              </SelectContent>
-            </Select>
-
-            {selectedBus && (
-              <div
-                className={`p-3 rounded-lg border text-sm ${
-                  isCapacitySufficient
-                    ? 'bg-green-50 border-green-200 text-green-800'
-                    : 'bg-orange-50 border-orange-200 text-orange-800'
-                }`}
-              >
-                <div className="flex items-center space-x-2">
-                  {isCapacitySufficient ? (
-                    <CheckCircle2 className="h-4 w-4" />
-                  ) : (
-                    <AlertTriangle className="h-4 w-4" />
-                  )}
+          {!assignedBus ? (
+            <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
+              <div className="flex items-start space-x-2">
+                <AlertTriangle className="h-5 w-5 text-orange-600 mt-0.5" />
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-orange-900">
+                    Belum ada bus yang di-assign
+                  </p>
+                  <p className="text-xs text-orange-700">
+                    Silakan assign bus di halaman <strong>Manajemen Perjalanan</strong> terlebih dahulu sebelum melakukan assignment meeting point.
+                  </p>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="mt-2"
+                    onClick={() => window.location.href = '/trips'}
+                  >
+                    Buka Manajemen Perjalanan
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <Label>Bus dari Trip</Label>
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-center justify-between">
                   <div>
-                    <div className="font-medium">
-                      Kapasitas Bus: {selectedBus.capacity} kursi
+                    <div className="font-medium text-blue-900">
+                      {assignedBus.bus_number} - {assignedBus.type}
                     </div>
-                    <div className="text-xs mt-1">
-                      {isCapacitySufficient
-                        ? `Cukup untuk ${participantCount} peserta (Sisa: ${
-                            selectedBus.capacity - participantCount
-                          } kursi)`
-                        : `Tidak cukup! Kurang ${
-                            participantCount - selectedBus.capacity
-                          } kursi`}
+                    <div className="text-xs text-blue-700 mt-1">
+                      {assignedBus.plate_number} • Kapasitas: {assignedBus.capacity} kursi
+                    </div>
+                  </div>
+                  {isCapacitySufficient ? (
+                    <CheckCircle2 className="h-5 w-5 text-green-600" />
+                  ) : (
+                    <AlertTriangle className="h-5 w-5 text-orange-600" />
+                  )}
+                </div>
+                <div className="mt-2 text-xs text-blue-700">
+                  {isCapacitySufficient
+                    ? `✓ Cukup untuk ${participantCount} peserta (Sisa: ${assignedBus.capacity - participantCount} kursi)`
+                    : `⚠ Tidak cukup! Kurang ${participantCount - assignedBus.capacity} kursi`}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {assignedDriver ? (
+            <div className="space-y-2">
+              <Label>Driver dari Trip</Label>
+              <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                <div className="flex items-center space-x-2">
+                  <User className="h-4 w-4 text-green-600" />
+                  <div>
+                    <div className="font-medium text-green-900">{assignedDriver.name}</div>
+                    <div className="text-xs text-green-700 mt-0.5">
+                      {assignedDriver.phone} • {assignedDriver.license_type}
                     </div>
                   </div>
                 </div>
               </div>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="driver_id">Pilih Driver (Opsional)</Label>
-            <Select
-              value={formData.driver_id || 'none'}
-              onValueChange={(value) =>
-                setFormData({ ...formData, driver_id: value === 'none' ? '' : value })
-              }
-            >
-              <SelectTrigger id="driver_id">
-                <SelectValue placeholder="Pilih driver..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Belum ditentukan</SelectItem>
-                {drivers.map((driver) => (
-                  <SelectItem key={driver.id} value={driver.id}>
-                    <div className="flex items-center space-x-2">
-                      <User className="h-3 w-3" />
-                      <span>{driver.name}</span>
-                      {driver.phone && (
-                        <span className="text-xs text-gray-500">
-                          ({driver.phone})
-                        </span>
-                      )}
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+            </div>
+          ) : (
+            <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+              <div className="flex items-center space-x-2 text-gray-600">
+                <User className="h-4 w-4" />
+                <span className="text-sm">Driver belum di-assign di trip ini</span>
+              </div>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="assignment_status">Status Assignment</Label>
