@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { Plus, AlertCircle, Users, Search, CreditCard as Edit, Trash2, UserPlus } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
@@ -38,7 +39,11 @@ export function UserManagementPage() {
     role: 'admin'
   })
   const [inviting, setInviting] = useState(false)
-  
+  const [editingUser, setEditingUser] = useState<UserProfile | null>(null)
+  const [showEditForm, setShowEditForm] = useState(false)
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+
   const { isSuperAdmin, user: currentUser } = useAuth()
 
   const fetchUsers = async () => {
@@ -132,6 +137,71 @@ export function UserManagementPage() {
     } finally {
       setInviting(false)
     }
+  }
+
+  const handleEditUser = (user: UserProfile) => {
+    setEditingUser(user)
+    setShowEditForm(true)
+  }
+
+  const handleUpdateUser = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editingUser) return
+
+    try {
+      setError(null)
+
+      const { error: updateError } = await supabase
+        .from('user_profiles')
+        .update({
+          full_name: editingUser.full_name,
+          company_name: editingUser.company_name,
+          phone: editingUser.phone,
+          role: editingUser.role,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', editingUser.id)
+
+      if (updateError) throw updateError
+
+      alert('Pengguna berhasil diperbarui!')
+      setShowEditForm(false)
+      setEditingUser(null)
+      fetchUsers()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Gagal memperbarui pengguna')
+    }
+  }
+
+  const handleDeleteUser = async () => {
+    if (!deletingUserId) return
+
+    try {
+      setError(null)
+
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        throw new Error('No active session')
+      }
+
+      const { error: deleteError } = await supabase.auth.admin.deleteUser(
+        deletingUserId
+      )
+
+      if (deleteError) throw deleteError
+
+      alert('Pengguna berhasil dihapus!')
+      setShowDeleteDialog(false)
+      setDeletingUserId(null)
+      fetchUsers()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Gagal menghapus pengguna')
+    }
+  }
+
+  const openDeleteDialog = (userId: string) => {
+    setDeletingUserId(userId)
+    setShowDeleteDialog(true)
   }
 
   const filteredUsers = users.filter(user => {
@@ -415,11 +485,23 @@ export function UserManagementPage() {
                     <TableCell>{formatShortDate(user.created_at)}</TableCell>
                     <TableCell>
                       <div className="flex space-x-2">
-                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-8 w-8 p-0"
+                          onClick={() => handleEditUser(user)}
+                          title="Edit pengguna"
+                        >
                           <Edit className="h-3 w-3" />
                         </Button>
-                        {user.role !== 'super_admin' && (
-                          <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-red-600 hover:text-red-700">
+                        {user.role !== 'super_admin' && user.id !== currentUser?.id && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                            onClick={() => openDeleteDialog(user.id)}
+                            title="Hapus pengguna"
+                          >
                             <Trash2 className="h-3 w-3" />
                           </Button>
                         )}
@@ -432,6 +514,110 @@ export function UserManagementPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Edit User Dialog */}
+      <Dialog open={showEditForm} onOpenChange={setShowEditForm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <Edit className="h-5 w-5" />
+              <span>Edit Pengguna</span>
+            </DialogTitle>
+          </DialogHeader>
+          {editingUser && (
+            <form onSubmit={handleUpdateUser} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2 md:col-span-2">
+                  <Label>Email</Label>
+                  <Input
+                    value={editingUser.email}
+                    disabled
+                    className="bg-gray-50"
+                  />
+                  <p className="text-xs text-gray-500">Email tidak dapat diubah</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-fullName">Nama Lengkap</Label>
+                  <Input
+                    id="edit-fullName"
+                    value={editingUser.full_name || ''}
+                    onChange={(e) => setEditingUser({ ...editingUser, full_name: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-companyName">Nama Perusahaan</Label>
+                  <Input
+                    id="edit-companyName"
+                    value={editingUser.company_name || ''}
+                    onChange={(e) => setEditingUser({ ...editingUser, company_name: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-phone">Nomor Telepon</Label>
+                  <Input
+                    id="edit-phone"
+                    value={editingUser.phone || ''}
+                    onChange={(e) => setEditingUser({ ...editingUser, phone: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-role">Peran</Label>
+                  <Select
+                    value={editingUser.role}
+                    onValueChange={(value) => setEditingUser({ ...editingUser, role: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="super_admin">Super Admin</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="flex space-x-2">
+                <Button type="submit">
+                  Simpan Perubahan
+                </Button>
+                <Button type="button" variant="outline" onClick={() => {
+                  setShowEditForm(false)
+                  setEditingUser(null)
+                }}>
+                  Batal
+                </Button>
+              </div>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete User Alert Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus Pengguna</AlertDialogTitle>
+            <AlertDialogDescription>
+              Apakah Anda yakin ingin menghapus pengguna ini? Tindakan ini tidak dapat dibatalkan dan akan menghapus semua data terkait pengguna.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setShowDeleteDialog(false)
+              setDeletingUserId(null)
+            }}>
+              Batal
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteUser}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Hapus
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
