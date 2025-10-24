@@ -2,7 +2,7 @@ import React from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { MapPin, Users, Bus, Clock, CheckCircle2, AlertCircle } from 'lucide-react'
+import { MapPin, Users, Bus, Clock, CheckCircle2, AlertCircle, UserPlus } from 'lucide-react'
 import type { MeetingPointSummary } from '@/hooks/useMeetingPointSummary'
 
 interface MeetingPointSummaryCardProps {
@@ -18,7 +18,12 @@ export function MeetingPointSummaryCard({
   onAssignTransport,
   onViewParticipants
 }: MeetingPointSummaryCardProps) {
+  const hasNoParticipants = summary.participant_count === 0
+
   const getStatusColor = () => {
+    if (hasNoParticipants) {
+      return 'bg-gray-50 border-gray-300 border-dashed'
+    }
     if (summary.has_pickup_schedule && summary.has_transportation_assigned) {
       return 'bg-green-50 border-green-200'
     }
@@ -29,6 +34,9 @@ export function MeetingPointSummaryCard({
   }
 
   const getStatusIcon = () => {
+    if (hasNoParticipants) {
+      return <AlertCircle className="h-5 w-5 text-gray-400" />
+    }
     if (summary.has_pickup_schedule && summary.has_transportation_assigned) {
       return <CheckCircle2 className="h-5 w-5 text-green-600" />
     }
@@ -86,38 +94,57 @@ export function MeetingPointSummaryCard({
         </div>
 
         <div className="flex flex-col space-y-2 pt-2 border-t">
-          <Button
-            size="sm"
-            variant="outline"
-            className="w-full justify-start"
-            onClick={() => onViewParticipants(summary.meeting_point_name)}
-          >
-            <Users className="h-4 w-4 mr-2" />
-            Lihat Daftar Peserta
-          </Button>
+          {hasNoParticipants ? (
+            <>
+              <div className="text-xs text-gray-500 text-center py-2 px-3 bg-gray-100 rounded">
+                Belum ada peserta di meeting point ini
+              </div>
+              <Button
+                size="sm"
+                variant="default"
+                className="w-full justify-start"
+                onClick={() => window.location.href = '/participants'}
+              >
+                <UserPlus className="h-4 w-4 mr-2" />
+                Tambah Peserta
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-full justify-start"
+                onClick={() => onViewParticipants(summary.meeting_point_name)}
+              >
+                <Users className="h-4 w-4 mr-2" />
+                Lihat Daftar Peserta
+              </Button>
 
-          {!summary.has_pickup_schedule && (
-            <Button
-              size="sm"
-              variant="outline"
-              className="w-full justify-start text-orange-600 hover:text-orange-700"
-              onClick={() => onSchedulePickup(summary.meeting_point_name)}
-            >
-              <Clock className="h-4 w-4 mr-2" />
-              Atur Jadwal Penjemputan
-            </Button>
-          )}
+              {!summary.has_pickup_schedule && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="w-full justify-start text-orange-600 hover:text-orange-700"
+                  onClick={() => onSchedulePickup(summary.meeting_point_name)}
+                >
+                  <Clock className="h-4 w-4 mr-2" />
+                  Atur Jadwal Penjemputan
+                </Button>
+              )}
 
-          {!summary.has_transportation_assigned && (
-            <Button
-              size="sm"
-              variant="outline"
-              className="w-full justify-start text-blue-600 hover:text-blue-700"
-              onClick={() => onAssignTransport(summary.meeting_point_name)}
-            >
-              <Bus className="h-4 w-4 mr-2" />
-              Assign Bus & Driver
-            </Button>
+              {!summary.has_transportation_assigned && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="w-full justify-start text-blue-600 hover:text-blue-700"
+                  onClick={() => onAssignTransport(summary.meeting_point_name)}
+                >
+                  <Bus className="h-4 w-4 mr-2" />
+                  Assign Bus & Driver
+                </Button>
+              )}
+            </>
           )}
         </div>
       </CardContent>

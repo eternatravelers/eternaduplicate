@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
-import { MapPin, Clock, Bus, FileText, Users, AlertCircle, Download } from 'lucide-react'
+import { MapPin, Clock, Bus, FileText, Users, AlertCircle, Download, UserPlus, Info } from 'lucide-react'
 import { useTrips } from '@/hooks/useTrips'
 import { useMeetingPointSummary } from '@/hooks/useMeetingPointSummary'
 import { MeetingPointSummaryCard } from '../components/MeetingPointSummaryCard'
@@ -118,12 +118,52 @@ export function MeetingPointOperationsPage() {
           <div className="h-64 bg-gray-200 rounded-lg"></div>
         </div>
       ) : summary.length === 0 ? (
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Belum ada peserta yang terdaftar untuk trip ini. Silakan tambahkan peserta terlebih dahulu.
-          </AlertDescription>
-        </Alert>
+        <Card className="border-2 border-dashed border-gray-300">
+          <CardContent className="pt-12 pb-12">
+            <div className="text-center space-y-6">
+              <div className="flex justify-center">
+                <div className="bg-blue-50 p-6 rounded-full">
+                  <MapPin className="h-16 w-16 text-blue-600" />
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <h3 className="text-xl font-semibold text-gray-900">
+                  Belum Ada Meeting Point untuk Trip Ini
+                </h3>
+                <p className="text-gray-600 max-w-md mx-auto">
+                  Trip ini belum memiliki meeting point yang terkonfigurasi. Meeting point akan otomatis muncul saat peserta mendaftar dengan lokasi meeting point mereka.
+                </p>
+              </div>
+
+              <Alert className="max-w-2xl mx-auto bg-blue-50 border-blue-200">
+                <Info className="h-4 w-4 text-blue-600" />
+                <AlertDescription className="text-sm text-blue-900">
+                  <strong>Langkah selanjutnya:</strong> Tambahkan peserta terlebih dahulu pada halaman Participants. Meeting point akan otomatis tercatat berdasarkan data peserta yang didaftarkan.
+                </AlertDescription>
+              </Alert>
+
+              <div className="flex justify-center gap-3 pt-4">
+                <Button
+                  variant="default"
+                  size="lg"
+                  onClick={() => window.location.href = '/participants'}
+                  className="gap-2"
+                >
+                  <UserPlus className="h-5 w-5" />
+                  Tambah Peserta
+                </Button>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={() => window.location.href = '/trips'}
+                >
+                  Lihat Semua Trip
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       ) : (
         <>
           <div className="grid gap-4 md:grid-cols-4">

@@ -77,12 +77,27 @@ export function MeetingPointParticipantsModal({
             </div>
 
             {filteredParticipants.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">
-                <Users className="h-16 w-16 mx-auto mb-4 opacity-30" />
-                <h3 className="text-lg font-medium mb-2">Tidak ada peserta</h3>
-                <p className="text-sm">
-                  Belum ada peserta yang terdaftar di meeting point ini
-                </p>
+              <div className="text-center py-12 space-y-4">
+                <div className="flex justify-center">
+                  <div className="bg-gray-50 p-6 rounded-full">
+                    <Users className="h-16 w-16 text-gray-400" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-lg font-medium text-gray-900">Tidak Ada Peserta</h3>
+                  <p className="text-sm text-gray-600 max-w-sm mx-auto">
+                    Belum ada peserta yang terdaftar di meeting point ini. Tambahkan peserta terlebih dahulu untuk melanjutkan operasi.
+                  </p>
+                </div>
+                <Button
+                  onClick={() => {
+                    onClose()
+                    window.location.href = '/participants'
+                  }}
+                  className="mt-4"
+                >
+                  Tambah Peserta
+                </Button>
               </div>
             ) : (
               <Table>

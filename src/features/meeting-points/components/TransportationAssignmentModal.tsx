@@ -67,6 +67,11 @@ export function TransportationAssignmentModal({
       return
     }
 
+    if (participantCount === 0) {
+      alert('Tidak dapat assign transportasi untuk meeting point tanpa peserta')
+      return
+    }
+
     const assignmentData = {
       trip_id: tripId,
       meeting_point_name: meetingPointName,
