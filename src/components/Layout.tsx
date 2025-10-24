@@ -84,10 +84,14 @@ const menuItems: MenuItem[] = [
     ]
   },
   {
-    id: 'operations',
+    id: 'operations-category',
     label: 'Operasional',
     icon: CheckSquare,
-    type: 'item'
+    type: 'category',
+    children: [
+      { id: 'operations', label: 'Trip Monitoring', icon: CheckSquare, type: 'item' },
+      { id: 'meeting-points', label: 'Meeting Point Operations', icon: MapPin, type: 'item' }
+    ]
   },
   {
     id: 'user-management',
@@ -142,7 +146,7 @@ export function Layout({ children, activeTab, onTabChange, onViewTripParticipant
         if (item.id === 'dashboard') return true
         if (item.id === 'travel-management') return true
         if (item.id === 'customer-management') return true
-        if (item.id === 'operations') return true
+        if (item.id === 'operations-category') return true
         if (item.id === 'finance-reports') return false
         if (item.id === 'user-management') return false
         return false
