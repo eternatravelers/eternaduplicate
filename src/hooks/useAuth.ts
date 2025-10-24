@@ -31,6 +31,7 @@ export function useAuthProvider(): AuthContextType {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [userRole, setUserRole] = useState<string | null>(null)
+  const [isCheckingStatus, setIsCheckingStatus] = useState(false)
 
   const getUserRole = (user: User): string => {
     const userMetaRole = user.user_metadata?.role
@@ -78,7 +79,7 @@ export function useAuthProvider(): AuthContextType {
         const { data: userProfile, error: profileError } = await supabase
           .from('user_profiles')
           .select('is_active')
-          .eq('id', data.user.id)
+          .eq('user_id', data.user.id)
           .maybeSingle()
 
         if (profileError) {
@@ -140,73 +141,106 @@ export function useAuthProvider(): AuthContextType {
   }
 
   useEffect(() => {
+    let mounted = true
+    let loadingTimeout: NodeJS.Timeout | null = null
+
     const checkUserStatus = async (userId: string) => {
-      const { data: userProfile, error: profileError } = await supabase
-        .from('user_profiles')
-        .select('is_active')
-        .eq('id', userId)
-        .maybeSingle()
+      if (isCheckingStatus) return true
 
-      if (profileError) {
-        console.error('[useAuth] Error checking user status:', profileError)
+      setIsCheckingStatus(true)
+      try {
+        const { data: userProfile, error: profileError } = await supabase
+          .from('user_profiles')
+          .select('is_active')
+          .eq('user_id', userId)
+          .maybeSingle()
+
+        if (profileError) {
+          console.error('[useAuth] Error checking user status:', profileError)
+          return true
+        }
+
+        if (userProfile && !userProfile.is_active) {
+          await supabase.auth.signOut()
+          setError('Akun Anda telah dinonaktifkan. Silakan hubungi administrator.')
+          return false
+        }
+
         return true
+      } finally {
+        setIsCheckingStatus(false)
       }
-
-      if (userProfile && !userProfile.is_active) {
-        await supabase.auth.signOut()
-        setError('Akun Anda telah dinonaktifkan. Silakan hubungi administrator.')
-        return false
-      }
-
-      return true
     }
 
     const getInitialSession = async () => {
       try {
+        loadingTimeout = setTimeout(() => {
+          if (mounted) {
+            console.warn('[useAuth] Session check timeout - forcing loading to false')
+            setLoading(false)
+            setError('Koneksi lambat. Silakan muat ulang halaman.')
+          }
+        }, 10000)
+
         const { data: { session }, error } = await supabase.auth.getSession()
 
         if (error) throw error
+
+        if (!mounted) return
 
         setSession(session)
         setUser(session?.user ?? null)
 
         if (session?.user) {
           const isActive = await checkUserStatus(session.user.id)
-          if (isActive) {
+          if (mounted && isActive) {
             const role = getUserRole(session.user)
             setUserRole(role)
           }
         }
       } catch (err) {
-        console.error('Error getting initial session:', err)
-        setError(err instanceof Error ? err.message : 'Unknown error')
+        console.error('[useAuth] Error getting initial session:', err)
+        if (mounted) {
+          setError(err instanceof Error ? err.message : 'Unknown error')
+        }
       } finally {
-        setLoading(false)
+        if (loadingTimeout) clearTimeout(loadingTimeout)
+        if (mounted) {
+          setLoading(false)
+        }
       }
     }
 
     getInitialSession()
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setSession(session)
-        setUser(session?.user ?? null)
+      (event, session) => {
+        (async () => {
+          if (!mounted) return
 
-        if (session?.user) {
-          const isActive = await checkUserStatus(session.user.id)
-          if (isActive) {
-            const role = getUserRole(session.user)
-            setUserRole(role)
+          setSession(session)
+          setUser(session?.user ?? null)
+
+          if (session?.user) {
+            const isActive = await checkUserStatus(session.user.id)
+            if (mounted && isActive) {
+              const role = getUserRole(session.user)
+              setUserRole(role)
+            }
+          } else {
+            if (mounted) setUserRole(null)
           }
-        } else {
-          setUserRole(null)
-        }
 
-        setLoading(false)
+          if (mounted) setLoading(false)
+        })()
       }
     )
 
-    return () => subscription.unsubscribe()
+    return () => {
+      mounted = false
+      if (loadingTimeout) clearTimeout(loadingTimeout)
+      subscription.unsubscribe()
+    }
   }, [])
 
   return {

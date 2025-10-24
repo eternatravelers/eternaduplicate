@@ -26,26 +26,25 @@ export function useDashboard() {
   const fetchDashboardData = async () => {
     try {
       setLoading(true)
-      
-      // Fetch all required data
+
+      const today = new Date().toISOString().split('T')[0]
+
+      // Fetch all required data - optimized queries
       const [
         { data: participants },
         { data: transactions },
         { data: trips }
       ] = await Promise.all([
-        supabase.from('participants').select('id'),
-        supabase.from('transactions').select('*').eq('status', 'active'),
+        supabase.from('participants').select('id', { count: 'exact', head: true }),
+        supabase.from('transactions').select('amount, transaction_type').eq('status', 'active'),
         supabase
           .from('trips')
           .select(`
             id,
             name,
             departure_date,
-            return_date,
             quota,
             status,
-            meeting_point,
-            price,
             participants!left(id),
             trip_destinations!left(
               destinations(
@@ -55,6 +54,9 @@ export function useDashboard() {
             )
           `)
           .eq('status', 'active')
+          .gte('departure_date', today)
+          .order('departure_date', { ascending: true })
+          .limit(5)
       ])
 
       // Calculate income and expenses
@@ -63,11 +65,25 @@ export function useDashboard() {
       const totalExpense = transactions?.filter(t => t.transaction_type === 'Pengeluaran')
         .reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0) || 0
       
+      // Get total counts more efficiently
+      const { count: totalParticipantCount } = await supabase
+        .from('participants')
+        .select('*', { count: 'exact', head: true })
+
+      const { count: totalTripCount } = await supabase
+        .from('trips')
+        .select('*', { count: 'exact', head: true })
+
+      const { count: activeTripCount } = await supabase
+        .from('trips')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'active')
+
       // Calculate stats
-      const totalTrips = trips?.length || 0
-      const totalParticipants = participants?.length || 0
-      const totalRevenue = totalIncome // Omset is total income
-      const activeTrips = trips?.filter(trip => trip.status === 'active').length || 0
+      const totalTrips = totalTripCount || 0
+      const totalParticipants = totalParticipantCount || 0
+      const totalRevenue = totalIncome
+      const activeTrips = activeTripCount || 0
       const profitMargin = totalIncome > 0 ? ((totalIncome - totalExpense) / totalIncome) * 100 : 0
 
       setStats({
@@ -91,14 +107,7 @@ export function useDashboard() {
         destinations: trip.trip_destinations?.map(td => td.destinations).filter(Boolean) || []
       })) || []
 
-      // Set upcoming trips
-      const today = new Date().toISOString().split('T')[0]
-      const upcoming = processedTrips
-        .filter(trip => trip.departure_date >= today)
-        .sort((a, b) => new Date(a.departure_date).getTime() - new Date(b.departure_date).getTime())
-        .slice(0, 5)
-      
-      setUpcomingTrips(upcoming)
+      setUpcomingTrips(processedTrips)
 
     } catch (error) {
       console.error('Error fetching dashboard data:', error)
