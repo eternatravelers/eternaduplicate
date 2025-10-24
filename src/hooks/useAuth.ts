@@ -47,15 +47,24 @@ export function useAuthProvider(): AuthContextType {
     return user.user_metadata?.tenant_id || user.app_metadata?.tenant_id || null
   }
 
-  // Get user role from user metadata
+  // Get user role from user metadata with robust fallback
   const getUserRole = (user: User): string => {
-    return user.user_metadata?.role || user.app_metadata?.role || 'admin'
+    const role = user.user_metadata?.role || user.app_metadata?.role
+
+    // Only allow valid roles, default to 'admin'
+    if (role === 'super_admin' || role === 'admin') {
+      return role
+    }
+
+    // Default to admin for any other value
+    return 'admin'
   }
 
   // Check if user is admin (has basic access)
+  // Note: Both admin and super_admin have admin access
   const isAdmin = userRole === 'admin' || userRole === 'super_admin'
 
-  // Check if user is super admin (has full access)
+  // Check if user is super admin (has full access including financial data)
   const isSuperAdmin = userRole === 'super_admin'
 
   const signIn = async (email: string, password: string) => {

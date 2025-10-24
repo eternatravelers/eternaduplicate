@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { AuthProvider } from '@/components/Auth/AuthProvider'
 import { ProtectedRoute } from '@/components/Auth/ProtectedRoute'
+import { SuperAdminRoute } from '@/components/Auth/SuperAdminRoute'
 import { Layout } from '@/components/Layout'
 import { Dashboard } from '@/components/Dashboard'
 import { ParticipantsPage } from '@/features/participants/pages/ParticipantsPage'
@@ -16,6 +17,7 @@ import { CostPlansPage } from '@/features/cost-plans/pages/CostPlansPage'
 import { TrashTransactionsPage } from '@/features/finance/pages/TrashTransactionsPage'
 import { FinancePage } from '@/features/finance/pages/FinancePage'
 import { TripParticipantsPage } from '@/features/trips/pages/TripParticipantsPage'
+import { UserManagementPage } from '@/features/user-management/pages/UserManagementPage'
 import { useAuth } from '@/hooks/useAuth'
 function AppContent() {
   const [activeTab, setActiveTab] = useState('dashboard')
@@ -23,34 +25,30 @@ function AppContent() {
   const { isSuperAdmin, isAdmin } = useAuth()
 
   const renderContent = () => {
+    // Financial pages that require Super Admin access
+    const financialPages = ['finance', 'reports', 'analytics', 'trash']
+
     // Check if user has access to the requested tab
     const hasAccess = () => {
       if (isSuperAdmin) return true // Super admin has access to everything
-      
+
       if (isAdmin) {
-        // Admin only has access to specific tabs
+        // Admin has access to operational tabs but NOT financial tabs
         const adminAllowedTabs = [
           'dashboard',
-          'participants', 
-          'trips', 
-          'destinations', 
-          'sales', 
-          'operational-resources', 
-          'finance',
-          'operations',
-          'reports',
+          'participants',
+          'trips',
+          'destinations',
+          'sales',
           'operational-resources',
-          'finance',
-          'operations',
-          'reports',
-          'analytics',
           'cost-plans',
-          'trash',
-          'trip-participants'
+          'operations',
+          'trip-participants',
+          'user-management' // Will be further restricted in the page itself
         ]
         return adminAllowedTabs.includes(activeTab)
       }
-      
+
       return false
     }
 
@@ -60,7 +58,11 @@ function AppContent() {
           <div className="text-center">
             <div className="text-6xl mb-4">🔒</div>
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Akses Terbatas</h2>
-            <p className="text-gray-600">Anda tidak memiliki izin untuk mengakses halaman ini.</p>
+            <p className="text-gray-600">
+              {financialPages.includes(activeTab)
+                ? 'Halaman keuangan hanya dapat diakses oleh Super Admin.'
+                : 'Anda tidak memiliki izin untuk mengakses halaman ini.'}
+            </p>
           </div>
         </div>
       )
@@ -83,19 +85,39 @@ function AppContent() {
       case 'operational-resources':
         return <OperationalResourcesPage />
       case 'finance':
-        return <FinancePage />
+        return (
+          <SuperAdminRoute>
+            <FinancePage />
+          </SuperAdminRoute>
+        )
       case 'operations':
         return <OperationsPage />
       case 'reports':
-        return <ReportsPage />
+        return (
+          <SuperAdminRoute>
+            <ReportsPage />
+          </SuperAdminRoute>
+        )
       case 'analytics':
-        return <AnalyticsPage />
+        return (
+          <SuperAdminRoute>
+            <AnalyticsPage />
+          </SuperAdminRoute>
+        )
       case 'cost-plans':
         return <CostPlansPage />
       case 'trash':
-        return <TrashTransactionsPage />
+        return (
+          <SuperAdminRoute>
+            <TrashTransactionsPage />
+          </SuperAdminRoute>
+        )
       case 'user-management':
-        return <UserManagementPage />
+        return (
+          <SuperAdminRoute>
+            <UserManagementPage />
+          </SuperAdminRoute>
+        )
       case 'trip-participants':
         return selectedTripForParticipants ? (
           <TripParticipantsPage

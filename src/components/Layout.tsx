@@ -130,19 +130,20 @@ export function Layout({ children, activeTab, onTabChange, onViewTripParticipant
     if (isSuperAdmin) {
       return menuItems // Super admin sees everything
     }
-    
+
     if (isAdmin) {
-      // Admin only sees dashboard, travel management, and customer management
+      // Admin sees operational features but NOT finance/reports/analytics
       return menuItems.filter(item => {
         if (item.id === 'dashboard') return true
         if (item.id === 'travel-management') return true
         if (item.id === 'customer-management') return true
-        if (item.id === 'finance-reports') return true // Show finance & reports for admin
-        if (item.id === 'operations') return true // Show operations for admin
+        if (item.id === 'operations') return true
+        // HIDE finance-reports from regular admin
+        if (item.id === 'finance-reports') return false
         return false
       })
     }
-    
+
     return [] // No access for other roles
   }
 
