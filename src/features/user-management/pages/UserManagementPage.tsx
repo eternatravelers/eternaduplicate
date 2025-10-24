@@ -51,21 +51,27 @@ export function UserManagementPage() {
         return
       }
 
-      const { data: { users: authUsers }, error } = await supabase.auth.admin.listUsers()
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        throw new Error('No active session')
+      }
 
-      if (error) throw error
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/list-users`
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+      })
 
-      const mappedUsers: UserProfile[] = (authUsers || []).map(user => ({
-        id: user.id,
-        email: user.email || 'N/A',
-        full_name: user.user_metadata?.full_name || null,
-        company_name: user.user_metadata?.company_name || null,
-        phone: user.user_metadata?.phone || null,
-        role: user.user_metadata?.role || user.app_metadata?.role || 'admin',
-        created_at: user.created_at
-      }))
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to fetch users')
+      }
 
-      setUsers(mappedUsers)
+      const data = await response.json()
+      setUsers(data.users || [])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Terjadi kesalahan')
     } finally {
@@ -75,29 +81,41 @@ export function UserManagementPage() {
 
   const handleInviteUser = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     try {
       setInviting(true)
       setError(null)
 
-      const temporaryPassword = 'TempPass' + Math.random().toString(36).slice(-8) + '!'
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        throw new Error('No active session')
+      }
 
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: inviteData.email,
-        password: temporaryPassword,
-        email_confirm: true,
-        user_metadata: {
-          full_name: inviteData.fullName,
-          company_name: inviteData.companyName,
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/invite-user`
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: inviteData.email,
+          fullName: inviteData.fullName,
+          companyName: inviteData.companyName,
           phone: inviteData.phone,
           role: inviteData.role
-        }
+        }),
       })
 
-      if (authError) throw authError
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to invite user')
+      }
 
-      if (authData.user) {
-        alert(`Pengguna berhasil diundang!\n\nEmail: ${inviteData.email}\nPassword Sementara: ${temporaryPassword}\n\nSilakan bagikan informasi ini kepada pengguna.`)
+      const data = await response.json()
+
+      if (data.success) {
+        alert(`Pengguna berhasil diundang!\n\nEmail: ${inviteData.email}\nPassword Sementara: ${data.temporaryPassword}\n\nSilakan bagikan informasi ini kepada pengguna.`)
 
         setInviteData({
           email: '',
