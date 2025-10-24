@@ -11,7 +11,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Users, Plus, CreditCard as Edit, Trash2, UserPlus, Mail, Phone, MapPin } from 'lucide-react'
 import { FileSpreadsheet } from 'lucide-react'
 import { formatCurrency, formatShortDate } from '@/lib/utils'
-import { useParticipants, useCreateParticipant, useUpdateParticipant, useDeleteParticipant } from '@/hooks/useParticipants'
+import { useAllParticipants, useCreateParticipant, useUpdateParticipant, useDeleteParticipant } from '@/hooks/useParticipants'
 import { GroupMembersCSVImportModal } from './GroupMembersCSVImportModal'
 
 interface GroupMembersModalProps {
@@ -38,7 +38,7 @@ export function GroupMembersModal({
     additional_requests: ''
   })
 
-  const { participants: allParticipants, loading: participantsLoading, refetch } = useParticipants()
+  const { allParticipants, loading: participantsLoading, refetch } = useAllParticipants()
   const { createParticipant, loading: creating } = useCreateParticipant()
   const { updateParticipant, loading: updating } = useUpdateParticipant()
   const { deleteParticipant, loading: deleting } = useDeleteParticipant()
