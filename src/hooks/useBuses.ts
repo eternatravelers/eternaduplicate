@@ -33,26 +33,12 @@ export function useBuses() {
           status,
           notes,
           created_at,
-          updated_at,
-          trip_buses!left (
-            trips (
-              id,
-              name,
-              departure_date,
-              status
-            )
-          )
+          updated_at
         `)
 
       if (error) throw error
 
-      // Process data to include assigned trips
-      const busesWithAssignments = data?.map(bus => ({
-        ...bus,
-        assignedTrips: bus.trip_buses?.map(tb => tb.trips).filter(Boolean) || []
-      })) || []
-
-      setBuses(busesWithAssignments)
+      setBuses(data || [])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error')
     } finally {

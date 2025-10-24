@@ -35,26 +35,12 @@ export function useDrivers() {
           emergency_phone,
           notes,
           created_at,
-          updated_at,
-          trip_drivers!left (
-            trips (
-              id,
-              name,
-              departure_date,
-              status
-            )
-          )
+          updated_at
         `)
 
       if (error) throw error
 
-      // Process data to include assigned trips
-      const driversWithAssignments = data?.map(driver => ({
-        ...driver,
-        assignedTrips: driver.trip_drivers?.map(td => td.trips).filter(Boolean) || []
-      })) || []
-
-      setDrivers(driversWithAssignments)
+      setDrivers(data || [])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error')
     } finally {
