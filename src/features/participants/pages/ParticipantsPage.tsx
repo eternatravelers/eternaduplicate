@@ -40,6 +40,9 @@ export function ParticipantsPage() {
   const totalParticipants = allParticipants.length
   const totalRevenue = participants.reduce((sum, p) => sum + (p.package_price || 0), 0)
   const totalDP = participants.reduce((sum, p) => sum + (p.dp_amount || 0), 0)
+  const totalPaid = participants.reduce((sum, p) => sum + (p.total_paid || 0), 0)
+  const totalRemaining = participants.reduce((sum, p) => sum + (p.remaining_payment || 0), 0)
+  const paidOffCount = participants.filter(p => p.payment_status === 'lunas').length
 
   const handleSubmit = async (data: any, file?: File | null) => {
     try {
@@ -215,6 +218,9 @@ export function ParticipantsPage() {
         totalRevenue={totalRevenue}
         totalDP={totalDP}
         deletedCount={deletedParticipants.length}
+        totalPaid={totalPaid}
+        totalRemaining={totalRemaining}
+        paidOffCount={paidOffCount}
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">

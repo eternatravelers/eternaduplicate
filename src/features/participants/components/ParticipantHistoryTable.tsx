@@ -5,9 +5,10 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, CreditCard as Edit, Search, Users, UserPlus } from 'lucide-react';
+import { Trash2, CreditCard as Edit, Search, Users, UserPlus, Wallet } from 'lucide-react';
 import { formatCurrency, formatShortDate } from '@/lib/utils';
 import { GroupMembersModal } from './GroupMembersModal';
+import { PaymentManagementModal } from './PaymentManagementModal';
 
 interface Participant {
   id: string;
@@ -20,6 +21,9 @@ interface Participant {
   dp_amount: number;
   dp_transfer_date: string;
   status: string;
+  payment_status?: string;
+  total_paid?: number;
+  remaining_payment?: number;
   additional_requests?: string;
   trip_id?: string;
   sales_id?: string;
@@ -52,14 +56,36 @@ export function ParticipantHistoryTable({
 }: ParticipantHistoryTableProps) {
   const [showGroupMembersModal, setShowGroupMembersModal] = useState(false);
   const [selectedGroupParticipant, setSelectedGroupParticipant] = useState<any>(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [selectedPaymentParticipant, setSelectedPaymentParticipant] = useState<any>(null);
 
   const handleViewGroupMembers = (participant: any) => {
     setSelectedGroupParticipant(participant);
     setShowGroupMembersModal(true);
   };
 
+  const handleManagePayment = (participant: any) => {
+    setSelectedPaymentParticipant(participant);
+    setShowPaymentModal(true);
+  };
+
   const isGroupLeader = (participant: any) => {
     return participant.participant_count > 1 && !participant.parent_participant_id;
+  };
+
+  const getPaymentStatusBadge = (status: string) => {
+    switch (status) {
+      case 'lunas':
+        return <Badge className="bg-green-600">Lunas</Badge>;
+      case 'cicilan_berjalan':
+        return <Badge className="bg-blue-600">Cicilan Berjalan</Badge>;
+      case 'dp_dibayar':
+        return <Badge className="bg-yellow-600">DP Dibayar</Badge>;
+      case 'belum_bayar':
+        return <Badge className="bg-red-600">Belum Bayar</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
   };
 
   const getStatusBadgeVariant = (status: string) => {
@@ -121,7 +147,7 @@ export function ParticipantHistoryTable({
               <TableHead>Contact</TableHead>
               <TableHead>Participants</TableHead>
               <TableHead>Package Price</TableHead>
-              <TableHead>DP Amount</TableHead>
+              <TableHead>Payment Status</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Created</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -169,15 +195,18 @@ export function ParticipantHistoryTable({
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    {formatCurrency(participant.package_price)}
-                  </TableCell>
-                  <TableCell>
                     <div>
-                      <div>{formatCurrency(participant.dp_amount)}</div>
-                      <div className="text-xs text-gray-500">
-                        {formatShortDate(participant.dp_transfer_date)}
+                      <div className="font-medium">{formatCurrency(participant.package_price)}</div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        Bayar: {formatCurrency(participant.total_paid || 0)}
+                      </div>
+                      <div className="text-xs text-red-600">
+                        Sisa: {formatCurrency(participant.remaining_payment || 0)}
                       </div>
                     </div>
+                  </TableCell>
+                  <TableCell>
+                    {getPaymentStatusBadge(participant.payment_status || 'belum_bayar')}
                   </TableCell>
                   <TableCell>
                     <Badge variant={getStatusBadgeVariant(participant.status)}>
@@ -200,6 +229,15 @@ export function ParticipantHistoryTable({
                           <Users className="h-4 w-4" />
                         </Button>
                       )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleManagePayment(participant)}
+                        title="Kelola pembayaran"
+                        className="text-green-600 hover:text-green-700"
+                      >
+                        <Wallet className="h-4 w-4" />
+                      </Button>
                       <Button
                         variant="outline"
                         size="sm"
@@ -235,6 +273,13 @@ export function ParticipantHistoryTable({
         isOpen={showGroupMembersModal}
         onClose={() => setShowGroupMembersModal(false)}
         groupParticipant={selectedGroupParticipant}
+        onRefresh={onRefresh}
+      />
+
+      <PaymentManagementModal
+        isOpen={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+        participant={selectedPaymentParticipant}
         onRefresh={onRefresh}
       />
     </>
