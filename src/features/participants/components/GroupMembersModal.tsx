@@ -102,8 +102,19 @@ export function GroupMembersModal({
 
   const handleSubmitMember = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!groupParticipant) return
+
+    // Validate that we're not exceeding the group capacity (only for new members, not edits)
+    if (!editingMember) {
+      const totalMembers = groupMembers.length + 1 // +1 for group leader
+      const expectedMembers = groupParticipant.participant_count
+
+      if (totalMembers >= expectedMembers) {
+        alert(`Grup sudah penuh! Jumlah maksimal peserta adalah ${expectedMembers} orang (termasuk ketua grup).`)
+        return
+      }
+    }
 
     const submitData = {
       trip_id: groupParticipant.trip_id,
@@ -129,7 +140,7 @@ export function GroupMembersModal({
       } else {
         await createParticipant(submitData)
       }
-      
+
       setShowAddMemberForm(false)
       setEditingMember(null)
       resetMemberForm()

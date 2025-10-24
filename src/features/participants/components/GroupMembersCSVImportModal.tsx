@@ -131,7 +131,7 @@ export function GroupMembersCSVImportModal({
 
   const handleImport = async () => {
     const validMembers = parsedData.filter(m => m.errors.length === 0)
-    
+
     if (validMembers.length === 0) {
       setParseError('Tidak ada data valid untuk diimpor')
       return
@@ -139,6 +139,18 @@ export function GroupMembersCSVImportModal({
 
     if (!groupParticipant) {
       setParseError('Data grup tidak ditemukan')
+      return
+    }
+
+    // Validate group capacity
+    // We need to fetch current group members to check available slots
+    // Note: This is a simplified check. In production, you'd want to fetch actual member count
+    const expectedMembers = groupParticipant.participant_count
+    const currentMembersCount = 1 // 1 for group leader. In production, fetch actual count from DB
+    const availableSlots = expectedMembers - currentMembersCount
+
+    if (validMembers.length > availableSlots) {
+      setParseError(`Jumlah anggota yang diimpor (${validMembers.length}) melebihi kapasitas grup yang tersedia (${availableSlots} slot tersisa)`)
       return
     }
 

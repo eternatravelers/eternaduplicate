@@ -6,7 +6,7 @@ import { ParticipantForm } from '../components/ParticipantForm'
 import { GroupRegistrationForm } from '../components/GroupRegistrationForm'
 import { ParticipantHistoryTable } from '../components/ParticipantHistoryTable'
 import { DeletedParticipantsTable } from '../components/DeletedParticipantsTable'
-import { useParticipants, useCreateParticipant, useUpdateParticipant, useDeleteParticipant, useRestoreParticipant, useDeletedParticipants } from '@/hooks/useParticipants'
+import { useParticipants, useCreateParticipant, useUpdateParticipant, useDeleteParticipant, useRestoreParticipant, useDeletedParticipants, useAllParticipants } from '@/hooks/useParticipants'
 import { useTrips } from '@/hooks/useTrips'
 import { useSales } from '@/hooks/useSales'
 import { CSVImportModal } from '../components/CSVImportModal'
@@ -27,6 +27,7 @@ export function ParticipantsPage() {
   
   const { participants, loading, refetch } = useParticipants()
   const { deletedParticipants, loading: deletedLoading, refetch: refetchDeleted } = useDeletedParticipants()
+  const { allParticipants } = useAllParticipants()
   const { trips } = useTrips()
   const { sales } = useSales()
   const { createParticipant, loading: creating } = useCreateParticipant()
@@ -35,8 +36,8 @@ export function ParticipantsPage() {
   const { restoreParticipant, loading: restoring } = useRestoreParticipant()
   const { isAdmin, isSuperAdmin } = useAuth()
 
-  // Calculate stats
-  const totalParticipants = participants.reduce((sum, p) => sum + (p.participant_count || 1), 0)
+  // Calculate stats - count actual participants (including all group members)
+  const totalParticipants = allParticipants.length
   const totalRevenue = participants.reduce((sum, p) => sum + (p.package_price || 0), 0)
   const totalDP = participants.reduce((sum, p) => sum + (p.dp_amount || 0), 0)
 

@@ -24,8 +24,9 @@ export function useParticipants(filters?: ParticipantFilters) {
   const fetchParticipants = async () => {
     try {
       setLoading(true)
-      
+
       // Fetch participants without trips join
+      // Filter: only show individual participants and group leaders (not group members)
       let participantsQuery = supabase
         .from('participants')
         .select(`
@@ -45,8 +46,11 @@ export function useParticipants(filters?: ParticipantFilters) {
           created_at,
           updated_at,
           proof_of_transfer_url,
-          meeting_point_details
+          meeting_point_details,
+          parent_participant_id
         `)
+        .is('parent_participant_id', null)
+        .is('deleted_at', null)
 
       // Apply date filters
       if (filters?.startDate) {
@@ -61,7 +65,8 @@ export function useParticipants(filters?: ParticipantFilters) {
         participantsQuery = participantsQuery.eq('trip_id', filters.tripId)
       }
 
-      const { data: participantsData, error: participantsError } = await participantsQuery.order('created_at', { ascending: false })
+      const { data: participantsData, error: participantsError } = await participantsQuery
+        .order('created_at', { ascending: false })
 
       if (participantsError) throw participantsError
 
@@ -151,7 +156,8 @@ export function useCreateParticipant() {
           created_at,
           updated_at,
           proof_of_transfer_url,
-          meeting_point_details
+          meeting_point_details,
+          parent_participant_id
         `)
         .eq('id', insertResult.id)
         .single()
@@ -246,7 +252,8 @@ export function useUpdateParticipant() {
           created_at,
           updated_at,
           proof_of_transfer_url,
-          meeting_point_details
+          meeting_point_details,
+          parent_participant_id
         `)
         .eq('id', id)
         .single()
@@ -407,11 +414,12 @@ export function useDeletedParticipants() {
           updated_at,
           proof_of_transfer_url,
           meeting_point_details,
+          parent_participant_id,
           deleted_at,
-          deleted_by_user_name,
           deleted_by_user_name
         `)
         .not('deleted_at', 'is', null)
+        .is('parent_participant_id', null)
         .order('deleted_at', { ascending: false })
 
       if (error) throw error
@@ -459,4 +467,82 @@ export function useDeletedParticipants() {
   }, [])
 
   return { deletedParticipants, loading, error, refetch: fetchDeletedParticipants }
+}
+
+export function useAllParticipants() {
+  const [allParticipants, setAllParticipants] = useState<Participant[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const fetchAllParticipants = async () => {
+    try {
+      setLoading(true)
+
+      const { data, error } = await supabase
+        .from('participants')
+        .select(`
+          id,
+          trip_id,
+          sales_id,
+          full_name,
+          email,
+          phone,
+          address,
+          participant_count,
+          package_price,
+          dp_amount,
+          dp_transfer_date,
+          status,
+          additional_requests,
+          created_at,
+          updated_at,
+          proof_of_transfer_url,
+          meeting_point_details,
+          parent_participant_id
+        `)
+        .is('deleted_at', null)
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+
+      const { data: tripsData, error: tripsError } = await supabase
+        .from('trips')
+        .select('id, name, departure_date, meeting_point, trip_type')
+
+      if (tripsError) throw tripsError
+
+      const { data: salesData, error: salesError } = await supabase
+        .from('sales')
+        .select('id, name, email, phone')
+
+      if (salesError) throw salesError
+
+      const participantsWithTripsAndSales = data?.map(participant => {
+        const trip = participant.trip_id
+          ? tripsData?.find(t => t.id === participant.trip_id)
+          : null
+        const sales = participant.sales_id
+          ? salesData?.find(s => s.id === participant.sales_id)
+          : null
+
+        return {
+          ...participant,
+          trips: trip || undefined,
+          sales: sales || undefined
+        }
+      }) || []
+
+      setAllParticipants(participantsWithTripsAndSales)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchAllParticipants()
+  }, [])
+
+  return { allParticipants, loading, error, refetch: fetchAllParticipants }
 }
