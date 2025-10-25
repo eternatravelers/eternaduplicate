@@ -37,8 +37,9 @@ export function TransportationAssignmentModal({
   const { trips } = useTrips()
   const selectedTripData = trips.find(t => t.id === tripId)
 
-  const assignedBus = selectedTripData?.buses
-  const assignedDriver = selectedTripData?.drivers
+  // Get first bus and driver from the arrays
+  const assignedBus = selectedTripData?.buses?.[0]
+  const assignedDriver = selectedTripData?.drivers?.[0]
 
   const { createAssignment, loading: creating } = useCreateMeetingPointAssignment()
   const { updateAssignment, loading: updating } = useUpdateMeetingPointAssignment()
