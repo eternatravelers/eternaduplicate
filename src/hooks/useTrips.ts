@@ -6,8 +6,8 @@ type Trip = Database['public']['Tables']['trips']['Row'] & {
   destinations?: Database['public']['Tables']['destinations']['Row'][]
   cost_plans?: Database['public']['Tables']['cost_plans']['Row']
   tour_leaders?: Database['public']['Tables']['tour_leaders']['Row'][]
-  buses?: Database['public']['Tables']['buses']['Row']
-  drivers?: Database['public']['Tables']['drivers']['Row']
+  buses?: Database['public']['Tables']['buses']['Row'][]
+  drivers?: Database['public']['Tables']['drivers']['Row'][]
   participant_count?: number
 }
 
@@ -65,22 +65,26 @@ export function useTrips() {
               bio
             )
           ),
-          buses!trips_bus_id_fkey(
-            id,
-            bus_number,
-            plate_number,
-            type,
-            model,
-            capacity,
-            status
+          trip_buses!left(
+            buses(
+              id,
+              bus_number,
+              plate_number,
+              type,
+              model,
+              capacity,
+              status
+            )
           ),
-          drivers!trips_driver_id_fkey(
-            id,
-            name,
-            phone,
-            license_number,
-            license_type,
-            status
+          trip_drivers!left(
+            drivers(
+              id,
+              name,
+              phone,
+              license_number,
+              license_type,
+              status
+            )
           ),
           participants!left(id)
         `)
@@ -88,12 +92,14 @@ export function useTrips() {
         
       if (error) throw error
 
-      // Calculate participant count for each trip and flatten destinations
+      // Calculate participant count for each trip and flatten destinations, tour_leaders, buses, drivers
       const tripsWithCount = data?.map(trip => ({
         ...trip,
         participant_count: trip.participants?.length || 0,
         destinations: trip.trip_destinations?.map(td => td.destinations).filter(Boolean) || [],
-        tour_leaders: trip.trip_tour_leaders?.map(ttl => ttl.tour_leaders).filter(Boolean) || []
+        tour_leaders: trip.trip_tour_leaders?.map(ttl => ttl.tour_leaders).filter(Boolean) || [],
+        buses: trip.trip_buses?.map(tb => tb.buses).filter(Boolean) || [],
+        drivers: trip.trip_drivers?.map(td => td.drivers).filter(Boolean) || []
       })) || []
 
       setTrips(tripsWithCount)
