@@ -7,28 +7,32 @@ import { FinancialSummaryCards } from '../components/FinancialSummaryCards'
 import { DetailedTransactionTable } from '../components/DetailedTransactionTable'
 import { useTransactions, useDeleteTransaction } from '@/hooks/useTransactions'
 import { useParticipants } from '@/hooks/useParticipants'
+import { useTrips } from '@/hooks/useTrips'
 
 export function ReportsPage() {
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [reportType, setReportType] = useState('all')
-  
+  const [selectedTrip, setSelectedTrip] = useState('')
+
   const { transactions, loading: transactionsLoading } = useTransactions()
   const { deleteTransaction, loading: deleting, error: deleteError } = useDeleteTransaction()
   const { participants, loading: participantsLoading } = useParticipants()
+  const { trips } = useTrips()
 
   const filteredTransactions = transactions.filter(transaction => {
     const transactionDate = new Date(transaction.transaction_date)
     const fromDate = dateFrom ? new Date(dateFrom) : null
     const toDate = dateTo ? new Date(dateTo) : null
-    
+
     let dateMatch = true
     if (fromDate) dateMatch = dateMatch && transactionDate >= fromDate
     if (toDate) dateMatch = dateMatch && transactionDate <= toDate
-    
+
     const typeMatch = reportType === 'all' || transaction.transaction_type === reportType
-    
-    return dateMatch && typeMatch
+    const tripMatch = !selectedTrip || transaction.trip_id === selectedTrip
+
+    return dateMatch && typeMatch && tripMatch
   })
 
   const filteredParticipants = participants.filter(participant => {
@@ -144,6 +148,15 @@ export function ReportsPage() {
         setDateTo={setDateTo}
         reportType={reportType}
         setReportType={setReportType}
+        selectedTrip={selectedTrip}
+        setSelectedTrip={setSelectedTrip}
+        trips={trips}
+        onReset={() => {
+          setDateFrom('')
+          setDateTo('')
+          setReportType('all')
+          setSelectedTrip('')
+        }}
       />
 
       <FinancialSummaryCards

@@ -18,8 +18,9 @@ export function FinancePage() {
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [filterType, setFilterType] = useState('all')
+  const [selectedTrip, setSelectedTrip] = useState('')
   const [error, setError] = useState<string | null>(null)
-  
+
   const { transactions, loading, refetch } = useTransactions()
   const { trips } = useTrips()
   const { destinations } = useDestinations()
@@ -27,24 +28,26 @@ export function FinancePage() {
   const { updateTransaction, loading: updating } = useUpdateTransaction()
   const { deleteTransaction, loading: deleting, error: deleteError } = useDeleteTransaction()
 
-  // Filter transactions based on search and date filters
+  // Filter transactions based on search, date, and trip filters
   const filteredTransactions = transactions.filter(transaction => {
     const transactionDate = new Date(transaction.transaction_date)
     const fromDate = dateFrom ? new Date(dateFrom) : null
     const toDate = dateTo ? new Date(dateTo) : null
-    
+
     let dateMatch = true
     if (fromDate) dateMatch = dateMatch && transactionDate >= fromDate
     if (toDate) dateMatch = dateMatch && transactionDate <= toDate
-    
+
     const typeMatch = filterType === 'all' || transaction.transaction_type === filterType
-    
-    const searchMatch = 
+
+    const tripMatch = !selectedTrip || transaction.trip_id === selectedTrip
+
+    const searchMatch =
       transaction.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
       transaction.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       transaction.trips?.name?.toLowerCase().includes(searchTerm.toLowerCase())
-    
-    return dateMatch && typeMatch && searchMatch
+
+    return dateMatch && typeMatch && tripMatch && searchMatch
   })
 
   // Calculate stats
@@ -156,6 +159,7 @@ export function FinancePage() {
     setDateTo('')
     setFilterType('all')
     setSearchTerm('')
+    setSelectedTrip('')
   }
 
   if (loading) {
@@ -226,6 +230,9 @@ export function FinancePage() {
             setSearchTerm={setSearchTerm}
             filterType={filterType}
             setFilterType={setFilterType}
+            selectedTrip={selectedTrip}
+            setSelectedTrip={setSelectedTrip}
+            trips={trips}
             onReset={resetFilters}
             showReportType={false}
             showSearch={true}

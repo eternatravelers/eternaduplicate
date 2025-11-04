@@ -17,6 +17,9 @@ interface TransactionFilterProps {
   setSearchTerm?: (term: string) => void
   filterType?: string
   setFilterType?: (type: string) => void
+  selectedTrip?: string
+  setSelectedTrip?: (tripId: string) => void
+  trips?: Array<{ id: string; name: string }>
   onReset?: () => void
   showReportType?: boolean
   showSearch?: boolean
@@ -33,6 +36,9 @@ export function TransactionFilter({
   setSearchTerm,
   filterType,
   setFilterType,
+  selectedTrip,
+  setSelectedTrip,
+  trips = [],
   onReset,
   showReportType = true,
   showSearch = false
@@ -46,7 +52,7 @@ export function TransactionFilter({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <div className="space-y-2">
             <Label htmlFor="date_from">Tanggal Dari</Label>
             <Input
@@ -114,7 +120,26 @@ export function TransactionFilter({
               </Select>
             </div>
           )}
-          
+
+          {selectedTrip !== undefined && setSelectedTrip && trips.length > 0 && (
+            <div className="space-y-2">
+              <Label htmlFor="selected_trip">Trip</Label>
+              <Select value={selectedTrip} onValueChange={setSelectedTrip}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Semua Trip</SelectItem>
+                  {trips.map((trip) => (
+                    <SelectItem key={trip.id} value={trip.id}>
+                      {trip.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           {onReset && (
             <div className="flex items-end">
               <Button variant="outline" className="w-full" onClick={onReset}>
