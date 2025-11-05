@@ -30,24 +30,28 @@ export function FinancePage() {
 
   // Filter transactions based on search, date, and trip filters
   const filteredTransactions = transactions.filter(transaction => {
-    const transactionDate = new Date(transaction.transaction_date)
-    const fromDate = dateFrom ? new Date(dateFrom) : null
-    const toDate = dateTo ? new Date(dateTo) : null
+    try {
+      const transactionDate = new Date(transaction.transaction_date)
+      const fromDate = dateFrom ? new Date(dateFrom) : null
+      const toDate = dateTo ? new Date(dateTo) : null
 
-    let dateMatch = true
-    if (fromDate) dateMatch = dateMatch && transactionDate >= fromDate
-    if (toDate) dateMatch = dateMatch && transactionDate <= toDate
+      let dateMatch = true
+      if (fromDate) dateMatch = dateMatch && transactionDate >= fromDate
+      if (toDate) dateMatch = dateMatch && transactionDate <= toDate
 
-    const typeMatch = filterType === 'all' || transaction.transaction_type === filterType
+      const typeMatch = filterType === 'all' || transaction.transaction_type === filterType
 
-    const tripMatch = !selectedTrip || transaction.trip_id === selectedTrip
+      const tripMatch = !selectedTrip || transaction.trip_id === selectedTrip
 
-    const searchMatch =
-      transaction.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      transaction.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      transaction.trips?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+      const searchMatch =
+        transaction.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        transaction.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        transaction.trips?.name?.toLowerCase().includes(searchTerm.toLowerCase())
 
-    return dateMatch && typeMatch && tripMatch && searchMatch
+      return dateMatch && typeMatch && tripMatch && searchMatch
+    } catch {
+      return false
+    }
   })
 
   // Calculate stats
@@ -166,8 +170,31 @@ export function FinancePage() {
     return (
       <div className="space-y-6">
         <h1 className="text-3xl font-bold">Manajemen Keuangan</h1>
-        <div className="animate-pulse">
+        <div className="animate-pulse space-y-4">
+          <div className="h-32 bg-gray-200 rounded-lg"></div>
           <div className="h-64 bg-gray-200 rounded-lg"></div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!transactions || transactions.length === 0) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Manajemen Keuangan</h1>
+            <p className="text-gray-600 mt-2">Kelola pemasukan dan pengeluaran bisnis travel Anda</p>
+          </div>
+          <Button onClick={handleAddNew} className="bg-green-600 hover:bg-green-700">
+            <Plus className="h-4 w-4 mr-2" />
+            Tambah Transaksi
+          </Button>
+        </div>
+        <div className="text-center py-12 text-gray-500">
+          <div className="text-6xl mb-4">💰</div>
+          <h3 className="text-lg font-medium mb-2">Belum ada transaksi</h3>
+          <p className="text-sm mb-4">Mulai dengan menambahkan transaksi pertama Anda</p>
         </div>
       </div>
     )

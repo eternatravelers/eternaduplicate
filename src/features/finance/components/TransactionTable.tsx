@@ -28,11 +28,17 @@ export function TransactionTable({
 }: TransactionTableProps) {
   const { isSuperAdmin } = useAuth()
 
-  const filteredTransactions = transactions.filter(transaction =>
-    transaction.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    transaction.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    transaction.trips?.name?.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const filteredTransactions = transactions.filter(transaction => {
+    try {
+      return (
+        transaction.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        transaction.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        transaction.trips?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    } catch {
+      return false
+    }
+  })
 
   const getTransactionTypeBadge = (type: string) => {
     switch (type) {
