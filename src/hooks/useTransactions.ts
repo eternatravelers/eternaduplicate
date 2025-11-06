@@ -28,11 +28,11 @@ export function useTransactions(filters?: TransactionFilters) {
   const fetchTransactions = async () => {
     try {
       setLoading(true)
-      
+      setError(null)
+
       let query = supabase
         .from('transactions')
-        .select('id, transaction_date, transaction_type, category, amount, description, trip_id, destination_id, trip_type, status, created_at, updated_at, trips(id, name, trip_type, departure_date), destinations(id, name, location)')
-
+        .select('*')
 
       // Filter by status - default to active only unless includeDeleted is true
       if (filters?.includeDeleted) {
@@ -56,11 +56,55 @@ export function useTransactions(filters?: TransactionFilters) {
 
       const { data, error } = await query.order('transaction_date', { ascending: false })
 
-      if (error) throw error
+      if (error) {
+        console.error('Transaction fetch error:', error)
+        throw error
+      }
 
-      setTransactions(data || [])
+      // Fetch trips and destinations separately to avoid join issues
+      if (data && data.length > 0) {
+        const tripIds = [...new Set(data.filter(t => t.trip_id).map(t => t.trip_id))]
+        const destIds = [...new Set(data.filter(t => t.destination_id).map(t => t.destination_id))]
+
+        let trips: any[] = []
+        let destinations: any[] = []
+
+        if (tripIds.length > 0) {
+          const { data: tripsData, error: tripsError } = await supabase
+            .from('trips')
+            .select('id, name, trip_type, departure_date')
+            .in('id', tripIds)
+
+          if (tripsError) console.error('Trips fetch error:', tripsError)
+          trips = tripsData || []
+        }
+
+        if (destIds.length > 0) {
+          const { data: destsData, error: destsError } = await supabase
+            .from('destinations')
+            .select('id, name, location')
+            .in('id', destIds)
+
+          if (destsError) console.error('Destinations fetch error:', destsError)
+          destinations = destsData || []
+        }
+
+        // Merge the related data into transactions
+        const enrichedData = data.map(transaction => ({
+          ...transaction,
+          trips: trips.find(t => t.id === transaction.trip_id) || null,
+          destinations: destinations.find(d => d.id === transaction.destination_id) || null
+        }))
+
+        setTransactions(enrichedData)
+      } else {
+        setTransactions(data || [])
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error')
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+      console.error('useTransactions error:', errorMessage)
+      setError(errorMessage)
+      setTransactions([])
     } finally {
       setLoading(false)
     }

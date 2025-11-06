@@ -21,18 +21,22 @@ export function ReportsPage() {
   const { trips } = useTrips()
 
   const filteredTransactions = transactions.filter(transaction => {
-    const transactionDate = new Date(transaction.transaction_date)
-    const fromDate = dateFrom ? new Date(dateFrom) : null
-    const toDate = dateTo ? new Date(dateTo) : null
+    try {
+      const transactionDate = new Date(transaction.transaction_date)
+      const fromDate = dateFrom ? new Date(dateFrom) : null
+      const toDate = dateTo ? new Date(dateTo) : null
 
-    let dateMatch = true
-    if (fromDate) dateMatch = dateMatch && transactionDate >= fromDate
-    if (toDate) dateMatch = dateMatch && transactionDate <= toDate
+      let dateMatch = true
+      if (fromDate) dateMatch = dateMatch && transactionDate >= fromDate
+      if (toDate) dateMatch = dateMatch && transactionDate <= toDate
 
-    const typeMatch = reportType === 'all' || transaction.transaction_type === reportType
-    const tripMatch = !selectedTrip || transaction.trip_id === selectedTrip
+      const typeMatch = reportType === 'all' || transaction.transaction_type === reportType
+      const tripMatch = !selectedTrip || transaction.trip_id === selectedTrip
 
-    return dateMatch && typeMatch && tripMatch
+      return dateMatch && typeMatch && tripMatch
+    } catch {
+      return false
+    }
   })
 
   const filteredParticipants = participants.filter(participant => {
@@ -109,8 +113,34 @@ export function ReportsPage() {
     return (
       <div className="space-y-6">
         <h1 className="text-3xl font-bold">Laporan & Rekapitulasi</h1>
-        <div className="animate-pulse">
+        <div className="animate-pulse space-y-4">
+          <div className="h-32 bg-gray-200 rounded-lg"></div>
           <div className="h-64 bg-gray-200 rounded-lg"></div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!transactions || transactions.length === 0) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold">Laporan & Rekapitulasi</h1>
+          <div className="flex space-x-2">
+            <Button variant="outline" onClick={handleExportCSV} disabled>
+              <FileSpreadsheet className="h-4 w-4 mr-2" />
+              Export CSV
+            </Button>
+            <Button variant="outline" onClick={handleExportExcel} disabled>
+              <Download className="h-4 w-4 mr-2" />
+              Export Excel
+            </Button>
+          </div>
+        </div>
+        <div className="text-center py-12 text-gray-500">
+          <div className="text-6xl mb-4">📋</div>
+          <h3 className="text-lg font-medium mb-2">Belum ada laporan</h3>
+          <p className="text-sm">Tambahkan transaksi terlebih dahulu untuk membuat laporan</p>
         </div>
       </div>
     )
