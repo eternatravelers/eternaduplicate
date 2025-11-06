@@ -62,7 +62,7 @@ export function TransactionFilter({
               onChange={(e) => setDateFrom(e.target.value)}
             />
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="date_to">Tanggal Sampai</Label>
             <Input
@@ -72,7 +72,7 @@ export function TransactionFilter({
               onChange={(e) => setDateTo(e.target.value)}
             />
           </div>
-          
+
           {showReportType && reportType !== undefined && setReportType && (
             <div className="space-y-2">
               <Label htmlFor="report_type">Jenis Laporan</Label>
@@ -124,12 +124,12 @@ export function TransactionFilter({
           {selectedTrip !== undefined && setSelectedTrip && trips.length > 0 && (
             <div className="space-y-2">
               <Label htmlFor="selected_trip">Trip</Label>
-              <Select value={selectedTrip} onValueChange={setSelectedTrip}>
+              <Select value={selectedTrip || 'all-trips'} onValueChange={(value) => setSelectedTrip(value === 'all-trips' ? '' : value)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Semua Trip</SelectItem>
+                  <SelectItem value="all-trips">Semua Trip</SelectItem>
                   {trips.map((trip) => (
                     <SelectItem key={trip.id} value={trip.id}>
                       {trip.name}
