@@ -26,6 +26,12 @@ interface Participant {
   remaining_payment?: number;
   additional_requests?: string;
   trip_id?: string;
+  trips?: {
+    id: string;
+    name: string;
+    departure_date: string;
+    trip_type?: string;
+  };
   sales_id?: string;
   created_at: string;
   updated_at: string;
@@ -104,10 +110,11 @@ export function ParticipantHistoryTable({
   const filteredParticipants = participants.filter(participant => {
     const matchesSearch = participant.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          participant.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         participant.phone.includes(searchTerm);
-    
+                         participant.phone.includes(searchTerm) ||
+                         participant.trips?.name.toLowerCase().includes(searchTerm.toLowerCase());
+
     const matchesStatus = filterStatus === 'all' || participant.status === filterStatus;
-    
+
     return matchesSearch && matchesStatus;
   });
 
@@ -144,6 +151,7 @@ export function ParticipantHistoryTable({
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
+              <TableHead>Trip</TableHead>
               <TableHead>Contact</TableHead>
               <TableHead>Participants</TableHead>
               <TableHead>Package Price</TableHead>
@@ -156,7 +164,7 @@ export function ParticipantHistoryTable({
           <TableBody>
             {filteredParticipants.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8 text-gray-500">
+                <TableCell colSpan={9} className="text-center py-8 text-gray-500">
                   No participants found
                 </TableCell>
               </TableRow>
@@ -182,6 +190,18 @@ export function ParticipantHistoryTable({
                         {participant.address}
                       </div>
                     </div>
+                  </TableCell>
+                  <TableCell>
+                    {participant.trips ? (
+                      <div>
+                        <div className="font-medium text-sm">{participant.trips.name}</div>
+                        <div className="text-xs text-gray-500">
+                          {formatShortDate(participant.trips.departure_date)}
+                        </div>
+                      </div>
+                    ) : (
+                      <Badge variant="outline" className="text-gray-400">Belum ada trip</Badge>
+                    )}
                   </TableCell>
                   <TableCell>
                     <div className="text-sm">
