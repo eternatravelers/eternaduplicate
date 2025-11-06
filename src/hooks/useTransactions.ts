@@ -31,22 +31,7 @@ export function useTransactions(filters?: TransactionFilters) {
       
       let query = supabase
         .from('transactions')
-        .select(`
-          id,
-          transaction_date,
-          transaction_type,
-          category,
-          amount,
-          description,
-          trip_id,
-          destination_id,
-          trip_type,
-          status,
-          created_at,
-          updated_at,
-          trips(id, name, trip_type, departure_date),
-          destinations(id, name, location)
-        `)
+        .select('id, transaction_date, transaction_type, category, amount, description, trip_id, destination_id, trip_type, status, created_at, updated_at, trips(id, name, trip_type, departure_date), destinations(id, name, location)')
 
 
       // Filter by status - default to active only unless includeDeleted is true
