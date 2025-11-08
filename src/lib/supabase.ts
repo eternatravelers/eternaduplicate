@@ -114,28 +114,37 @@ export type Database = {
       buses: {
         Row: {
           id: string
+          bus_number: string
           plate_number: string
+          type: string | null
           model: string | null
           capacity: number | null
           status: string | null
+          notes: string | null
           created_at: string | null
           updated_at: string | null
         }
         Insert: {
           id?: string
+          bus_number?: string
           plate_number: string
+          type?: string | null
           model?: string | null
           capacity?: number | null
           status?: string
+          notes?: string | null
           created_at?: string | null
           updated_at?: string | null
         }
         Update: {
           id?: string
+          bus_number?: string
           plate_number?: string
+          type?: string | null
           model?: string | null
           capacity?: number | null
           status?: string
+          notes?: string | null
           created_at?: string | null
           updated_at?: string | null
         }
@@ -146,7 +155,12 @@ export type Database = {
           name: string
           phone: string | null
           license_number: string | null
+          license_type: string | null
+          license_expiry: string | null
+          emergency_contact: string | null
+          emergency_phone: string | null
           status: string | null
+          notes: string | null
           created_at: string | null
           updated_at: string | null
         }
@@ -155,7 +169,12 @@ export type Database = {
           name: string
           phone?: string | null
           license_number?: string | null
+          license_type?: string | null
+          license_expiry?: string | null
+          emergency_contact?: string | null
+          emergency_phone?: string | null
           status?: string | null
+          notes?: string | null
           created_at?: string | null
           updated_at?: string | null
         }
@@ -164,7 +183,12 @@ export type Database = {
           name?: string
           phone?: string | null
           license_number?: string | null
+          license_type?: string | null
+          license_expiry?: string | null
+          emergency_contact?: string | null
+          emergency_phone?: string | null
           status?: string | null
+          notes?: string | null
           created_at?: string | null
           updated_at?: string | null
         }
@@ -573,6 +597,137 @@ export type Database = {
           is_active?: boolean
           created_at?: string
           updated_at?: string
+        }
+      }
+      pickup_schedules: {
+        Row: {
+          id: string
+          trip_id: string
+          meeting_point_name: string
+          pickup_time: string | null
+          estimated_duration: number | null
+          notes: string | null
+          status: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          trip_id: string
+          meeting_point_name: string
+          pickup_time?: string | null
+          estimated_duration?: number | null
+          notes?: string | null
+          status?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          trip_id?: string
+          meeting_point_name?: string
+          pickup_time?: string | null
+          estimated_duration?: number | null
+          notes?: string | null
+          status?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      meeting_point_assignments: {
+        Row: {
+          id: string
+          pickup_schedule_id: string | null
+          trip_id: string
+          meeting_point_name: string
+          bus_id: string | null
+          driver_id: string | null
+          capacity_used: number
+          capacity_available: number
+          assignment_status: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          pickup_schedule_id?: string | null
+          trip_id: string
+          meeting_point_name: string
+          bus_id?: string | null
+          driver_id?: string | null
+          capacity_used?: number
+          capacity_available?: number
+          assignment_status?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          pickup_schedule_id?: string | null
+          trip_id?: string
+          meeting_point_name?: string
+          bus_id?: string | null
+          driver_id?: string | null
+          capacity_used?: number
+          capacity_available?: number
+          assignment_status?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      meeting_points: {
+        Row: {
+          id: string
+          name: string
+          description: string | null
+          address: string | null
+          is_active: boolean
+          display_order: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          description?: string | null
+          address?: string | null
+          is_active?: boolean
+          display_order?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          description?: string | null
+          address?: string | null
+          is_active?: boolean
+          display_order?: number
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      trip_meeting_points: {
+        Row: {
+          id: string
+          trip_id: string
+          meeting_point_id: string
+          is_primary: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          trip_id: string
+          meeting_point_id: string
+          is_primary?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          trip_id?: string
+          meeting_point_id?: string
+          is_primary?: boolean
+          created_at?: string
         }
       }
     }
