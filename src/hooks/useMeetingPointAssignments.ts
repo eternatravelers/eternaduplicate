@@ -2,9 +2,13 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { Database } from '@/lib/supabase'
 
-type MeetingPointAssignment = Database['public']['Tables']['meeting_point_assignments']['Row'] & {
-  buses?: Database['public']['Tables']['buses']['Row']
-  drivers?: Database['public']['Tables']['drivers']['Row']
+type BusRow = Database['public']['Tables']['buses']['Row']
+type DriverRow = Database['public']['Tables']['drivers']['Row']
+type MeetingPointAssignmentRow = Database['public']['Tables']['meeting_point_assignments']['Row']
+
+type MeetingPointAssignment = MeetingPointAssignmentRow & {
+  buses: BusRow | null
+  drivers: DriverRow | null
 }
 
 type MeetingPointAssignmentInsert = Database['public']['Tables']['meeting_point_assignments']['Insert']
@@ -28,38 +32,29 @@ export function useMeetingPointAssignments(tripId: string | null) {
 
       const { data: assignmentsData, error: fetchError } = await supabase
         .from('meeting_point_assignments')
-        .select('*')
+        .select(`
+          *,
+          buses(id, bus_number, plate_number, type, capacity, status),
+          drivers(id, name, phone, license_number, license_type, status)
+        `)
         .eq('trip_id', tripId)
         .order('created_at', { ascending: false })
 
       if (fetchError) throw fetchError
 
-      const { data: busesData } = await supabase
-        .from('buses')
-        .select('id, bus_number, capacity, status')
-
-      const { data: driversData } = await supabase
-        .from('drivers')
-        .select('id, name, phone, license_number')
-
-      const enrichedAssignments = assignmentsData?.map(assignment => {
-        const bus = assignment.bus_id
-          ? busesData?.find(b => b.id === assignment.bus_id)
-          : undefined
-        const driver = assignment.driver_id
-          ? driversData?.find(d => d.id === assignment.driver_id)
-          : undefined
-
+      const enrichedAssignments = (assignmentsData || []).map((assignment: any) => {
         return {
           ...assignment,
-          buses: bus,
-          drivers: driver
+          buses: assignment.buses || null,
+          drivers: assignment.drivers || null
         }
-      }) || []
+      })
 
       setAssignments(enrichedAssignments)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch meeting point assignments')
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch meeting point assignments'
+      setError(errorMessage)
+      console.error('Error fetching meeting point assignments:', err)
     } finally {
       setLoading(false)
     }
@@ -81,11 +76,39 @@ export function useCreateMeetingPointAssignment() {
       setLoading(true)
       setError(null)
 
+      // Validate bus_id if provided
+      if (assignmentData.bus_id) {
+        const { data: busExists, error: busCheckError } = await supabase
+          .from('buses')
+          .select('id')
+          .eq('id', assignmentData.bus_id)
+          .maybeSingle()
+
+        if (busCheckError) throw new Error(`Failed to verify bus: ${busCheckError.message}`)
+        if (!busExists) throw new Error('Bus tidak ditemukan. Silakan pilih bus yang valid.')
+      }
+
+      // Validate driver_id if provided
+      if (assignmentData.driver_id) {
+        const { data: driverExists, error: driverCheckError } = await supabase
+          .from('drivers')
+          .select('id')
+          .eq('id', assignmentData.driver_id)
+          .maybeSingle()
+
+        if (driverCheckError) throw new Error(`Failed to verify driver: ${driverCheckError.message}`)
+        if (!driverExists) throw new Error('Driver tidak ditemukan. Silakan pilih driver yang valid.')
+      }
+
       const { data, error: insertError } = await supabase
         .from('meeting_point_assignments')
         .insert([assignmentData])
-        .select()
-        .single()
+        .select(`
+          *,
+          buses(id, bus_number, plate_number, type, capacity, status),
+          drivers(id, name, phone, license_number, license_type, status)
+        `)
+        .maybeSingle()
 
       if (insertError) throw insertError
 
@@ -93,6 +116,7 @@ export function useCreateMeetingPointAssignment() {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to create assignment'
       setError(errorMessage)
+      console.error('Error creating meeting point assignment:', err)
       return { data: null, error: errorMessage }
     } finally {
       setLoading(false)
@@ -111,12 +135,40 @@ export function useUpdateMeetingPointAssignment() {
       setLoading(true)
       setError(null)
 
+      // Validate bus_id if provided
+      if (assignmentData.bus_id) {
+        const { data: busExists, error: busCheckError } = await supabase
+          .from('buses')
+          .select('id')
+          .eq('id', assignmentData.bus_id)
+          .maybeSingle()
+
+        if (busCheckError) throw new Error(`Failed to verify bus: ${busCheckError.message}`)
+        if (!busExists) throw new Error('Bus tidak ditemukan. Silakan pilih bus yang valid.')
+      }
+
+      // Validate driver_id if provided
+      if (assignmentData.driver_id) {
+        const { data: driverExists, error: driverCheckError } = await supabase
+          .from('drivers')
+          .select('id')
+          .eq('id', assignmentData.driver_id)
+          .maybeSingle()
+
+        if (driverCheckError) throw new Error(`Failed to verify driver: ${driverCheckError.message}`)
+        if (!driverExists) throw new Error('Driver tidak ditemukan. Silakan pilih driver yang valid.')
+      }
+
       const { data, error: updateError } = await supabase
         .from('meeting_point_assignments')
         .update(assignmentData)
         .eq('id', id)
-        .select()
-        .single()
+        .select(`
+          *,
+          buses(id, bus_number, plate_number, type, capacity, status),
+          drivers(id, name, phone, license_number, license_type, status)
+        `)
+        .maybeSingle()
 
       if (updateError) throw updateError
 
@@ -124,6 +176,7 @@ export function useUpdateMeetingPointAssignment() {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to update assignment'
       setError(errorMessage)
+      console.error('Error updating meeting point assignment:', err)
       return { data: null, error: errorMessage }
     } finally {
       setLoading(false)
@@ -153,6 +206,7 @@ export function useDeleteMeetingPointAssignment() {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to delete assignment'
       setError(errorMessage)
+      console.error('Error deleting meeting point assignment:', err)
       return { error: errorMessage }
     } finally {
       setLoading(false)
