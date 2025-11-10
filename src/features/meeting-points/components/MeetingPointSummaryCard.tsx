@@ -2,11 +2,16 @@ import React from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { MapPin, Users, Bus, Clock, CheckCircle2, AlertCircle, UserPlus, Edit } from 'lucide-react'
+import { MapPin, Users, Bus, Clock, CheckCircle2, AlertCircle, UserPlus, Edit, Truck } from 'lucide-react'
 import type { MeetingPointSummary } from '@/hooks/useMeetingPointSummary'
 
 interface MeetingPointSummaryCardProps {
-  summary: MeetingPointSummary
+  summary: MeetingPointSummary & {
+    bus_number?: string
+    bus_capacity?: number
+    driver_name?: string
+    pickup_time?: string
+  }
   onSchedulePickup: (meetingPointName: string) => void
   onAssignTransport: (meetingPointName: string) => void
   onViewParticipants: (meetingPointName: string) => void
@@ -21,10 +26,14 @@ export function MeetingPointSummaryCard({
   onEditAssignment
 }: MeetingPointSummaryCardProps) {
   const hasNoParticipants = summary.participant_count === 0
+  const isCapacityWarning = summary.bus_capacity && summary.bus_capacity < summary.participant_count
 
   const getStatusColor = () => {
     if (hasNoParticipants) {
       return 'bg-gray-50 border-gray-300 border-dashed'
+    }
+    if (isCapacityWarning) {
+      return 'bg-red-50 border-red-200'
     }
     if (summary.has_pickup_schedule && summary.has_transportation_assigned) {
       return 'bg-green-50 border-green-200'
@@ -38,6 +47,9 @@ export function MeetingPointSummaryCard({
   const getStatusIcon = () => {
     if (hasNoParticipants) {
       return <AlertCircle className="h-5 w-5 text-gray-400" />
+    }
+    if (isCapacityWarning) {
+      return <AlertCircle className="h-5 w-5 text-red-600" />
     }
     if (summary.has_pickup_schedule && summary.has_transportation_assigned) {
       return <CheckCircle2 className="h-5 w-5 text-green-600" />
@@ -86,14 +98,68 @@ export function MeetingPointSummaryCard({
               </Badge>
               <Badge
                 variant={summary.has_transportation_assigned ? 'default' : 'outline'}
-                className={`text-xs ${summary.has_transportation_assigned ? 'bg-blue-100 text-blue-800' : ''}`}
+                className={`text-xs ${
+                  isCapacityWarning
+                    ? 'bg-red-100 text-red-800'
+                    : summary.has_transportation_assigned
+                    ? 'bg-blue-100 text-blue-800'
+                    : ''
+                }`}
               >
                 <Bus className="h-3 w-3 mr-1" />
-                {summary.has_transportation_assigned ? 'Bus assigned' : 'Belum ada bus'}
+                {summary.has_transportation_assigned
+                  ? isCapacityWarning
+                    ? 'Kapasitas kurang!'
+                    : 'Bus assigned'
+                  : 'Belum ada bus'}
               </Badge>
             </div>
           </div>
         </div>
+
+        {summary.has_transportation_assigned && (
+          <div className="space-y-2 pt-2 border-t">
+            <div className="text-xs font-semibold text-gray-600 uppercase">Informasi Transportasi</div>
+            <div className="space-y-2">
+              {summary.bus_number && (
+                <div className="flex items-center justify-between p-2 bg-blue-50 rounded border border-blue-100">
+                  <div className="flex items-center space-x-2">
+                    <Truck className="h-4 w-4 text-blue-600" />
+                    <div>
+                      <div className="text-xs font-medium text-blue-900">{summary.bus_number}</div>
+                      {summary.bus_capacity && (
+                        <div className={`text-xs ${isCapacityWarning ? 'text-red-600 font-semibold' : 'text-blue-700'}`}>
+                          {summary.participant_count}/{summary.bus_capacity} kursi
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  {isCapacityWarning && (
+                    <AlertCircle className="h-4 w-4 text-red-600" />
+                  )}
+                </div>
+              )}
+              {summary.driver_name && (
+                <div className="flex items-center space-x-2 p-2 bg-green-50 rounded border border-green-100">
+                  <Users className="h-4 w-4 text-green-600" />
+                  <div>
+                    <div className="text-xs font-medium text-green-900">{summary.driver_name}</div>
+                    <div className="text-xs text-green-700">Driver</div>
+                  </div>
+                </div>
+              )}
+              {summary.pickup_time && (
+                <div className="flex items-center space-x-2 p-2 bg-purple-50 rounded border border-purple-100">
+                  <Clock className="h-4 w-4 text-purple-600" />
+                  <div>
+                    <div className="text-xs font-medium text-purple-900">{summary.pickup_time}</div>
+                    <div className="text-xs text-purple-700">Waktu Penjemputan</div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         <div className="flex flex-col space-y-2 pt-2 border-t">
           {hasNoParticipants ? (
