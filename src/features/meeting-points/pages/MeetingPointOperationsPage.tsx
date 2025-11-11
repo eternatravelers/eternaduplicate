@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
@@ -7,6 +7,8 @@ import { Label } from '@/components/ui/label'
 import { MapPin, Clock, Bus, FileText, Users, AlertCircle, Download, UserPlus, Info } from 'lucide-react'
 import { useTrips } from '@/hooks/useTrips'
 import { useMeetingPointSummary } from '@/hooks/useMeetingPointSummary'
+import { useMeetingPointAssignments } from '@/hooks/useMeetingPointAssignments'
+import { usePickupSchedules } from '@/hooks/usePickupSchedules'
 import { MeetingPointSummaryCard } from '../components/MeetingPointSummaryCard'
 import { MeetingPointParticipantsModal } from '../components/MeetingPointParticipantsModal'
 import { PickupScheduleForm } from '../components/PickupScheduleForm'
@@ -28,10 +30,27 @@ export function MeetingPointOperationsPage() {
 
   const { trips, loading: tripsLoading } = useTrips()
   const { summary, loading: summaryLoading, refetch: refetchSummary } = useMeetingPointSummary(selectedTripId)
+  const { assignments } = useMeetingPointAssignments(selectedTripId)
+  const { schedules } = usePickupSchedules(selectedTripId)
 
   const selectedTrip = trips.find(t => t.id === selectedTripId)
-
   const activeTrips = trips.filter(trip => trip.status === 'active')
+
+  // Enrich summary with assignment and schedule data
+  const enrichedSummary = useMemo(() => {
+    return summary.map(item => {
+      const assignment = assignments.find(a => a.meeting_point_name === item.meeting_point_name)
+      const schedule = schedules.find(s => s.meeting_point_name === item.meeting_point_name)
+
+      return {
+        ...item,
+        bus_number: assignment?.buses?.bus_number,
+        bus_capacity: assignment?.buses?.capacity,
+        driver_name: assignment?.drivers?.name,
+        pickup_time: schedule?.pickup_time
+      }
+    })
+  }, [summary, assignments, schedules])
 
   const handleViewParticipants = (meetingPointName: string) => {
     setSelectedMeetingPoint(meetingPointName)
@@ -65,10 +84,10 @@ export function MeetingPointOperationsPage() {
     refetchSummary()
   }
 
-  const totalParticipants = summary.reduce((sum, s) => sum + s.participant_count, 0)
-  const totalMeetingPoints = summary.length
-  const scheduledMeetingPoints = summary.filter(s => s.has_pickup_schedule).length
-  const assignedMeetingPoints = summary.filter(s => s.has_transportation_assigned).length
+  const totalParticipants = enrichedSummary.reduce((sum, s) => sum + s.participant_count, 0)
+  const totalMeetingPoints = enrichedSummary.length
+  const scheduledMeetingPoints = enrichedSummary.filter(s => s.has_pickup_schedule).length
+  const assignedMeetingPoints = enrichedSummary.filter(s => s.has_transportation_assigned).length
 
   return (
     <div className="space-y-6">
@@ -117,7 +136,7 @@ export function MeetingPointOperationsPage() {
         <div className="animate-pulse">
           <div className="h-64 bg-gray-200 rounded-lg"></div>
         </div>
-      ) : summary.length === 0 ? (
+      ) : enrichedSummary.length === 0 ? (
         <Card className="border-2 border-dashed border-gray-300">
           <CardContent className="pt-12 pb-12">
             <div className="text-center space-y-6">
@@ -246,7 +265,7 @@ export function MeetingPointOperationsPage() {
 
             <TabsContent value="summary" className="space-y-6">
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {summary.map((item) => (
+                {enrichedSummary.map((item) => (
                   <MeetingPointSummaryCard
                     key={item.meeting_point_name}
                     summary={item}
