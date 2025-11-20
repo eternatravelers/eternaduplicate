@@ -13,6 +13,7 @@ const Destinations = lazy(() => import('@/components/Destinations').then(m => ({
 const MasterMeetingPointsPage = lazy(() => import('@/features/master-data/pages/MasterMeetingPointsPage').then(m => ({ default: m.MasterMeetingPointsPage })))
 const SalesPage = lazy(() => import('@/features/sales/pages/SalesPage').then(m => ({ default: m.SalesPage })))
 const OperationalResourcesPage = lazy(() => import('@/features/operational-resources/pages/OperationalResourcesPage').then(m => ({ default: m.OperationalResourcesPage })))
+const ResourceSchedulingPage = lazy(() => import('@/features/resource-scheduling/pages/ResourceSchedulingPage').then(m => ({ default: m.ResourceSchedulingPage })))
 const OperationsPage = lazy(() => import('@/features/operations/pages/OperationsPage').then(m => ({ default: m.OperationsPage })))
 const ReportsPage = lazy(() => import('@/features/finance/pages/ReportsPage').then(m => ({ default: m.ReportsPage })))
 const AnalyticsPage = lazy(() => import('@/features/analytics/pages/AnalyticsPage').then(m => ({ default: m.AnalyticsPage })))
@@ -66,6 +67,8 @@ function AppContent() {
               return <SalesPage />
             case 'operational-resources':
               return <OperationalResourcesPage />
+            case 'resource-scheduling':
+              return <ResourceSchedulingPage />
             case 'finance':
               return (
                 <SuperAdminRoute>

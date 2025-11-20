@@ -1,11 +1,11 @@
 import React, { useState } from 'react'
-import { 
-  LayoutDashboard, 
-  Users, 
-  MapPin, 
-  DollarSign, 
-  CheckSquare, 
-  FileText, 
+import {
+  LayoutDashboard,
+  Users,
+  MapPin,
+  DollarSign,
+  CheckSquare,
+  FileText,
   BarChart,
   Menu,
   X,
@@ -21,6 +21,7 @@ import {
   Calculator,
   Settings,
   Trash2,
+  Calendar,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -59,6 +60,7 @@ const menuItems: MenuItem[] = [
       { id: 'destinations', label: 'Destinasi', icon: Globe, type: 'item' },
       { id: 'master-meeting-points', label: 'Master Meeting Points', icon: MapPin, type: 'item' },
       { id: 'operational-resources', label: 'Sumber Daya Operasional', icon: Settings, type: 'item' },
+      { id: 'resource-scheduling', label: 'Resource Scheduling', icon: Calendar, type: 'item' },
       { id: 'cost-plans', label: 'Rencana Biaya', icon: Calculator, type: 'item' }
     ]
   },
