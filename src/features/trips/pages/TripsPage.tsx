@@ -5,6 +5,7 @@ import { Plus, Calendar, Users, MapPin, DollarSign } from 'lucide-react'
 import { TripFormModal } from '../components/TripFormModal'
 import { TripListTable } from '../components/TripListTable'
 import { TripTypeManagerModal } from '../components/TripTypeManagerModal'
+import { TripResourcesModal } from '../components/TripResourcesModal'
 import { useTrips, useCreateTrip, useUpdateTrip, useDeleteTrip } from '@/hooks/useTrips'
 import { useTourLeaders } from '@/hooks/useTourLeaders'
 import { useDestinations } from '@/hooks/useDestinations'
@@ -38,6 +39,7 @@ export function TripsPage({ onViewTripParticipants, onNavigateToResourceScheduli
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false)
   const [isAddTripTypeModalOpen, setIsAddTripTypeModalOpen] = useState(false)
+  const [isResourcesModalOpen, setIsResourcesModalOpen] = useState(false)
   const [selectedTrip, setSelectedTrip] = useState<any>(null)
   const { isSuperAdmin } = useAuth()
 
@@ -132,6 +134,11 @@ export function TripsPage({ onViewTripParticipants, onNavigateToResourceScheduli
     }
   }
 
+  const handleViewResources = (trip: any) => {
+    setSelectedTrip(trip)
+    setIsResourcesModalOpen(true)
+  }
+
   if (loading) {
     return <div className="flex justify-center items-center h-64">Loading...</div>
   }
@@ -211,6 +218,7 @@ export function TripsPage({ onViewTripParticipants, onNavigateToResourceScheduli
         onDuplicate={handleDuplicate}
         onDelete={handleDelete}
         onViewParticipants={handleViewParticipants}
+        onViewResources={handleViewResources}
         onNavigateToResourceScheduling={onNavigateToResourceScheduling}
         isSuperAdmin={isSuperAdmin}
         deleting={deleting}
@@ -274,6 +282,12 @@ export function TripsPage({ onViewTripParticipants, onNavigateToResourceScheduli
         onDeleteTripType={handleDeleteTripType}
         creatingTripType={creatingTripType}
         deletingTripType={deletingTripType}
+      />
+
+      <TripResourcesModal
+        isOpen={isResourcesModalOpen}
+        onClose={() => setIsResourcesModalOpen(false)}
+        trip={selectedTrip}
       />
 
     </div>

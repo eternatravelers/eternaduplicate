@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
-import { Edit, Trash2, Copy, Users, MapPin, AlertTriangle, Settings, CheckCircle2 } from 'lucide-react'
+import { Edit, Trash2, Copy, Users, MapPin, AlertTriangle, Settings, CheckCircle2, Bus } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 import { TripResourceSummary } from './TripResourceSummary'
 
@@ -14,6 +14,7 @@ interface TripListTableProps {
   onDuplicate: (trip: any) => void
   onDelete: (id: string) => void
   onViewParticipants: (trip: any) => void
+  onViewResources?: (trip: any) => void
   onNavigateToResourceScheduling?: (tripId: string) => void
   isSuperAdmin: boolean
   deleting: boolean
@@ -25,6 +26,7 @@ export function TripListTable({
   onDuplicate,
   onDelete,
   onViewParticipants,
+  onViewResources,
   onNavigateToResourceScheduling,
   isSuperAdmin,
   deleting
@@ -191,6 +193,17 @@ export function TripListTable({
                     >
                       <Users className="w-4 h-4" />
                     </Button>
+                    {onViewResources && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onViewResources(trip)}
+                        title="Lihat Sumber Daya"
+                        className="text-purple-600 hover:text-purple-700"
+                      >
+                        <Bus className="w-4 h-4" />
+                      </Button>
+                    )}
                     <Button
                       variant="outline"
                       size="sm"
