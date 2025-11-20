@@ -14,6 +14,7 @@ import { MeetingPointSummaryCard } from '@/features/meeting-points/components/Me
 import { PickupScheduleTimeline } from '@/features/meeting-points/components/PickupScheduleTimeline'
 import { TransportationAssignmentModal } from '@/features/meeting-points/components/TransportationAssignmentModal'
 import { PickupScheduleForm } from '@/features/meeting-points/components/PickupScheduleForm'
+import { TripStatusManagement } from './TripStatusManagement'
 import { useMeetingPointSummary } from '@/hooks/useMeetingPointSummary'
 import { useMeetingPointAssignments } from '@/hooks/useMeetingPointAssignments'
 import { usePickupSchedules } from '@/hooks/usePickupSchedules'
@@ -201,10 +202,14 @@ export function TripFormModal({
           )}
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="basic">
                 <Info className="h-4 w-4 mr-2" />
                 Informasi Dasar
+              </TabsTrigger>
+              <TabsTrigger value="status" disabled={!isEditMode}>
+                <CheckCircle2 className="h-4 w-4 mr-2" />
+                Status & Kesiapan
               </TabsTrigger>
               <TabsTrigger value="transport" disabled={!isEditMode}>
                 <Bus className="h-4 w-4 mr-2" />
@@ -442,6 +447,26 @@ export function TripFormModal({
             </form>
           </TabsContent>
 
+            <TabsContent value="status">
+              {!isEditMode ? (
+                <Alert>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    Simpan trip terlebih dahulu untuk mengakses fitur status management.
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <TripStatusManagement
+                  trip={initialData}
+                  onStatusChange={async (newStatus) => {
+                    handleInputChange('status', newStatus)
+                    const updatedData = { ...formData, status: newStatus }
+                    await onSubmit(updatedData)
+                  }}
+                  updating={updating}
+                />
+              )}
+            </TabsContent>
 
             <TabsContent value="transport">
               <div className="space-y-6">

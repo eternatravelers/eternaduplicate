@@ -40,6 +40,11 @@ export function useTrips() {
           updated_at,
           pricing_type,
           cost_plan_id,
+          confirmed_participant_count,
+          pending_participant_count,
+          available_quota,
+          readiness_score,
+          can_accept_registrations,
           trip_destinations!left(
             destinations(
               id,
@@ -95,7 +100,7 @@ export function useTrips() {
             is_primary
           )
         `)
-        .in('status', ['active', 'completed', 'cancelled', 'draft']) // Filter out deleted trips by explicitly including active ones
+        .in('status', ['active', 'completed', 'cancelled', 'draft', 'open', 'confirmed', 'ongoing'])
         
       if (error) throw error
 

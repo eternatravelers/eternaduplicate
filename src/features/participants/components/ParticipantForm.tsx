@@ -50,7 +50,10 @@ export function ParticipantForm({
 
   const [proofOfTransferUrl, setProofOfTransferUrl] = useState<string | null>(null)
   const [selectedTripMeetingPoint, setSelectedTripMeetingPoint] = useState<string>('')
+  const [quotaWarning, setQuotaWarning] = useState<string | null>(null)
   const { meetingPoints: tripMeetingPoints, loading: loadingMeetingPoints } = useMeetingPointsForTrip(formData.trip_id || null)
+
+  const selectedTrip = trips.find(t => t.id === formData.trip_id)
 
   useEffect(() => {
     if (initialData) {
@@ -86,6 +89,24 @@ export function ParticipantForm({
     }
   }, [formData.trip_id, tripMeetingPoints, editingParticipant])
 
+  useEffect(() => {
+    if (selectedTrip && !editingParticipant) {
+      setQuotaWarning(null)
+
+      if (selectedTrip.status === 'cancelled') {
+        setQuotaWarning('Trip ini telah dibatalkan dan tidak menerima pendaftaran.')
+      } else if (selectedTrip.status === 'completed') {
+        setQuotaWarning('Trip ini sudah selesai dan tidak menerima pendaftaran.')
+      } else if (selectedTrip.status === 'draft') {
+        setQuotaWarning('Trip ini masih dalam status draft. Pendaftaran akan aktif setelah trip dibuka.')
+      } else if (selectedTrip.status === 'open' && !selectedTrip.can_accept_registrations) {
+        setQuotaWarning('Pendaftaran untuk trip ini sudah ditutup (quota penuh).')
+      } else if (selectedTrip.available_quota !== null && selectedTrip.available_quota !== undefined && selectedTrip.available_quota <= 5 && selectedTrip.available_quota > 0) {
+        setQuotaWarning(`Hanya tersisa ${selectedTrip.available_quota} seat untuk trip ini!`)
+      }
+    }
+  }, [formData.trip_id, selectedTrip, editingParticipant])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
@@ -116,11 +137,60 @@ export function ParticipantForm({
       </CardHeader>
       <CardContent className="pt-6">
         <form onSubmit={handleSubmit} className="space-y-6">
+          {quotaWarning && (
+            <Alert className={selectedTrip?.status === 'cancelled' || selectedTrip?.status === 'completed' || (selectedTrip?.status === 'open' && !selectedTrip?.can_accept_registrations) ? 'bg-red-50 border-red-200' : 'bg-orange-50 border-orange-200'}>
+              <AlertCircle className={selectedTrip?.status === 'cancelled' || selectedTrip?.status === 'completed' || (selectedTrip?.status === 'open' && !selectedTrip?.can_accept_registrations) ? 'h-4 w-4 text-red-600' : 'h-4 w-4 text-orange-600'} />
+              <AlertDescription className={selectedTrip?.status === 'cancelled' || selectedTrip?.status === 'completed' || (selectedTrip?.status === 'open' && !selectedTrip?.can_accept_registrations) ? 'text-red-900' : 'text-orange-900'}>
+                {quotaWarning}
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {selectedTrip && (
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-blue-900">Info Trip:</span>
+                <span className={`text-xs px-2 py-1 rounded ${
+                  selectedTrip.status === 'open' ? 'bg-green-100 text-green-800' :
+                  selectedTrip.status === 'confirmed' ? 'bg-blue-100 text-blue-800' :
+                  selectedTrip.status === 'draft' ? 'bg-gray-100 text-gray-800' :
+                  'bg-red-100 text-red-800'
+                }`}>
+                  {selectedTrip.status}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-blue-700">Quota:</span>
+                  <span className="ml-2 font-semibold text-blue-900">
+                    {selectedTrip.confirmed_participant_count || 0}/{selectedTrip.quota || '-'}
+                  </span>
+                </div>
+                {selectedTrip.available_quota !== null && selectedTrip.available_quota !== undefined && (
+                  <div>
+                    <span className="text-blue-700">Sisa:</span>
+                    <span className="ml-2 font-semibold text-blue-900">
+                      {selectedTrip.available_quota} seat
+                    </span>
+                  </div>
+                )}
+                {selectedTrip.pending_participant_count > 0 && (
+                  <div>
+                    <span className="text-blue-700">Pending:</span>
+                    <span className="ml-2 font-semibold text-orange-700">
+                      {selectedTrip.pending_participant_count}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="trip_id">Trip</Label>
-              <Select 
-                value={formData.trip_id} 
+              <Select
+                value={formData.trip_id}
                 onValueChange={(value) => setFormData(prev => ({ ...prev, trip_id: value }))}
               >
                 <SelectTrigger>
@@ -130,6 +200,11 @@ export function ParticipantForm({
                   {trips.map(trip => (
                     <SelectItem key={trip.id} value={trip.id}>
                       {trip.name} - {formatShortDate(trip.departure_date)}
+                      {trip.available_quota !== null && trip.available_quota !== undefined && (
+                        <span className="ml-2 text-xs text-gray-500">
+                          ({trip.available_quota} seat tersisa)
+                        </span>
+                      )}
                     </SelectItem>
                   ))}
                 </SelectContent>

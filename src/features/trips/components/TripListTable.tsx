@@ -29,11 +29,29 @@ export function TripListTable({
   const getStatusBadge = (status: string) => {
     const statusColors = {
       active: 'bg-green-100 text-green-800',
-      completed: 'bg-blue-100 text-blue-800',
+      open: 'bg-green-100 text-green-800',
+      confirmed: 'bg-blue-100 text-blue-800',
+      ongoing: 'bg-orange-100 text-orange-800',
+      completed: 'bg-purple-100 text-purple-800',
       cancelled: 'bg-red-100 text-red-800',
       draft: 'bg-gray-100 text-gray-800'
     }
     return statusColors[status as keyof typeof statusColors] || statusColors.draft
+  }
+
+  const getQuotaBadgeColor = (confirmed: number, quota: number) => {
+    if (!quota) return 'bg-gray-100 text-gray-700'
+    const percentage = (confirmed / quota) * 100
+    if (percentage >= 80) return 'bg-green-100 text-green-700'
+    if (percentage >= 50) return 'bg-orange-100 text-orange-700'
+    if (percentage > 0) return 'bg-yellow-100 text-yellow-700'
+    return 'bg-gray-100 text-gray-700'
+  }
+
+  const getReadinessBadgeColor = (score: number) => {
+    if (score >= 80) return 'bg-green-100 text-green-700 border-green-300'
+    if (score >= 50) return 'bg-orange-100 text-orange-700 border-orange-300'
+    return 'bg-red-100 text-red-700 border-red-300'
   }
 
   const formatDate = (dateString: string) => {
@@ -56,38 +74,32 @@ export function TripListTable({
               <TableHead>Trip Name</TableHead>
               <TableHead>Type</TableHead>
               <TableHead>Departure</TableHead>
-              <TableHead>Return</TableHead>
-              <TableHead>Quota</TableHead>
-              <TableHead>Price</TableHead>
-              <TableHead>Cost Plan</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Quota Peserta</TableHead>
+              <TableHead>Kesiapan</TableHead>
+              <TableHead>Price</TableHead>
               <TableHead>Meeting Points</TableHead>
-              <TableHead>Assignment Status</TableHead>
-              <TableHead>Kendaraan</TableHead>
-              <TableHead>Driver</TableHead>
+              <TableHead>Transport</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {trips.map((trip) => (
               <TableRow key={trip.id}>
-                <TableCell className="font-medium">{trip.name}</TableCell>
-                <TableCell>{trip.trip_type}</TableCell>
-                <TableCell>{formatDate(trip.departure_date)}</TableCell>
-                <TableCell>{formatDate(trip.return_date)}</TableCell>
-                <TableCell>{trip.quota}</TableCell>
-                <TableCell>{formatCurrency(trip.price || 0)}</TableCell>
+                <TableCell className="font-medium">
+                  <div>{trip.name}</div>
+                  <div className="text-xs text-gray-500 mt-1">{trip.trip_type}</div>
+                </TableCell>
                 <TableCell>
-                  {trip.cost_plans ? (
-                    <div className="text-sm">
-                      <div className="font-medium text-green-600">{trip.cost_plans.name}</div>
-                      <div className="text-gray-500">
-                        {formatCurrency(trip.cost_plans.cost_per_person || 0)}/orang
-                      </div>
-                    </div>
-                  ) : (
-                    <span className="text-gray-400 text-sm">-</span>
-                  )}
+                  <Badge variant="outline" className="text-xs">
+                    {trip.trip_type}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <div className="text-sm">
+                    <div className="font-medium">{formatDate(trip.departure_date)}</div>
+                    <div className="text-xs text-gray-500">s/d {formatDate(trip.return_date)}</div>
+                  </div>
                 </TableCell>
                 <TableCell>
                   <Badge className={getStatusBadge(trip.status)}>
@@ -95,12 +107,51 @@ export function TripListTable({
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  {trip.meeting_point_ids && trip.meeting_point_ids.length > 0 ? (
-                    <div className="flex items-center space-x-1">
-                      <MapPin className="h-4 w-4 text-green-600" />
-                      <Badge variant="outline" className="text-green-600 border-green-200">
-                        {trip.meeting_point_ids.length} Points
+                  <div className="flex items-center space-x-2">
+                    <Badge className={getQuotaBadgeColor(trip.confirmed_participant_count || 0, trip.quota || 0)}>
+                      {trip.confirmed_participant_count || 0}/{trip.quota || '-'}
+                    </Badge>
+                    {trip.pending_participant_count > 0 && (
+                      <Badge variant="outline" className="text-xs text-orange-600 border-orange-300">
+                        +{trip.pending_participant_count} pending
                       </Badge>
+                    )}
+                  </div>
+                  {trip.available_quota !== null && trip.available_quota !== undefined && (
+                    <div className="text-xs text-gray-500 mt-1">
+                      Sisa: {trip.available_quota} seat
+                    </div>
+                  )}
+                </TableCell>
+                <TableCell>
+                  <Badge variant="outline" className={getReadinessBadgeColor(trip.readiness_score || 0)}>
+                    {trip.readiness_score || 0}%
+                  </Badge>
+                  {!trip.can_accept_registrations && trip.status === 'open' && (
+                    <div className="text-xs text-red-600 mt-1">Pendaftaran ditutup</div>
+                  )}
+                </TableCell>
+                <TableCell>{formatCurrency(trip.price || 0)}</TableCell>
+                <TableCell>
+                  {trip.meeting_point_ids && trip.meeting_point_ids.length > 0 ? (
+                    <div className="space-y-1">
+                      <div className="flex items-center space-x-1">
+                        <MapPin className="h-4 w-4 text-green-600" />
+                        <Badge variant="outline" className="text-green-600 border-green-200">
+                          {trip.meeting_point_ids.length} Points
+                        </Badge>
+                      </div>
+                      {(() => {
+                        const totalMeetingPoints = trip.meeting_point_ids.length
+                        const assignedCount = trip.meeting_point_assignment_count || 0
+                        const percentage = totalMeetingPoints > 0 ? Math.round((assignedCount / totalMeetingPoints) * 100) : 0
+
+                        return (
+                          <div className="text-xs text-gray-600">
+                            {assignedCount}/{totalMeetingPoints} assigned ({percentage}%)
+                          </div>
+                        )
+                      })()}
                     </div>
                   ) : (
                     <div className="flex items-center space-x-1">
@@ -110,70 +161,41 @@ export function TripListTable({
                   )}
                 </TableCell>
                 <TableCell>
-                  {trip.meeting_point_ids && trip.meeting_point_ids.length > 0 ? (
-                    (() => {
-                      const totalMeetingPoints = trip.meeting_point_ids.length
-                      const assignedCount = trip.meeting_point_assignment_count || 0
-                      const percentage = totalMeetingPoints > 0 ? Math.round((assignedCount / totalMeetingPoints) * 100) : 0
-
-                      return (
-                        <div className="flex items-center space-x-2">
-                          {percentage === 100 ? (
-                            <>
-                              <CheckCircle2 className="h-4 w-4 text-green-600" />
-                              <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50">
-                                {assignedCount}/{totalMeetingPoints} Assigned
-                              </Badge>
-                            </>
-                          ) : percentage > 0 ? (
-                            <>
-                              <AlertTriangle className="h-4 w-4 text-orange-600" />
-                              <Badge variant="outline" className="text-orange-600 border-orange-200 bg-orange-50">
-                                {assignedCount}/{totalMeetingPoints} Assigned
-                              </Badge>
-                            </>
-                          ) : (
-                            <>
-                              <AlertTriangle className="h-4 w-4 text-red-600" />
-                              <Badge variant="outline" className="text-red-600 border-red-200 bg-red-50">
-                                Belum Assigned
-                              </Badge>
-                            </>
-                          )}
-                        </div>
-                      )
-                    })()
-                  ) : (
-                    <span className="text-xs text-gray-400">-</span>
-                  )}
-                </TableCell>
-                <TableCell>
-                  {trip.buses && trip.buses.length > 0 ? (
-                    <div className="text-sm">
-                      {trip.buses.map((bus: any, index: number) => (
-                        <div key={bus.id} className={index > 0 ? 'mt-1 pt-1 border-t' : ''}>
-                          <div className="font-medium">{bus.plate_number}</div>
-                          <div className="text-gray-500">{bus.model || 'N/A'}</div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <span className="text-gray-400">Belum ditentukan</span>
-                  )}
-                </TableCell>
-                <TableCell>
-                  {trip.drivers && trip.drivers.length > 0 ? (
-                    <div className="text-sm">
-                      {trip.drivers.map((driver: any, index: number) => (
-                        <div key={driver.id} className={index > 0 ? 'mt-1 pt-1 border-t' : ''}>
-                          <div className="font-medium">{driver.name}</div>
-                          <div className="text-gray-500">{driver.phone || 'N/A'}</div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <span className="text-gray-400">Belum ditentukan</span>
-                  )}
+                  <div className="space-y-2">
+                    {trip.buses && trip.buses.length > 0 ? (
+                      <div className="flex items-center space-x-1">
+                        <CheckCircle2 className="h-3 w-3 text-green-600" />
+                        <span className="text-xs font-medium">{trip.buses.length} Bus</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center space-x-1">
+                        <AlertTriangle className="h-3 w-3 text-orange-500" />
+                        <span className="text-xs text-gray-500">No bus</span>
+                      </div>
+                    )}
+                    {trip.drivers && trip.drivers.length > 0 ? (
+                      <div className="flex items-center space-x-1">
+                        <CheckCircle2 className="h-3 w-3 text-green-600" />
+                        <span className="text-xs font-medium">{trip.drivers.length} Driver</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center space-x-1">
+                        <AlertTriangle className="h-3 w-3 text-orange-500" />
+                        <span className="text-xs text-gray-500">No driver</span>
+                      </div>
+                    )}
+                    {trip.tour_leaders && trip.tour_leaders.length > 0 ? (
+                      <div className="flex items-center space-x-1">
+                        <CheckCircle2 className="h-3 w-3 text-green-600" />
+                        <span className="text-xs font-medium">{trip.tour_leaders.length} TL</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center space-x-1">
+                        <AlertTriangle className="h-3 w-3 text-orange-500" />
+                        <span className="text-xs text-gray-500">No TL</span>
+                      </div>
+                    )}
+                  </div>
                 </TableCell>
                 <TableCell>
                   <div className="flex space-x-2">
