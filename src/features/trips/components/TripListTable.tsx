@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { Edit, Trash2, Copy, Users, MapPin, AlertTriangle, Settings, CheckCircle2 } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
+import { TripResourceSummary } from './TripResourceSummary'
 
 interface TripListTableProps {
   trips: any[]
@@ -13,6 +14,7 @@ interface TripListTableProps {
   onDuplicate: (trip: any) => void
   onDelete: (id: string) => void
   onViewParticipants: (trip: any) => void
+  onNavigateToResourceScheduling?: (tripId: string) => void
   isSuperAdmin: boolean
   deleting: boolean
 }
@@ -23,6 +25,7 @@ export function TripListTable({
   onDuplicate,
   onDelete,
   onViewParticipants,
+  onNavigateToResourceScheduling,
   isSuperAdmin,
   deleting
 }: TripListTableProps) {
@@ -161,41 +164,11 @@ export function TripListTable({
                   )}
                 </TableCell>
                 <TableCell>
-                  <div className="space-y-2">
-                    {trip.buses && trip.buses.length > 0 ? (
-                      <div className="flex items-center space-x-1">
-                        <CheckCircle2 className="h-3 w-3 text-green-600" />
-                        <span className="text-xs font-medium">{trip.buses.length} Bus</span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center space-x-1">
-                        <AlertTriangle className="h-3 w-3 text-orange-500" />
-                        <span className="text-xs text-gray-500">No bus</span>
-                      </div>
-                    )}
-                    {trip.drivers && trip.drivers.length > 0 ? (
-                      <div className="flex items-center space-x-1">
-                        <CheckCircle2 className="h-3 w-3 text-green-600" />
-                        <span className="text-xs font-medium">{trip.drivers.length} Driver</span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center space-x-1">
-                        <AlertTriangle className="h-3 w-3 text-orange-500" />
-                        <span className="text-xs text-gray-500">No driver</span>
-                      </div>
-                    )}
-                    {trip.tour_leaders && trip.tour_leaders.length > 0 ? (
-                      <div className="flex items-center space-x-1">
-                        <CheckCircle2 className="h-3 w-3 text-green-600" />
-                        <span className="text-xs font-medium">{trip.tour_leaders.length} TL</span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center space-x-1">
-                        <AlertTriangle className="h-3 w-3 text-orange-500" />
-                        <span className="text-xs text-gray-500">No TL</span>
-                      </div>
-                    )}
-                  </div>
+                  <TripResourceSummary
+                    tripId={trip.id}
+                    compact
+                    onNavigateToScheduling={onNavigateToResourceScheduling ? () => onNavigateToResourceScheduling(trip.id) : undefined}
+                  />
                 </TableCell>
                 <TableCell>
                   <div className="flex space-x-2">

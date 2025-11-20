@@ -36,6 +36,7 @@ function LoadingFallback() {
 function AppContent() {
   const [activeTab, setActiveTab] = useState('dashboard')
   const [selectedTripForParticipants, setSelectedTripForParticipants] = useState<{id: string, name: string} | null>(null)
+  const [selectedTripIdForScheduling, setSelectedTripIdForScheduling] = useState<string | null>(null)
   const { isSuperAdmin, isAdmin, userRole } = useAuth()
 
   console.log('[AppContent] Auth state:', {
@@ -55,10 +56,16 @@ function AppContent() {
             case 'participants':
               return <ParticipantsPage />
             case 'trips':
-              return <TripsPage onViewTripParticipants={(trip) => {
-                setSelectedTripForParticipants(trip)
-                setActiveTab('trip-participants')
-              }} />
+              return <TripsPage
+                onViewTripParticipants={(trip) => {
+                  setSelectedTripForParticipants(trip)
+                  setActiveTab('trip-participants')
+                }}
+                onNavigateToResourceScheduling={(tripId) => {
+                  setSelectedTripIdForScheduling(tripId)
+                  setActiveTab('resource-scheduling')
+                }}
+              />
             case 'destinations':
               return <Destinations />
             case 'master-meeting-points':

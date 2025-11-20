@@ -17,9 +17,10 @@ import { useAuth } from '@/hooks/useAuth'
 
 interface TripsPageProps {
   onViewTripParticipants?: (trip: {id: string, name: string}) => void
+  onNavigateToResourceScheduling?: (tripId: string) => void
 }
 
-export function TripsPage({ onViewTripParticipants }: TripsPageProps = {}) {
+export function TripsPage({ onViewTripParticipants, onNavigateToResourceScheduling }: TripsPageProps = {}) {
   const { trips, loading, refetch } = useTrips()
   const { tourLeaders } = useTourLeaders()
   const { destinations } = useDestinations()
@@ -210,6 +211,7 @@ export function TripsPage({ onViewTripParticipants }: TripsPageProps = {}) {
         onDuplicate={handleDuplicate}
         onDelete={handleDelete}
         onViewParticipants={handleViewParticipants}
+        onNavigateToResourceScheduling={onNavigateToResourceScheduling}
         isSuperAdmin={isSuperAdmin}
         deleting={deleting}
       />
