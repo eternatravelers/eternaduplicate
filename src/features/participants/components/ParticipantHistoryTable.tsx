@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, CreditCard as Edit, Search, Users, UserPlus, Wallet } from 'lucide-react';
+import { Trash2, CreditCard as Edit, Search, Users, UserPlus, Wallet, X } from 'lucide-react';
 import { formatCurrency, formatShortDate } from '@/lib/utils';
 import { GroupMembersModal } from './GroupMembersModal';
 import { PaymentManagementModal } from './PaymentManagementModal';
@@ -64,6 +64,8 @@ export function ParticipantHistoryTable({
   const [selectedGroupParticipant, setSelectedGroupParticipant] = useState<any>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedPaymentParticipant, setSelectedPaymentParticipant] = useState<any>(null);
+  const [filterTrip, setFilterTrip] = useState<string>('all');
+  const [filterPaymentStatus, setFilterPaymentStatus] = useState<string>('all');
 
   const handleViewGroupMembers = (participant: any) => {
     setSelectedGroupParticipant(participant);
@@ -107,6 +109,15 @@ export function ParticipantHistoryTable({
     }
   };
 
+  // Get unique trips for filter dropdown
+  const uniqueTrips = Array.from(
+    new Map(
+      participants
+        .filter(p => p.trips)
+        .map(p => [p.trips!.id, p.trips!])
+    ).values()
+  );
+
   const filteredParticipants = participants.filter(participant => {
     const matchesSearch = participant.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          participant.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -114,35 +125,89 @@ export function ParticipantHistoryTable({
                          participant.trips?.name.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesStatus = filterStatus === 'all' || participant.status === filterStatus;
+    const matchesTrip = filterTrip === 'all' || participant.trip_id === filterTrip;
+    const matchesPaymentStatus = filterPaymentStatus === 'all' || participant.payment_status === filterPaymentStatus;
 
-    return matchesSearch && matchesStatus;
+    return matchesSearch && matchesStatus && matchesTrip && matchesPaymentStatus;
   });
+
+  const hasActiveFilters = searchTerm !== '' || filterStatus !== 'all' || filterTrip !== 'all' || filterPaymentStatus !== 'all';
+
+  const clearAllFilters = () => {
+    setSearchTerm('');
+    setFilterStatus('all');
+    setFilterTrip('all');
+    setFilterPaymentStatus('all');
+  };
 
   return (
     <>
       <div className="space-y-4">
       {/* Search and Filter Controls */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-          <Input
-            placeholder="Search participants..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder="Cari nama, email, telepon, atau trip..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          {hasActiveFilters && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={clearAllFilters}
+              className="shrink-0"
+            >
+              <X className="h-4 w-4 mr-2" />
+              Clear Filters
+            </Button>
+          )}
         </div>
-        <Select value={filterStatus} onValueChange={setFilterStatus}>
-          <SelectTrigger className="w-full sm:w-48">
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="confirmed">Confirmed</SelectItem>
-            <SelectItem value="cancelled">Cancelled</SelectItem>
-          </SelectContent>
-        </Select>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <SelectTrigger>
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Semua Status</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="confirmed">Confirmed</SelectItem>
+              <SelectItem value="cancelled">Cancelled</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={filterTrip} onValueChange={setFilterTrip}>
+            <SelectTrigger>
+              <SelectValue placeholder="Filter by trip" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Semua Trip</SelectItem>
+              {uniqueTrips.map((trip) => (
+                <SelectItem key={trip.id} value={trip.id}>
+                  {trip.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={filterPaymentStatus} onValueChange={setFilterPaymentStatus}>
+            <SelectTrigger>
+              <SelectValue placeholder="Filter by payment" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Semua Pembayaran</SelectItem>
+              <SelectItem value="lunas">Lunas</SelectItem>
+              <SelectItem value="cicilan_berjalan">Cicilan Berjalan</SelectItem>
+              <SelectItem value="dp_dibayar">DP Dibayar</SelectItem>
+              <SelectItem value="belum_bayar">Belum Bayar</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Participants Table */}
@@ -284,8 +349,15 @@ export function ParticipantHistoryTable({
       </div>
 
       {/* Results Summary */}
-      <div className="text-sm text-gray-500">
-        Showing {filteredParticipants.length} of {participants.length} participants
+      <div className="flex items-center justify-between text-sm text-gray-500">
+        <div>
+          Menampilkan {filteredParticipants.length} dari {participants.length} peserta
+        </div>
+        {hasActiveFilters && (
+          <div className="text-blue-600">
+            Filter aktif
+          </div>
+        )}
       </div>
       </div>
 
