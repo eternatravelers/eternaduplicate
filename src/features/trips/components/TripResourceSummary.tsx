@@ -20,16 +20,17 @@ export function TripResourceSummary({ tripId, compact = false, onNavigateToSched
   if (!summary || summary.length === 0) {
     return (
       <div className="flex items-center gap-2">
-        <span className="text-xs text-gray-400">No resources assigned</span>
+        <span className="text-xs text-gray-400">Not scheduled yet</span>
         {onNavigateToScheduling && (
           <Button
             size="sm"
-            variant="ghost"
+            variant="outline"
             onClick={onNavigateToScheduling}
-            className="h-6 px-2 text-xs"
+            className="h-6 px-2 text-xs bg-blue-50 hover:bg-blue-100 border-blue-200"
+            title="Assign resources via Resource Scheduling"
           >
             <Calendar className="h-3 w-3 mr-1" />
-            Assign
+            Schedule
           </Button>
         )}
       </div>

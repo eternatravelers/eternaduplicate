@@ -406,14 +406,41 @@ export function useTripResourceSummary(tripId: string) {
       setLoading(true)
       setError(null)
 
-      const { data, error: fetchError } = await supabase.rpc(
-        'get_trip_resource_summary',
-        { p_trip_id: tripId }
-      )
+      // Fetch resource schedules for this trip
+      const { data: schedules, error: fetchError } = await supabase
+        .from('resource_schedules')
+        .select('resource_type, resource_id, participant_count')
+        .eq('trip_id', tripId)
+        .in('status', ['scheduled', 'confirmed', 'in_progress'])
 
       if (fetchError) throw fetchError
 
-      setSummary(data || [])
+      if (!schedules || schedules.length === 0) {
+        setSummary([])
+        return
+      }
+
+      // Group by resource type and calculate summary
+      const groupedByType = schedules.reduce((acc, schedule) => {
+        if (!acc[schedule.resource_type]) {
+          acc[schedule.resource_type] = {
+            resource_ids: new Set(),
+            total_capacity: 0
+          }
+        }
+        acc[schedule.resource_type].resource_ids.add(schedule.resource_id)
+        acc[schedule.resource_type].total_capacity += schedule.participant_count || 0
+        return acc
+      }, {} as Record<string, { resource_ids: Set<string>, total_capacity: number }>)
+
+      // Convert to summary array
+      const summaryData = Object.entries(groupedByType).map(([resourceType, data]) => ({
+        resource_type: resourceType,
+        resource_count: data.resource_ids.size,
+        total_capacity: data.total_capacity
+      }))
+
+      setSummary(summaryData)
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch trip resource summary'
       setError(errorMessage)
