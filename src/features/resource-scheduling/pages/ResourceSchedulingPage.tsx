@@ -84,30 +84,36 @@ export function ResourceSchedulingPage() {
       const { error: createError } = await createSchedule(data)
       if (createError) {
         setError(createError)
-        return
+        throw new Error(createError)
       }
       refetchSchedules()
       setShowForm(false)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create schedule')
+      const errorMessage = err instanceof Error ? err.message : 'Gagal membuat schedule'
+      setError(errorMessage)
+      throw err // Re-throw to let form handle it
     }
   }
 
   const handleUpdateSchedule = async (data: any) => {
     try {
       setError(null)
-      if (!editingSchedule?.id) return
+      if (!editingSchedule?.id) {
+        throw new Error('ID schedule tidak ditemukan')
+      }
 
       const { error: updateError } = await updateSchedule(editingSchedule.id, data)
       if (updateError) {
         setError(updateError)
-        return
+        throw new Error(updateError)
       }
       refetchSchedules()
       setShowForm(false)
       setEditingSchedule(null)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update schedule')
+      const errorMessage = err instanceof Error ? err.message : 'Gagal mengupdate schedule'
+      setError(errorMessage)
+      throw err // Re-throw to let form handle it
     }
   }
 

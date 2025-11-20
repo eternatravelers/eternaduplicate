@@ -158,6 +158,7 @@ export function ResourceScheduleForm({
     try {
       setSubmitting(true)
       await onSubmit(formData)
+      // Only close and reset if successful
       onClose()
       setFormData({
         resource_type: '',
@@ -171,8 +172,11 @@ export function ResourceScheduleForm({
         notes: ''
       })
       setConflictInfo(null)
+      setValidationError(null)
     } catch (err) {
-      setValidationError(err instanceof Error ? err.message : 'Terjadi kesalahan')
+      const errorMessage = err instanceof Error ? err.message : 'Terjadi kesalahan saat menyimpan'
+      setValidationError(errorMessage)
+      console.error('Submit error:', err)
     } finally {
       setSubmitting(false)
     }
