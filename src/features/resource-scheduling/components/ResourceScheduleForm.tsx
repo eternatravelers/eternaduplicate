@@ -6,9 +6,10 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { AlertCircle, CheckCircle2, Clock, AlertTriangle } from 'lucide-react'
+import { AlertCircle, CheckCircle2, Clock, AlertTriangle, Lock, Bus, UserCheck, Users } from 'lucide-react'
 import { useCheckResourceConflict } from '@/hooks/useResourceSchedules'
 import { Badge } from '@/components/ui/badge'
+import { Card } from '@/components/ui/card'
 
 interface ResourceScheduleFormProps {
   isOpen: boolean
@@ -55,6 +56,36 @@ export function ResourceScheduleForm({
   const availableResources = formData.resource_type === 'bus' ? resources.buses :
     formData.resource_type === 'driver' ? resources.drivers :
     formData.resource_type === 'tour_leader' ? resources.tourLeaders : []
+
+  // Get current resource name for locked indicator
+  const getCurrentResourceInfo = () => {
+    if (!formData.resource_type || !formData.resource_id) return null
+
+    const resource = availableResources.find((r: any) => r.id === formData.resource_id)
+    if (!resource) return null
+
+    let icon = <Lock className="h-5 w-5" />
+    let name = ''
+    let details = ''
+
+    if (formData.resource_type === 'bus') {
+      icon = <Bus className="h-5 w-5 text-blue-600" />
+      name = resource.plate_number
+      details = `${resource.capacity} kursi`
+    } else if (formData.resource_type === 'driver') {
+      icon = <UserCheck className="h-5 w-5 text-green-600" />
+      name = resource.name
+      details = 'Driver'
+    } else if (formData.resource_type === 'tour_leader') {
+      icon = <Users className="h-5 w-5 text-orange-600" />
+      name = resource.name
+      details = 'Tour Leader'
+    }
+
+    return { icon, name, details }
+  }
+
+  const resourceInfo = getCurrentResourceInfo()
 
   useEffect(() => {
     if (initialData) {
@@ -165,6 +196,35 @@ export function ResourceScheduleForm({
           </DialogTitle>
         </DialogHeader>
 
+        {resourceInfo && initialData && (
+          <Card className="bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-300 p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-white rounded-lg shadow-sm">
+                <Lock className="h-6 w-6 text-amber-600" />
+              </div>
+              <div className="flex-1">
+                <div className="text-xs font-semibold text-amber-900 uppercase tracking-wide mb-1">
+                  Sedang Mengedit
+                </div>
+                <div className="flex items-center gap-2">
+                  {resourceInfo.icon}
+                  <div>
+                    <div className="font-bold text-lg text-gray-900">
+                      {resourceInfo.name}
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      {resourceInfo.details}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <Badge variant="outline" className="bg-white border-amber-400 text-amber-700 font-semibold">
+                LOCKED
+              </Badge>
+            </div>
+          </Card>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-6">
           {validationError && (
             <Alert variant="destructive">
@@ -196,8 +256,9 @@ export function ResourceScheduleForm({
               <Select
                 value={formData.resource_type}
                 onValueChange={(value) => setFormData({ ...formData, resource_type: value, resource_id: '' })}
+                disabled={!!initialData}
               >
-                <SelectTrigger>
+                <SelectTrigger className={initialData ? 'bg-gray-100 cursor-not-allowed' : ''}>
                   <SelectValue placeholder="Pilih tipe resource" />
                 </SelectTrigger>
                 <SelectContent>
@@ -213,9 +274,9 @@ export function ResourceScheduleForm({
               <Select
                 value={formData.resource_id}
                 onValueChange={(value) => setFormData({ ...formData, resource_id: value })}
-                disabled={!formData.resource_type}
+                disabled={!formData.resource_type || !!initialData}
               >
-                <SelectTrigger>
+                <SelectTrigger className={initialData ? 'bg-gray-100 cursor-not-allowed' : ''}>
                   <SelectValue placeholder="Pilih resource" />
                 </SelectTrigger>
                 <SelectContent>
