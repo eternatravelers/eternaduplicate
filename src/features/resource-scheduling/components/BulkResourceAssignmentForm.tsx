@@ -11,7 +11,7 @@ import { supabase } from '@/lib/supabase'
 
 interface BulkResourceAssignmentFormProps {
   trips: Array<{ id: string; name: string; departure_date: string; return_date: string }>
-  buses: Array<{ id: string; bus_number: string; capacity: number }>
+  buses: Array<{ id: string; plate_number: string; capacity: number }>
   drivers: Array<{ id: string; name: string }>
   tourLeaders: Array<{ id: string; name: string }>
   onSave: () => void
@@ -50,7 +50,7 @@ export function BulkResourceAssignmentForm({
     try {
       setCheckingConflicts(true)
       const allResources = [
-        ...selectedBuses.map(id => ({ type: 'bus', id, name: buses.find(b => b.id === id)?.bus_number || 'Unknown' })),
+        ...selectedBuses.map(id => ({ type: 'bus', id, name: buses.find(b => b.id === id)?.plate_number || 'Unknown' })),
         ...selectedDrivers.map(id => ({ type: 'driver', id, name: drivers.find(d => d.id === id)?.name || 'Unknown' })),
         ...selectedTourLeaders.map(id => ({ type: 'tour_leader', id, name: tourLeaders.find(tl => tl.id === id)?.name || 'Unknown' }))
       ]
@@ -287,7 +287,7 @@ export function BulkResourceAssignmentForm({
                           htmlFor={`bus-${bus.id}`}
                           className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
                         >
-                          {bus.bus_number} ({bus.capacity} seats)
+                          {bus.plate_number} ({bus.capacity} seats)
                         </label>
                       </div>
                     ))}
