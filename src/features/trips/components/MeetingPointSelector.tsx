@@ -24,8 +24,11 @@ export function MeetingPointSelector({
 
   useEffect(() => {
     setLocalSelectedIds(selectedMeetingPointIds)
+  }, [selectedMeetingPointIds])
+
+  useEffect(() => {
     setLocalPrimaryId(primaryMeetingPointId)
-  }, [selectedMeetingPointIds, primaryMeetingPointId])
+  }, [primaryMeetingPointId])
 
   const handleToggleMeetingPoint = (id: string, checked: boolean) => {
     let newSelectedIds: string[]
@@ -105,21 +108,19 @@ export function MeetingPointSelector({
           return (
             <Card
               key={mp.id}
-              className={`cursor-pointer transition-all ${
+              className={`transition-all ${
                 isSelected
                   ? isPrimary
                     ? 'border-blue-500 bg-blue-50 shadow-sm'
                     : 'border-green-300 bg-green-50'
                   : 'border-gray-200 hover:border-gray-300'
               }`}
-              onClick={() => handleToggleMeetingPoint(mp.id, !isSelected)}
             >
               <CardContent className="p-4">
                 <div className="flex items-start space-x-3">
                   <Checkbox
                     checked={isSelected}
                     onCheckedChange={(checked) => handleToggleMeetingPoint(mp.id, checked as boolean)}
-                    onClick={(e) => e.stopPropagation()}
                   />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center space-x-2 mb-1">
@@ -141,10 +142,7 @@ export function MeetingPointSelector({
                       <button
                         type="button"
                         className="text-xs text-blue-600 hover:text-blue-700 font-medium"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleSetPrimary(mp.id)
-                        }}
+                        onClick={() => handleSetPrimary(mp.id)}
                       >
                         Jadikan Primary
                       </button>
