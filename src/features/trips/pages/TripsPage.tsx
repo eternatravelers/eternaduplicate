@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Plus, Calendar, Users, MapPin, DollarSign } from 'lucide-react'
@@ -39,6 +39,11 @@ export function TripsPage({ onViewTripParticipants }: TripsPageProps = {}) {
   const [isAddTripTypeModalOpen, setIsAddTripTypeModalOpen] = useState(false)
   const [selectedTrip, setSelectedTrip] = useState<any>(null)
   const { isSuperAdmin } = useAuth()
+
+  // Refetch trips when component mounts or becomes visible
+  useEffect(() => {
+    refetch()
+  }, [])
 
   const handleSubmit = async (formData: any) => {
     try {

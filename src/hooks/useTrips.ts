@@ -135,6 +135,17 @@ export function useTrips() {
 
   useEffect(() => {
     fetchTrips()
+
+    // Re-fetch when window regains focus (user returns to tab)
+    const handleFocus = () => {
+      fetchTrips()
+    }
+
+    window.addEventListener('focus', handleFocus)
+
+    return () => {
+      window.removeEventListener('focus', handleFocus)
+    }
   }, [])
 
   return { trips, loading, error, refetch: fetchTrips }
