@@ -1,8 +1,9 @@
-import React from 'react'
+import React, { useState, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Users, Phone, Mail, MapPin, DollarSign } from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Users, Phone, Mail, MapPin, DollarSign, Filter } from 'lucide-react'
 import { useParticipants } from '@/hooks/useParticipants'
 import { formatCurrency, formatShortDate } from '@/lib/utils'
 
@@ -13,6 +14,7 @@ interface TripParticipantsTableProps {
 
 export function TripParticipantsTable({ tripId, tripName }: TripParticipantsTableProps) {
   const { participants, loading } = useParticipants({ tripId })
+  const [selectedMeetingPoint, setSelectedMeetingPoint] = useState<string>('all')
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -47,9 +49,33 @@ export function TripParticipantsTable({ tripId, tripName }: TripParticipantsTabl
     return <span className="text-gray-400">-</span>
   }
 
-  const totalParticipants = participants.reduce((sum, p) => sum + (p.participant_count || 1), 0)
-  const totalRevenue = participants.reduce((sum, p) => sum + (p.package_price || 0), 0)
-  const totalDP = participants.reduce((sum, p) => sum + (p.dp_amount || 0), 0)
+  // Get unique meeting points
+  const meetingPoints = useMemo(() => {
+    const points = new Set<string>()
+    participants.forEach(p => {
+      const meetingPoint = p.meeting_point_details || p.trips?.meeting_point
+      if (meetingPoint) {
+        points.add(meetingPoint)
+      }
+    })
+    return Array.from(points).sort()
+  }, [participants])
+
+  // Filter participants by meeting point
+  const filteredParticipants = useMemo(() => {
+    if (selectedMeetingPoint === 'all') return participants
+    if (selectedMeetingPoint === 'none') {
+      return participants.filter(p => !p.meeting_point_details && !p.trips?.meeting_point)
+    }
+    return participants.filter(p => {
+      const meetingPoint = p.meeting_point_details || p.trips?.meeting_point
+      return meetingPoint === selectedMeetingPoint
+    })
+  }, [participants, selectedMeetingPoint])
+
+  const totalParticipants = filteredParticipants.reduce((sum, p) => sum + (p.participant_count || 1), 0)
+  const totalRevenue = filteredParticipants.reduce((sum, p) => sum + (p.package_price || 0), 0)
+  const totalDP = filteredParticipants.reduce((sum, p) => sum + (p.dp_amount || 0), 0)
 
   if (loading) {
     return (
@@ -115,21 +141,127 @@ export function TripParticipantsTable({ tripId, tripName }: TripParticipantsTabl
         </Card>
       </div>
 
+      {/* Meeting Point Breakdown */}
+      {meetingPoints.length > 0 && (
+        <Card className="border-blue-200">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2 text-blue-800">
+              <MapPin className="h-5 w-5" />
+              <span>Breakdown Meeting Point</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+              {meetingPoints.map(point => {
+                const count = participants.filter(p => {
+                  const meetingPoint = p.meeting_point_details || p.trips?.meeting_point
+                  return meetingPoint === point
+                }).length
+                const peopleCount = participants
+                  .filter(p => {
+                    const meetingPoint = p.meeting_point_details || p.trips?.meeting_point
+                    return meetingPoint === point
+                  })
+                  .reduce((sum, p) => sum + (p.participant_count || 1), 0)
+
+                return (
+                  <div
+                    key={point}
+                    className="p-4 bg-blue-50 rounded-lg border border-blue-200 hover:bg-blue-100 transition-colors cursor-pointer"
+                    onClick={() => setSelectedMeetingPoint(point)}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="font-medium text-blue-900 mb-1">{point}</div>
+                        <div className="text-sm text-blue-700">
+                          {count} registrasi • {peopleCount} peserta
+                        </div>
+                      </div>
+                      <MapPin className="h-4 w-4 text-blue-600 flex-shrink-0 mt-1" />
+                    </div>
+                  </div>
+                )
+              })}
+              {participants.some(p => !p.meeting_point_details && !p.trips?.meeting_point) && (
+                <div
+                  className="p-4 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors cursor-pointer"
+                  onClick={() => setSelectedMeetingPoint('none')}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="font-medium text-gray-700 mb-1">Tanpa Meeting Point</div>
+                      <div className="text-sm text-gray-600">
+                        {participants.filter(p => !p.meeting_point_details && !p.trips?.meeting_point).length} registrasi
+                      </div>
+                    </div>
+                    <MapPin className="h-4 w-4 text-gray-400 flex-shrink-0 mt-1" />
+                  </div>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Participants Table */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Users className="h-5 w-5 text-blue-600" />
-            <span>Daftar Peserta - {tripName}</span>
-            <Badge variant="outline">{participants.length} registrasi</Badge>
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center space-x-2">
+              <Users className="h-5 w-5 text-blue-600" />
+              <span>Daftar Peserta - {tripName}</span>
+              <Badge variant="outline">{participants.length} registrasi</Badge>
+              {selectedMeetingPoint !== 'all' && (
+                <Badge className="bg-blue-100 text-blue-800">
+                  {filteredParticipants.length} tersaring
+                </Badge>
+              )}
+            </CardTitle>
+            <div className="flex items-center space-x-2">
+              <Filter className="h-4 w-4 text-gray-500" />
+              <Select value={selectedMeetingPoint} onValueChange={setSelectedMeetingPoint}>
+                <SelectTrigger className="w-64">
+                  <SelectValue placeholder="Filter Meeting Point" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">
+                    <div className="flex items-center space-x-2">
+                      <MapPin className="h-4 w-4 text-gray-400" />
+                      <span>Semua Meeting Point</span>
+                    </div>
+                  </SelectItem>
+                  {meetingPoints.map(point => (
+                    <SelectItem key={point} value={point}>
+                      <div className="flex items-center space-x-2">
+                        <MapPin className="h-4 w-4 text-blue-600" />
+                        <span>{point}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                  <SelectItem value="none">
+                    <div className="flex items-center space-x-2">
+                      <MapPin className="h-4 w-4 text-gray-400" />
+                      <span className="text-gray-500">Tanpa Meeting Point</span>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
-          {participants.length === 0 ? (
+          {filteredParticipants.length === 0 ? (
             <div className="text-center py-12 text-gray-500">
               <Users className="h-16 w-16 mx-auto mb-4 opacity-30" />
-              <h3 className="text-lg font-medium mb-2">Belum ada peserta</h3>
-              <p className="text-sm">Belum ada peserta yang terdaftar untuk trip ini</p>
+              <h3 className="text-lg font-medium mb-2">
+                {selectedMeetingPoint === 'all' ? 'Belum ada peserta' : 'Tidak ada peserta'}
+              </h3>
+              <p className="text-sm">
+                {selectedMeetingPoint === 'all'
+                  ? 'Belum ada peserta yang terdaftar untuk trip ini'
+                  : `Tidak ada peserta dengan meeting point "${selectedMeetingPoint === 'none' ? 'tanpa meeting point' : selectedMeetingPoint}"`
+                }
+              </p>
             </div>
           ) : (
             <Table>
@@ -147,7 +279,7 @@ export function TripParticipantsTable({ tripId, tripName }: TripParticipantsTabl
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {participants.map((participant) => (
+                {filteredParticipants.map((participant) => (
                   <TableRow key={participant.id}>
                     <TableCell>
                       <div>
