@@ -10,7 +10,7 @@ export function useAssignBusToMeetingPoint() {
       const { error } = await supabase
         .from('meeting_point_buses')
         .insert({
-          assignment_id: assignmentId,
+          meeting_point_assignment_id: assignmentId,
           bus_id: busId,
           assigned_capacity: capacity
         })
@@ -64,7 +64,7 @@ export function useGetMeetingPointBuses() {
             plate_number
           )
         `)
-        .eq('assignment_id', assignmentId)
+        .eq('meeting_point_assignment_id', assignmentId)
 
       if (error) throw error
       return data || []
@@ -86,9 +86,8 @@ export function useAssignDriverToMeetingPoint() {
       const { error } = await supabase
         .from('meeting_point_drivers')
         .insert({
-          assignment_id: assignmentId,
-          driver_id: driverId,
-          bus_id: busId || null
+          meeting_point_assignment_id: assignmentId,
+          driver_id: driverId
         })
 
       return { error: error?.message || null }
@@ -131,7 +130,6 @@ export function useGetMeetingPointDrivers() {
         .from('meeting_point_drivers')
         .select(`
           id,
-          bus_id,
           drivers (
             id,
             name,
@@ -139,7 +137,7 @@ export function useGetMeetingPointDrivers() {
             license_number
           )
         `)
-        .eq('assignment_id', assignmentId)
+        .eq('meeting_point_assignment_id', assignmentId)
 
       if (error) throw error
       return data || []

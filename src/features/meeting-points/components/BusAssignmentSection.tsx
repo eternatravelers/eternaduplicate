@@ -119,10 +119,10 @@ export function BusAssignmentSection({
               <div className="flex items-center justify-between">
                 <div className="flex-1">
                   <div className="font-medium text-sm text-gray-900">
-                    {busAssign.buses?.bus_number} - {busAssign.buses?.type}
+                    {busAssign.buses?.plate_number} - {busAssign.buses?.model || busAssign.buses?.type}
                   </div>
                   <div className="text-xs text-gray-600 mt-1">
-                    Plat: {busAssign.buses?.plate_number} • Kapasitas: {busAssign.assigned_capacity} kursi
+                    Kapasitas: {busAssign.assigned_capacity} kursi
                   </div>
                 </div>
                 <Button
@@ -155,7 +155,7 @@ export function BusAssignmentSection({
               <SelectContent>
                 {availableBusOptions.map(bus => (
                   <SelectItem key={bus.id} value={bus.id}>
-                    {bus.bus_number} - {bus.type} ({bus.capacity} kursi)
+                    {bus.plate_number} - {bus.model || bus.type} ({bus.capacity} kursi)
                   </SelectItem>
                 ))}
               </SelectContent>
