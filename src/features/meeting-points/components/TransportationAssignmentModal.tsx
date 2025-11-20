@@ -150,16 +150,16 @@ export function TransportationAssignmentModal({
                     Belum ada bus yang di-assign
                   </p>
                   <p className="text-xs text-orange-700">
-                    Silakan assign bus di halaman <strong>Manajemen Perjalanan</strong> terlebih dahulu sebelum melakukan assignment meeting point.
+                    Silakan assign bus di halaman <strong>Sumber Daya Operasional</strong> terlebih dahulu sebelum melakukan assignment meeting point.
                   </p>
                   <Button
                     type="button"
                     size="sm"
                     variant="outline"
                     className="mt-2"
-                    onClick={() => window.location.href = '/trips'}
+                    onClick={() => window.location.href = '/operational-resources'}
                   >
-                    Buka Manajemen Perjalanan
+                    Buka Sumber Daya Operasional
                   </Button>
                 </div>
               </div>
