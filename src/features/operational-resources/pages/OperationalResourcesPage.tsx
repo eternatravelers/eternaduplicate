@@ -3,8 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Plus, Bus, UserCheck, Settings, AlertCircle, Users } from 'lucide-react'
-import { ResourceAssignmentModal } from '../components/ResourceAssignmentModal'
+import { Plus, Bus, UserCheck, Settings, AlertCircle } from 'lucide-react'
 import { BusForm } from '../components/BusForm'
 import { BusTable } from '../components/BusTable'
 import { DriverForm } from '../components/DriverForm'
@@ -28,7 +27,6 @@ export function OperationalResourcesPage() {
   const [driverSearchTerm, setDriverSearchTerm] = useState('')
   const [tourLeaderSearchTerm, setTourLeaderSearchTerm] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const [showAssignmentModal, setShowAssignmentModal] = useState(false)
 
   // Bus hooks
   const { buses, loading: busesLoading, refetch: refetchBuses } = useBuses()
@@ -49,8 +47,6 @@ export function OperationalResourcesPage() {
   const { deleteTourLeader, loading: deletingTourLeader } = useDeleteTourLeader()
 
   // Trip hooks for assignment
-  const { trips } = useTrips()
-  const { updateTrip, loading: updatingTrip } = useUpdateTrip()
 
   // Bus handlers
   const handleBusSubmit = async (formData: any) => {
@@ -212,24 +208,6 @@ export function OperationalResourcesPage() {
   }
 
   // Assignment handlers
-  const handleResourceAssignment = async (tripId: string, assignments: any) => {
-    try {
-      setError(null)
-      const { error } = await updateTrip(tripId, assignments)
-      if (error) {
-        setError(error)
-        return
-      }
-      // Refresh data after successful assignment
-      refetchTourLeaders()
-      refetchBuses() 
-      refetchDrivers()
-      // Close the assignment modal after successful assignment
-      setShowAssignmentModal(false)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Terjadi kesalahan')
-    }
-  }
 
   if (busesLoading || driversLoading || tourLeadersLoading) {
     return (
@@ -370,17 +348,10 @@ export function OperationalResourcesPage() {
           </TabsList>
           
           <div className="flex space-x-2">
-            <Button 
-              onClick={() => setShowAssignmentModal(true)}
-              className="bg-orange-600 hover:bg-orange-700"
-            >
-              <Users className="h-4 w-4 mr-2" />
-              Assignment ke Trip
-            </Button>
-            <Button 
+            <Button
               onClick={
                 activeTab === 'tour-leaders' ? handleTourLeaderAddNew :
-                activeTab === 'buses' ? handleBusAddNew : 
+                activeTab === 'buses' ? handleBusAddNew :
                 handleDriverAddNew
               }
               className={
@@ -464,16 +435,6 @@ export function OperationalResourcesPage() {
         </TabsContent>
       </Tabs>
 
-      <ResourceAssignmentModal
-        isOpen={showAssignmentModal}
-        onClose={() => setShowAssignmentModal(false)}
-        trips={trips}
-        tourLeaders={tourLeaders}
-        buses={buses}
-        drivers={drivers}
-        onAssign={handleResourceAssignment}
-        assigning={updatingTrip}
-      />
     </div>
   )
 }

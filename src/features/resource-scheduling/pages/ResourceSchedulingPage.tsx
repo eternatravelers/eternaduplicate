@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Plus, Calendar, Filter, Bus, UserCheck, Users, AlertCircle, Clock, CheckCircle2 } from 'lucide-react'
+import { Plus, Calendar, Filter, Bus, UserCheck, Users, AlertCircle, Clock, CheckCircle2, Zap } from 'lucide-react'
 import { useResourceSchedules, useCreateResourceSchedule, useUpdateResourceSchedule, useDeleteResourceSchedule } from '@/hooks/useResourceSchedules'
 import { useTrips } from '@/hooks/useTrips'
 import { useBuses } from '@/hooks/useBuses'
@@ -15,11 +15,13 @@ import { useTourLeaders } from '@/hooks/useTourLeaders'
 import { useMeetingPoints } from '@/hooks/useMeetingPoints'
 import { ResourceScheduleForm } from '../components/ResourceScheduleForm'
 import { ResourceScheduleTimeline } from '../components/ResourceScheduleTimeline'
+import { BulkResourceAssignmentForm } from '../components/BulkResourceAssignmentForm'
 import { addDays, startOfWeek, endOfWeek, format } from 'date-fns'
 
 export function ResourceSchedulingPage() {
   const [activeTab, setActiveTab] = useState('all')
   const [showForm, setShowForm] = useState(false)
+  const [showBulkForm, setShowBulkForm] = useState(false)
   const [editingSchedule, setEditingSchedule] = useState<any>(null)
   const [filters, setFilters] = useState({
     resourceType: '',
@@ -161,9 +163,13 @@ export function ResourceSchedulingPage() {
           </p>
         </div>
         <div className="flex items-center space-x-2">
-          <Button onClick={handleAddNew} className="bg-blue-600 hover:bg-blue-700">
+          <Button onClick={() => setShowBulkForm(true)} className="bg-green-600 hover:bg-green-700">
+            <Zap className="h-4 w-4 mr-2" />
+            Quick Assign
+          </Button>
+          <Button onClick={handleAddNew} variant="outline">
             <Plus className="h-4 w-4 mr-2" />
-            Tambah Jadwal
+            Tambah Manual
           </Button>
         </div>
       </div>
@@ -370,6 +376,27 @@ export function ResourceSchedulingPage() {
         resources={allResources}
         meetingPoints={meetingPoints}
       />
+
+      {showBulkForm && (
+        <Card className="fixed inset-4 z-50 overflow-auto">
+          <CardHeader className="border-b">
+            <CardTitle>Quick Assignment - Assign Multiple Resources</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <BulkResourceAssignmentForm
+              trips={trips}
+              buses={buses}
+              drivers={drivers}
+              tourLeaders={tourLeaders}
+              onSave={() => {
+                setShowBulkForm(false)
+                refetchSchedules()
+              }}
+              onCancel={() => setShowBulkForm(false)}
+            />
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }

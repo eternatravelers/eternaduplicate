@@ -16,7 +16,6 @@ import { TransportationAssignmentModal } from '@/features/meeting-points/compone
 import { PickupScheduleForm } from '@/features/meeting-points/components/PickupScheduleForm'
 import { MeetingPointParticipantsModal } from '@/features/meeting-points/components/MeetingPointParticipantsModal'
 import { TripStatusManagement } from './TripStatusManagement'
-import { TripResourceAssignment } from './TripResourceAssignment'
 import { useMeetingPointSummary } from '@/hooks/useMeetingPointSummary'
 import { useMeetingPointAssignments } from '@/hooks/useMeetingPointAssignments'
 import { usePickupSchedules } from '@/hooks/usePickupSchedules'
@@ -459,29 +458,15 @@ export function TripFormModal({
                   </AlertDescription>
                 </Alert>
               ) : (
-                <div className="space-y-8">
-                  <TripStatusManagement
-                    trip={initialData}
-                    onStatusChange={async (newStatus) => {
-                      handleInputChange('status', newStatus)
-                      const updatedData = { ...formData, status: newStatus }
-                      await onSubmit(updatedData)
-                    }}
-                    updating={updating}
-                  />
-
-                  <div className="border-t pt-6">
-                    <TripResourceAssignment
-                      tripId={tripId}
-                      departureDate={formData.departure_date}
-                      returnDate={formData.return_date}
-                      buses={buses}
-                      drivers={drivers}
-                      tourLeaders={tourLeaders}
-                      onSave={refetchSummary}
-                    />
-                  </div>
-                </div>
+                <TripStatusManagement
+                  trip={initialData}
+                  onStatusChange={async (newStatus) => {
+                    handleInputChange('status', newStatus)
+                    const updatedData = { ...formData, status: newStatus }
+                    await onSubmit(updatedData)
+                  }}
+                  updating={updating}
+                />
               )}
             </TabsContent>
 
