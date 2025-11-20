@@ -87,6 +87,9 @@ export function ResourceScheduleForm({
 
   const resourceInfo = getCurrentResourceInfo()
 
+  // Only lock if this is edit mode AND resource was already selected
+  const isResourceLocked = initialData && initialData.resource_type && initialData.resource_id
+
   useEffect(() => {
     if (initialData) {
       setFormData({
@@ -196,7 +199,7 @@ export function ResourceScheduleForm({
           </DialogTitle>
         </DialogHeader>
 
-        {resourceInfo && initialData && (
+        {resourceInfo && isResourceLocked && (
           <Card className="bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-300 p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-white rounded-lg shadow-sm">
@@ -256,9 +259,9 @@ export function ResourceScheduleForm({
               <Select
                 value={formData.resource_type}
                 onValueChange={(value) => setFormData({ ...formData, resource_type: value, resource_id: '' })}
-                disabled={!!initialData}
+                disabled={isResourceLocked}
               >
-                <SelectTrigger className={initialData ? 'bg-gray-100 cursor-not-allowed' : ''}>
+                <SelectTrigger className={isResourceLocked ? 'bg-gray-100 cursor-not-allowed' : ''}>
                   <SelectValue placeholder="Pilih tipe resource" />
                 </SelectTrigger>
                 <SelectContent>
@@ -274,9 +277,9 @@ export function ResourceScheduleForm({
               <Select
                 value={formData.resource_id}
                 onValueChange={(value) => setFormData({ ...formData, resource_id: value })}
-                disabled={!formData.resource_type || !!initialData}
+                disabled={!formData.resource_type || isResourceLocked}
               >
-                <SelectTrigger className={initialData ? 'bg-gray-100 cursor-not-allowed' : ''}>
+                <SelectTrigger className={isResourceLocked ? 'bg-gray-100 cursor-not-allowed' : ''}>
                   <SelectValue placeholder="Pilih resource" />
                 </SelectTrigger>
                 <SelectContent>
