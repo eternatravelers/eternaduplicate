@@ -2,7 +2,7 @@ import React from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Clock, MapPin, Edit2, Trash2, Bus, UserCheck, Users } from 'lucide-react'
+import { Clock, MapPin, Edit2, Trash2, Bus, UserCheck, Users, Eye } from 'lucide-react'
 import { format } from 'date-fns'
 import { id as idLocale } from 'date-fns/locale'
 
@@ -10,6 +10,7 @@ interface ResourceScheduleTimelineProps {
   schedules: any[]
   onEdit: (schedule: any) => void
   onDelete: (scheduleId: string) => void
+  onView?: (schedule: any) => void
   resourceType?: string
   groupBy?: 'date' | 'resource' | 'trip'
 }
@@ -18,6 +19,7 @@ export function ResourceScheduleTimeline({
   schedules,
   onEdit,
   onDelete,
+  onView,
   resourceType,
   groupBy = 'date'
 }: ResourceScheduleTimelineProps) {
@@ -186,10 +188,21 @@ export function ResourceScheduleTimeline({
                     </div>
 
                     <div className="flex space-x-2 ml-4">
+                      {onView && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => onView(schedule)}
+                          title="Lihat detail"
+                        >
+                          <Eye className="h-4 w-4 text-blue-600" />
+                        </Button>
+                      )}
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => onEdit(schedule)}
+                        title="Edit jadwal"
                       >
                         <Edit2 className="h-4 w-4" />
                       </Button>
@@ -198,6 +211,7 @@ export function ResourceScheduleTimeline({
                         variant="outline"
                         onClick={() => onDelete(schedule.id)}
                         className="text-red-600 hover:bg-red-50"
+                        title="Hapus jadwal"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>

@@ -16,13 +16,16 @@ import { useMeetingPoints } from '@/hooks/useMeetingPoints'
 import { ResourceScheduleForm } from '../components/ResourceScheduleForm'
 import { ResourceScheduleTimeline } from '../components/ResourceScheduleTimeline'
 import { BulkResourceAssignmentForm } from '../components/BulkResourceAssignmentForm'
+import { ScheduleDetailModal } from '../components/ScheduleDetailModal'
 import { addDays, startOfWeek, endOfWeek, format } from 'date-fns'
 
 export function ResourceSchedulingPage() {
   const [activeTab, setActiveTab] = useState('all')
   const [showForm, setShowForm] = useState(false)
   const [showBulkForm, setShowBulkForm] = useState(false)
+  const [showDetailModal, setShowDetailModal] = useState(false)
   const [editingSchedule, setEditingSchedule] = useState<any>(null)
+  const [viewingSchedule, setViewingSchedule] = useState<any>(null)
   const [filters, setFilters] = useState({
     resourceType: '',
     resourceId: '',
@@ -155,8 +158,23 @@ export function ResourceSchedulingPage() {
   }
 
   const handleEdit = (schedule: any) => {
-    setEditingSchedule(schedule)
+    // Format datetime untuk edit - convert to local datetime string format
+    const pickupDate = new Date(schedule.pickup_datetime)
+    const returnDate = new Date(schedule.return_datetime)
+
+    const formattedSchedule = {
+      ...schedule,
+      pickup_datetime: format(pickupDate, "yyyy-MM-dd'T'HH:mm"),
+      return_datetime: format(returnDate, "yyyy-MM-dd'T'HH:mm")
+    }
+
+    setEditingSchedule(formattedSchedule)
     setShowForm(true)
+  }
+
+  const handleView = (schedule: any) => {
+    setViewingSchedule(schedule)
+    setShowDetailModal(true)
   }
 
   const handleAddNew = () => {
@@ -167,6 +185,11 @@ export function ResourceSchedulingPage() {
   const handleCloseForm = () => {
     setShowForm(false)
     setEditingSchedule(null)
+  }
+
+  const handleCloseDetailModal = () => {
+    setShowDetailModal(false)
+    setViewingSchedule(null)
   }
 
   if (schedulesLoading) {
@@ -388,6 +411,7 @@ export function ResourceSchedulingPage() {
             schedules={filteredSchedules}
             onEdit={handleEdit}
             onDelete={handleDeleteSchedule}
+            onView={handleView}
             resourceType={activeTab !== 'all' ? activeTab : undefined}
             groupBy={viewMode}
           />
@@ -402,6 +426,12 @@ export function ResourceSchedulingPage() {
         trips={trips}
         resources={allResources}
         meetingPoints={meetingPoints}
+      />
+
+      <ScheduleDetailModal
+        isOpen={showDetailModal}
+        onClose={handleCloseDetailModal}
+        schedule={viewingSchedule}
       />
 
       {showBulkForm && (
