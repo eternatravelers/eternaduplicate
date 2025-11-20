@@ -25,7 +25,7 @@ export function useTourLeaders() {
         .from('tour_leaders')
         .select(`
           *,
-          trip_tour_leaders!left (
+          resource_schedules!resource_schedules_tour_leader_id_fkey (
             trips (
               id,
               name,
@@ -38,11 +38,19 @@ export function useTourLeaders() {
 
       if (error) throw error
 
-      // Process data to include assigned trips
-      const tourLeadersWithAssignments = data?.map(tl => ({
-        ...tl,
-        assignedTrips: tl.trip_tour_leaders?.map(ttl => ttl.trips).filter(Boolean) || []
-      })) || []
+      // Process data to include assigned trips from resource_schedules
+      const tourLeadersWithAssignments = data?.map(tl => {
+        const uniqueTrips = new Map()
+        tl.resource_schedules?.forEach((rs: any) => {
+          if (rs.trips && ['scheduled', 'confirmed', 'in_progress'].includes(rs.trips.status)) {
+            uniqueTrips.set(rs.trips.id, rs.trips)
+          }
+        })
+        return {
+          ...tl,
+          assignedTrips: Array.from(uniqueTrips.values())
+        }
+      }) || []
 
       setTourLeaders(tourLeadersWithAssignments)
     } catch (err) {
@@ -157,13 +165,13 @@ export function useTourLeaderPerformance() {
   const fetchPerformance = async () => {
     try {
       setLoading(true)
-      
-      // Get tour leaders with their trips through the many-to-many relationship
+
+      // Get tour leaders with their trips through resource_schedules
       const { data: tourLeaders, error: tlError } = await supabase
         .from('tour_leaders')
         .select(`
           *,
-          trip_tour_leaders!left (
+          resource_schedules!resource_schedules_tour_leader_id_fkey (
             trips (
               id,
               name,
@@ -180,8 +188,14 @@ export function useTourLeaderPerformance() {
       if (tlError) throw tlError
 
       const performanceData = tourLeaders?.map(tl => {
-        // Extract trips from the many-to-many relationship
-        const trips = tl.trip_tour_leaders?.map(ttl => ttl.trips).filter(Boolean) || []
+        // Extract unique trips from resource_schedules
+        const uniqueTrips = new Map()
+        tl.resource_schedules?.forEach((rs: any) => {
+          if (rs.trips && ['scheduled', 'confirmed', 'in_progress'].includes(rs.trips.status)) {
+            uniqueTrips.set(rs.trips.id, rs.trips)
+          }
+        })
+        const trips = Array.from(uniqueTrips.values())
         
         const activeTrips = trips.filter(t => t.status === 'active')
         const completedTrips = trips.filter(t => t.status === 'completed')

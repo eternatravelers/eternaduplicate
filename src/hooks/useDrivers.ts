@@ -24,23 +24,35 @@ export function useDrivers() {
       const { data, error } = await supabase
         .from('drivers')
         .select(`
-          id,
-          name,
-          phone,
-          license_number,
-          license_type,
-          license_expiry,
-          status,
-          emergency_contact,
-          emergency_phone,
-          notes,
-          created_at,
-          updated_at
+          *,
+          resource_schedules!resource_schedules_driver_id_fkey (
+            trips (
+              id,
+              name,
+              departure_date,
+              status
+            )
+          )
         `)
+        .order('name', { ascending: true })
 
       if (error) throw error
 
-      setDrivers(data || [])
+      // Process data to include assigned trips from resource_schedules
+      const driversWithAssignments = data?.map(driver => {
+        const uniqueTrips = new Map()
+        driver.resource_schedules?.forEach((rs: any) => {
+          if (rs.trips && ['scheduled', 'confirmed', 'in_progress'].includes(rs.trips.status)) {
+            uniqueTrips.set(rs.trips.id, rs.trips)
+          }
+        })
+        return {
+          ...driver,
+          assignedTrips: Array.from(uniqueTrips.values())
+        }
+      }) || []
+
+      setDrivers(driversWithAssignments)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error')
     } finally {

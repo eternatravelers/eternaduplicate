@@ -24,21 +24,35 @@ export function useBuses() {
       const { data, error } = await supabase
         .from('buses')
         .select(`
-          id,
-          bus_number,
-          plate_number,
-          type,
-          model,
-          capacity,
-          status,
-          notes,
-          created_at,
-          updated_at
+          *,
+          resource_schedules!resource_schedules_bus_id_fkey (
+            trips (
+              id,
+              name,
+              departure_date,
+              status
+            )
+          )
         `)
+        .order('bus_number', { ascending: true })
 
       if (error) throw error
 
-      setBuses(data || [])
+      // Process data to include assigned trips from resource_schedules
+      const busesWithAssignments = data?.map(bus => {
+        const uniqueTrips = new Map()
+        bus.resource_schedules?.forEach((rs: any) => {
+          if (rs.trips && ['scheduled', 'confirmed', 'in_progress'].includes(rs.trips.status)) {
+            uniqueTrips.set(rs.trips.id, rs.trips)
+          }
+        })
+        return {
+          ...bus,
+          assignedTrips: Array.from(uniqueTrips.values())
+        }
+      }) || []
+
+      setBuses(busesWithAssignments)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error')
     } finally {
