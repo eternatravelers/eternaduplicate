@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
-import { Edit, Trash2, Copy, Users } from 'lucide-react'
+import { Edit, Trash2, Copy, Users, MapPin, AlertTriangle } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 
 interface TripListTableProps {
@@ -61,6 +61,7 @@ export function TripListTable({
               <TableHead>Price</TableHead>
               <TableHead>Cost Plan</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Meeting Points</TableHead>
               <TableHead>Kendaraan</TableHead>
               <TableHead>Driver</TableHead>
               <TableHead>Actions</TableHead>
@@ -91,6 +92,21 @@ export function TripListTable({
                   <Badge className={getStatusBadge(trip.status)}>
                     {trip.status}
                   </Badge>
+                </TableCell>
+                <TableCell>
+                  {trip.meeting_point_ids && trip.meeting_point_ids.length > 0 ? (
+                    <div className="flex items-center space-x-1">
+                      <MapPin className="h-4 w-4 text-green-600" />
+                      <Badge variant="outline" className="text-green-600 border-green-200">
+                        {trip.meeting_point_ids.length} Points
+                      </Badge>
+                    </div>
+                  ) : (
+                    <div className="flex items-center space-x-1">
+                      <AlertTriangle className="h-4 w-4 text-orange-500" />
+                      <span className="text-xs text-gray-500">Belum ada</span>
+                    </div>
+                  )}
                 </TableCell>
                 <TableCell>
                   {trip.buses && trip.buses.length > 0 ? (

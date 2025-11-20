@@ -57,6 +57,7 @@ const menuItems: MenuItem[] = [
     children: [
       { id: 'trips', label: 'Trip & Operasional', icon: MapPin, type: 'item' },
       { id: 'destinations', label: 'Destinasi', icon: Globe, type: 'item' },
+      { id: 'master-meeting-points', label: 'Master Meeting Points', icon: MapPin, type: 'item' },
       { id: 'operational-resources', label: 'Sumber Daya Operasional', icon: Settings, type: 'item' },
       { id: 'cost-plans', label: 'Rencana Biaya', icon: Calculator, type: 'item' }
     ]

@@ -9,6 +9,8 @@ type Trip = Database['public']['Tables']['trips']['Row'] & {
   buses?: Database['public']['Tables']['buses']['Row'][]
   drivers?: Database['public']['Tables']['drivers']['Row'][]
   participant_count?: number
+  meeting_point_ids?: string[]
+  primary_meeting_point_id?: string
 }
 
 export function useTrips() {
@@ -86,21 +88,32 @@ export function useTrips() {
               status
             )
           ),
-          participants!left(id)
+          participants!left(id),
+          trip_meeting_points!left(
+            meeting_point_id,
+            is_primary
+          )
         `)
         .in('status', ['active', 'completed', 'cancelled', 'draft']) // Filter out deleted trips by explicitly including active ones
         
       if (error) throw error
 
-      // Calculate participant count for each trip and flatten destinations, tour_leaders, buses, drivers
-      const tripsWithCount = data?.map(trip => ({
-        ...trip,
-        participant_count: trip.participants?.length || 0,
-        destinations: trip.trip_destinations?.map(td => td.destinations).filter(Boolean) || [],
-        tour_leaders: trip.trip_tour_leaders?.map(ttl => ttl.tour_leaders).filter(Boolean) || [],
-        buses: trip.trip_buses?.map(tb => tb.buses).filter(Boolean) || [],
-        drivers: trip.trip_drivers?.map(td => td.drivers).filter(Boolean) || []
-      })) || []
+      // Calculate participant count for each trip and flatten destinations, tour_leaders, buses, drivers, meeting_points
+      const tripsWithCount = data?.map(trip => {
+        const meetingPoints = trip.trip_meeting_points || []
+        const primaryMeetingPoint = meetingPoints.find((mp: any) => mp.is_primary)
+
+        return {
+          ...trip,
+          participant_count: trip.participants?.length || 0,
+          destinations: trip.trip_destinations?.map(td => td.destinations).filter(Boolean) || [],
+          tour_leaders: trip.trip_tour_leaders?.map(ttl => ttl.tour_leaders).filter(Boolean) || [],
+          buses: trip.trip_buses?.map(tb => tb.buses).filter(Boolean) || [],
+          drivers: trip.trip_drivers?.map(td => td.drivers).filter(Boolean) || [],
+          meeting_point_ids: meetingPoints.map((mp: any) => mp.meeting_point_id),
+          primary_meeting_point_id: primaryMeetingPoint?.meeting_point_id
+        }
+      }) || []
 
       setTrips(tripsWithCount)
     } catch (err) {
@@ -122,6 +135,8 @@ type TripInsert = Database['public']['Tables']['trips']['Insert'] & {
   tour_leader_ids?: string[]
   bus_ids?: string[]
   driver_ids?: string[]
+  meeting_point_ids?: string[]
+  primary_meeting_point_id?: string
 }
 
 type TripUpdate = Database['public']['Tables']['trips']['Update'] & {
@@ -129,6 +144,8 @@ type TripUpdate = Database['public']['Tables']['trips']['Update'] & {
   tour_leader_ids?: string[]
   bus_ids?: string[]
   driver_ids?: string[]
+  meeting_point_ids?: string[]
+  primary_meeting_point_id?: string
 }
 
 export function useCreateTrip() {
@@ -140,7 +157,7 @@ export function useCreateTrip() {
       setLoading(true)
       setError(null)
 
-      const { destination_ids, tour_leader_ids, bus_ids, driver_ids, ...restTripData } = tripData
+      const { destination_ids, tour_leader_ids, bus_ids, driver_ids, meeting_point_ids, primary_meeting_point_id, ...restTripData } = tripData
 
       // Convert empty string cost_plan_id to null
       if (restTripData.cost_plan_id === '') {
@@ -205,6 +222,20 @@ export function useCreateTrip() {
 
         if (tdError) throw tdError
       }
+
+      // Insert meeting points
+      if (newTrip && meeting_point_ids && meeting_point_ids.length > 0) {
+        const tripMeetingPointsToInsert = meeting_point_ids.map(mpId => ({
+          trip_id: newTrip.id,
+          meeting_point_id: mpId,
+          is_primary: mpId === primary_meeting_point_id
+        }))
+        const { error: tmpError } = await supabase
+          .from('trip_meeting_points')
+          .insert(tripMeetingPointsToInsert)
+
+        if (tmpError) throw tmpError
+      }
       return { data: newTrip, error: null }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error'
@@ -227,7 +258,7 @@ export function useUpdateTrip() {
       setLoading(true)
       setError(null)
 
-      const { destination_ids, tour_leader_ids, bus_ids, driver_ids, ...restTripData } = tripData
+      const { destination_ids, tour_leader_ids, bus_ids, driver_ids, meeting_point_ids, primary_meeting_point_id, ...restTripData } = tripData
 
       // Convert empty string cost_plan_id to null
       if (restTripData.cost_plan_id === '') {
@@ -336,6 +367,27 @@ export function useUpdateTrip() {
             .insert(tripDriversToInsert)
 
           if (insertTDError) throw insertTDError
+        }
+
+        // Handle trip_meeting_points updates
+        const { error: deleteTMPError } = await supabase
+          .from('trip_meeting_points')
+          .delete()
+          .eq('trip_id', id)
+
+        if (deleteTMPError) throw deleteTMPError
+
+        if (meeting_point_ids && meeting_point_ids.length > 0) {
+          const tripMeetingPointsToInsert = meeting_point_ids.map(mpId => ({
+            trip_id: id,
+            meeting_point_id: mpId,
+            is_primary: mpId === primary_meeting_point_id
+          }))
+          const { error: insertTMPError } = await supabase
+            .from('trip_meeting_points')
+            .insert(tripMeetingPointsToInsert)
+
+          if (insertTMPError) throw insertTMPError
         }
       }
 

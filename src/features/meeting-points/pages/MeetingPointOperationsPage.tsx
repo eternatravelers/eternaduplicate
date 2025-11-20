@@ -151,14 +151,19 @@ export function MeetingPointOperationsPage() {
                   Belum Ada Meeting Point untuk Trip Ini
                 </h3>
                 <p className="text-gray-600 max-w-md mx-auto">
-                  Trip ini belum memiliki meeting point yang terkonfigurasi. Meeting point akan otomatis muncul saat peserta mendaftar dengan lokasi meeting point mereka.
+                  Trip ini belum memiliki meeting point yang di-assign. Data akan muncul setelah meeting point di-assign ke trip dan peserta terdaftar.
                 </p>
               </div>
 
               <Alert className="max-w-2xl mx-auto bg-blue-50 border-blue-200">
                 <Info className="h-4 w-4 text-blue-600" />
                 <AlertDescription className="text-sm text-blue-900">
-                  <strong>Langkah selanjutnya:</strong> Tambahkan peserta terlebih dahulu pada halaman Participants. Meeting point akan otomatis tercatat berdasarkan data peserta yang didaftarkan.
+                  <strong>Langkah selanjutnya:</strong>
+                  <ol className="list-decimal list-inside mt-2 space-y-1">
+                    <li>Assign meeting point ke trip di halaman <strong>Trip Management</strong></li>
+                    <li>Atau tambahkan meeting point baru di <strong>Master Meeting Points</strong></li>
+                    <li>Pastikan peserta sudah memilih meeting point saat pendaftaran</li>
+                  </ol>
                 </AlertDescription>
               </Alert>
 

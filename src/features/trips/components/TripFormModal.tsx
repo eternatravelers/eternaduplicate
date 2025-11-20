@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Plus, Users, Bus, UserCheck } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { MeetingPointSelector } from './MeetingPointSelector'
 
 interface TripFormModalProps {
   isOpen: boolean
@@ -41,7 +42,7 @@ export function TripFormModal({
   onAddTripType,
   title
 }: TripFormModalProps) {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<any>({
     name: '',
     trip_type: '',
     departure_date: '',
@@ -55,7 +56,9 @@ export function TripFormModal({
     driver_ids: [],
     pricing_type: 'per_person',
     cost_plan_id: '',
-    status: 'active'
+    status: 'active',
+    meeting_point_ids: [],
+    primary_meeting_point_id: undefined
   })
 
   useEffect(() => {
@@ -74,7 +77,9 @@ export function TripFormModal({
         driver_ids: [],
         pricing_type: initialData.pricing_type || 'per_person',
         cost_plan_id: initialData.cost_plan_id || '',
-        status: initialData.status || 'active'
+        status: initialData.status || 'active',
+        meeting_point_ids: initialData.meeting_point_ids || [],
+        primary_meeting_point_id: initialData.primary_meeting_point_id
       })
     }
   }, [initialData])
@@ -280,15 +285,17 @@ export function TripFormModal({
                 </div>
               </div>
               
-              <div>
-                <Label htmlFor="meeting_point">Meeting Point</Label>
-                <Input
-                  id="meeting_point"
-                  value={formData.meeting_point}
-                  onChange={(e) => handleInputChange('meeting_point', e.target.value)}
-                  required
-                />
-              </div>
+              <MeetingPointSelector
+                selectedMeetingPointIds={formData.meeting_point_ids}
+                primaryMeetingPointId={formData.primary_meeting_point_id}
+                onChange={(selectedIds, primaryId) => {
+                  setFormData((prev: any) => ({
+                    ...prev,
+                    meeting_point_ids: selectedIds,
+                    primary_meeting_point_id: primaryId
+                  }))
+                }}
+              />
               
               <div>
                 <Label htmlFor="additional_facilities">Additional Facilities</Label>

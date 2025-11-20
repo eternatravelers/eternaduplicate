@@ -5,9 +5,11 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import { Navigation, MapPin } from 'lucide-react'
+import { Navigation, MapPin, AlertCircle, Star } from 'lucide-react'
 import { ProofOfTransferUploader } from './ProofOfTransferUploader'
 import { formatShortDate } from '@/lib/utils'
+import { useMeetingPointsForTrip } from '@/hooks/useMeetingPoints'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 
 interface ParticipantFormProps {
   initialData?: any
@@ -48,6 +50,7 @@ export function ParticipantForm({
 
   const [proofOfTransferUrl, setProofOfTransferUrl] = useState<string | null>(null)
   const [selectedTripMeetingPoint, setSelectedTripMeetingPoint] = useState<string>('')
+  const { meetingPoints: tripMeetingPoints, loading: loadingMeetingPoints } = useMeetingPointsForTrip(formData.trip_id || null)
 
   useEffect(() => {
     if (initialData) {
@@ -71,19 +74,17 @@ export function ParticipantForm({
   }, [initialData])
 
   useEffect(() => {
-    if (formData.trip_id) {
-      const selectedTrip = trips.find(trip => trip.id === formData.trip_id)
-      if (selectedTrip) {
-        setSelectedTripMeetingPoint(selectedTrip.meeting_point)
-        if (!editingParticipant) {
-          setFormData(prev => ({ 
-            ...prev, 
-            meeting_point_details: selectedTrip.meeting_point 
-          }))
-        }
+    if (formData.trip_id && tripMeetingPoints.length > 0 && !editingParticipant) {
+      const primaryMeetingPoint = tripMeetingPoints.find((mp: any) => mp.is_primary)
+      const meetingPointToUse = primaryMeetingPoint || tripMeetingPoints[0]
+      if (meetingPointToUse) {
+        setFormData(prev => ({
+          ...prev,
+          meeting_point_details: meetingPointToUse.name
+        }))
       }
     }
-  }, [formData.trip_id, trips, editingParticipant])
+  }, [formData.trip_id, tripMeetingPoints, editingParticipant])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -271,32 +272,59 @@ export function ParticipantForm({
               <Navigation className="h-5 w-5" />
               <span>Titik Kumpul Peserta</span>
             </Label>
-            
-            {selectedTripMeetingPoint && (
-              <div className="p-3 bg-white border rounded-lg">
-                <div className="text-sm font-medium text-gray-700 mb-1">Titik Kumpul Default Trip:</div>
-                <div className="text-sm text-gray-600 flex items-center space-x-2">
-                  <MapPin className="h-4 w-4" />
-                  <span>{selectedTripMeetingPoint}</span>
-                </div>
+
+            {!formData.trip_id ? (
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Pilih trip terlebih dahulu untuk melihat meeting point yang tersedia.
+                </AlertDescription>
+              </Alert>
+            ) : loadingMeetingPoints ? (
+              <div className="animate-pulse h-12 bg-gray-200 rounded-lg"></div>
+            ) : tripMeetingPoints.length === 0 ? (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Trip ini belum memiliki meeting point. Silakan assign meeting point pada Trip Form terlebih dahulu.
+                </AlertDescription>
+              </Alert>
+            ) : (
+              <div className="space-y-2">
+                <Label htmlFor="meeting_point_details">
+                  Pilih Titik Kumpul <span className="text-red-500">*</span>
+                </Label>
+                <Select
+                  value={formData.meeting_point_details}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, meeting_point_details: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pilih meeting point" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {tripMeetingPoints.map((mp: any) => {
+                      const primaryMeetingPoint = tripMeetingPoints.find((p: any) => p.is_primary)
+                      const isPrimary = primaryMeetingPoint?.id === mp.id
+
+                      return (
+                        <SelectItem key={mp.id} value={mp.name}>
+                          <div className="flex items-center space-x-2">
+                            <MapPin className="h-3 w-3" />
+                            <span>{mp.name}</span>
+                            {isPrimary && (
+                              <Star className="h-3 w-3 text-yellow-500 fill-yellow-500" />
+                            )}
+                          </div>
+                        </SelectItem>
+                      )
+                    })}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-gray-500">
+                  Meeting point yang ditandai dengan ⭐ adalah meeting point utama trip ini.
+                </p>
               </div>
             )}
-            
-            <div className="space-y-2">
-              <Label htmlFor="meeting_point_details">
-                Titik Kumpul Khusus (Opsional)
-              </Label>
-              <Textarea
-                id="meeting_point_details"
-                value={formData.meeting_point_details}
-                onChange={(e) => setFormData(prev => ({ ...prev, meeting_point_details: e.target.value }))}
-                placeholder="Kosongkan jika menggunakan titik kumpul default trip, atau isi dengan lokasi khusus..."
-                rows={3}
-              />
-              <p className="text-xs text-gray-500">
-                Jika diisi, peserta akan menggunakan titik kumpul khusus ini. Jika kosong, akan menggunakan titik kumpul default dari trip.
-              </p>
-            </div>
           </div>
 
           <div className="space-y-2">
