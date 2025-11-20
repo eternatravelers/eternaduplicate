@@ -81,7 +81,18 @@ export function ResourceSchedulingPage() {
   const handleCreateSchedule = async (data: any) => {
     try {
       setError(null)
-      const { error: createError } = await createSchedule(data)
+
+      // Transform meeting_point_id to meeting_point_name
+      const transformedData = { ...data }
+      if (data.meeting_point_id) {
+        const meetingPoint = meetingPoints.find(mp => mp.id === data.meeting_point_id)
+        if (meetingPoint) {
+          transformedData.meeting_point_name = meetingPoint.name
+        }
+      }
+      delete transformedData.meeting_point_id
+
+      const { error: createError } = await createSchedule(transformedData)
       if (createError) {
         setError(createError)
         throw new Error(createError)
@@ -102,7 +113,17 @@ export function ResourceSchedulingPage() {
         throw new Error('ID schedule tidak ditemukan')
       }
 
-      const { error: updateError } = await updateSchedule(editingSchedule.id, data)
+      // Transform meeting_point_id to meeting_point_name
+      const transformedData = { ...data }
+      if (data.meeting_point_id) {
+        const meetingPoint = meetingPoints.find(mp => mp.id === data.meeting_point_id)
+        if (meetingPoint) {
+          transformedData.meeting_point_name = meetingPoint.name
+        }
+      }
+      delete transformedData.meeting_point_id
+
+      const { error: updateError } = await updateSchedule(editingSchedule.id, transformedData)
       if (updateError) {
         setError(updateError)
         throw new Error(updateError)
