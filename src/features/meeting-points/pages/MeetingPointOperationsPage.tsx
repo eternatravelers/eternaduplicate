@@ -13,7 +13,6 @@ import { MeetingPointSummaryCard } from '../components/MeetingPointSummaryCard'
 import { MeetingPointParticipantsModal } from '../components/MeetingPointParticipantsModal'
 import { PickupScheduleForm } from '../components/PickupScheduleForm'
 import { PickupScheduleTimeline } from '../components/PickupScheduleTimeline'
-import { TransportationAssignmentModal } from '../components/TransportationAssignmentModal'
 import { MeetingPointReport } from '../components/MeetingPointReport'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 
@@ -22,11 +21,8 @@ export function MeetingPointOperationsPage() {
   const [activeTab, setActiveTab] = useState('summary')
   const [showParticipantsModal, setShowParticipantsModal] = useState(false)
   const [showScheduleForm, setShowScheduleForm] = useState(false)
-  const [showAssignmentModal, setShowAssignmentModal] = useState(false)
   const [selectedMeetingPoint, setSelectedMeetingPoint] = useState<string>('')
-  const [selectedParticipantCount, setSelectedParticipantCount] = useState(0)
   const [editingSchedule, setEditingSchedule] = useState<any>(null)
-  const [editingAssignment, setEditingAssignment] = useState<any>(null)
 
   const { trips, loading: tripsLoading } = useTrips()
   const { summary, loading: summaryLoading, refetch: refetchSummary } = useMeetingPointSummary(selectedTripId)
@@ -63,12 +59,6 @@ export function MeetingPointOperationsPage() {
     setShowScheduleForm(true)
   }
 
-  const handleAssignTransport = (meetingPointName: string, participantCount: number) => {
-    setSelectedMeetingPoint(meetingPointName)
-    setSelectedParticipantCount(participantCount)
-    setEditingAssignment(null)
-    setShowAssignmentModal(true)
-  }
 
   const handleEditSchedule = (schedule: any) => {
     setSelectedMeetingPoint(schedule.meeting_point_name)
@@ -77,10 +67,6 @@ export function MeetingPointOperationsPage() {
   }
 
   const handleScheduleSuccess = () => {
-    refetchSummary()
-  }
-
-  const handleAssignmentSuccess = () => {
     refetchSummary()
   }
 
@@ -275,13 +261,7 @@ export function MeetingPointOperationsPage() {
                     key={item.meeting_point_name}
                     summary={item}
                     onSchedulePickup={handleSchedulePickup}
-                    onAssignTransport={(mp) =>
-                      handleAssignTransport(mp, item.participant_count)
-                    }
                     onViewParticipants={handleViewParticipants}
-                    onEditAssignment={(mp) =>
-                      handleAssignTransport(mp, item.participant_count)
-                    }
                   />
                 ))}
               </div>
@@ -338,19 +318,6 @@ export function MeetingPointOperationsPage() {
         meetingPointName={selectedMeetingPoint}
         initialData={editingSchedule}
         onSuccess={handleScheduleSuccess}
-      />
-
-      <TransportationAssignmentModal
-        isOpen={showAssignmentModal}
-        onClose={() => {
-          setShowAssignmentModal(false)
-          setEditingAssignment(null)
-        }}
-        tripId={selectedTripId}
-        meetingPointName={selectedMeetingPoint}
-        participantCount={selectedParticipantCount}
-        initialData={editingAssignment}
-        onSuccess={handleAssignmentSuccess}
       />
     </div>
   )

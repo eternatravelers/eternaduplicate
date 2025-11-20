@@ -12,13 +12,13 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { MeetingPointSelector } from './MeetingPointSelector'
 import { MeetingPointSummaryCard } from '@/features/meeting-points/components/MeetingPointSummaryCard'
 import { PickupScheduleTimeline } from '@/features/meeting-points/components/PickupScheduleTimeline'
-import { TransportationAssignmentModal } from '@/features/meeting-points/components/TransportationAssignmentModal'
 import { PickupScheduleForm } from '@/features/meeting-points/components/PickupScheduleForm'
 import { MeetingPointParticipantsModal } from '@/features/meeting-points/components/MeetingPointParticipantsModal'
 import { TripStatusManagement } from './TripStatusManagement'
 import { useMeetingPointSummary } from '@/hooks/useMeetingPointSummary'
 import { useMeetingPointAssignments } from '@/hooks/useMeetingPointAssignments'
 import { usePickupSchedules } from '@/hooks/usePickupSchedules'
+import { useResourceSchedules } from '@/hooks/useResourceSchedules'
 
 interface TripFormModalProps {
   isOpen: boolean
@@ -54,11 +54,9 @@ export function TripFormModal({
   title
 }: TripFormModalProps) {
   const [activeTab, setActiveTab] = useState('basic')
-  const [showAssignmentModal, setShowAssignmentModal] = useState(false)
   const [showScheduleForm, setShowScheduleForm] = useState(false)
   const [showParticipantsModal, setShowParticipantsModal] = useState(false)
   const [selectedMeetingPoint, setSelectedMeetingPoint] = useState<string>('')
-  const [selectedParticipantCount, setSelectedParticipantCount] = useState(0)
   const [editingSchedule, setEditingSchedule] = useState<any>(null)
 
   const [formData, setFormData] = useState<any>({
@@ -84,6 +82,7 @@ export function TripFormModal({
   const { summary, loading: summaryLoading, refetch: refetchSummary } = useMeetingPointSummary(tripId || null)
   const { assignments } = useMeetingPointAssignments(tripId || null)
   const { schedules } = usePickupSchedules(tripId || null)
+  const { schedules: resourceSchedules } = useResourceSchedules({ tripId: tripId || undefined })
 
   const enrichedSummary = useMemo(() => {
     return summary.map(item => {
@@ -103,6 +102,26 @@ export function TripFormModal({
   const totalMeetingPoints = enrichedSummary.length
   const assignedMeetingPoints = enrichedSummary.filter(s => s.has_transportation_assigned).length
   const scheduledMeetingPoints = enrichedSummary.filter(s => s.has_pickup_schedule).length
+
+  // Group resources from resource schedules
+  const assignedResources = useMemo(() => {
+    const tourLeaders = resourceSchedules
+      .filter(s => s.resource_type === 'tour_leader' && ['scheduled', 'confirmed', 'in_progress'].includes(s.status))
+      .map(s => s.tour_leaders)
+      .filter((tl, index, self) => tl && self.findIndex(t => t?.name === tl?.name) === index)
+
+    const buses = resourceSchedules
+      .filter(s => s.resource_type === 'bus' && ['scheduled', 'confirmed', 'in_progress'].includes(s.status))
+      .map(s => s.buses)
+      .filter((b, index, self) => b && self.findIndex(bus => bus?.plate_number === b?.plate_number) === index)
+
+    const drivers = resourceSchedules
+      .filter(s => s.resource_type === 'driver' && ['scheduled', 'confirmed', 'in_progress'].includes(s.status))
+      .map(s => s.drivers)
+      .filter((d, index, self) => d && self.findIndex(drv => drv?.name === d?.name) === index)
+
+    return { tourLeaders, buses, drivers }
+  }, [resourceSchedules])
 
   useEffect(() => {
     if (initialData) {
@@ -129,11 +148,6 @@ export function TripFormModal({
     }
   }, [initialData])
 
-  const handleAssignTransport = (meetingPointName: string, participantCount: number) => {
-    setSelectedMeetingPoint(meetingPointName)
-    setSelectedParticipantCount(participantCount)
-    setShowAssignmentModal(true)
-  }
 
   const handleSchedulePickup = (meetingPointName: string) => {
     setSelectedMeetingPoint(meetingPointName)
@@ -145,10 +159,6 @@ export function TripFormModal({
     setSelectedMeetingPoint(schedule.meeting_point_name)
     setEditingSchedule(schedule)
     setShowScheduleForm(true)
-  }
-
-  const handleAssignmentSuccess = () => {
-    refetchSummary()
   }
 
   const handleScheduleSuccess = () => {
@@ -312,9 +322,9 @@ export function TripFormModal({
                 <div className="space-y-4 p-4 border rounded-lg bg-gray-50">
                   <Label className="text-base font-semibold">Sumber Daya yang Ditugaskan</Label>
                   <div className="text-sm text-gray-600 mb-3">
-                    Assignment sumber daya dilakukan di halaman "Sumber Daya Operasional"
+                    Assignment sumber daya dilakukan di halaman "Resource Scheduling"
                   </div>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <Label className="text-sm font-medium flex items-center space-x-1">
@@ -322,10 +332,10 @@ export function TripFormModal({
                         <span>Tour Leaders</span>
                       </Label>
                       <div className="mt-2 space-y-1">
-                        {initialData.tour_leaders && initialData.tour_leaders.length > 0 ? (
-                          initialData.tour_leaders.map((tl: any) => (
-                            <Badge key={tl.id} variant="outline" className="mr-1 mb-1">
-                              {tl.name}
+                        {assignedResources.tourLeaders && assignedResources.tourLeaders.length > 0 ? (
+                          assignedResources.tourLeaders.map((tl: any, idx: number) => (
+                            <Badge key={idx} variant="outline" className="mr-1 mb-1">
+                              {tl?.name}
                             </Badge>
                           ))
                         ) : (
@@ -333,17 +343,17 @@ export function TripFormModal({
                         )}
                       </div>
                     </div>
-                    
+
                     <div>
                       <Label className="text-sm font-medium flex items-center space-x-1">
                         <Bus className="h-3 w-3" />
                         <span>Kendaraan</span>
                       </Label>
                       <div className="mt-2 space-y-1">
-                        {initialData.buses && initialData.buses.length > 0 ? (
-                          initialData.buses.map((bus: any) => (
-                            <Badge key={bus.id} variant="outline" className="mr-1 mb-1">
-                              {bus.plate_number}
+                        {assignedResources.buses && assignedResources.buses.length > 0 ? (
+                          assignedResources.buses.map((bus: any, idx: number) => (
+                            <Badge key={idx} variant="outline" className="mr-1 mb-1">
+                              {bus?.plate_number}
                             </Badge>
                           ))
                         ) : (
@@ -351,17 +361,17 @@ export function TripFormModal({
                         )}
                       </div>
                     </div>
-                    
+
                     <div>
                       <Label className="text-sm font-medium flex items-center space-x-1">
                         <UserCheck className="h-3 w-3" />
                         <span>Driver</span>
                       </Label>
                       <div className="mt-2 space-y-1">
-                        {initialData.drivers && initialData.drivers.length > 0 ? (
-                          initialData.drivers.map((driver: any) => (
-                            <Badge key={driver.id} variant="outline" className="mr-1 mb-1">
-                              {driver.name}
+                        {assignedResources.drivers && assignedResources.drivers.length > 0 ? (
+                          assignedResources.drivers.map((driver: any, idx: number) => (
+                            <Badge key={idx} variant="outline" className="mr-1 mb-1">
+                              {driver?.name}
                             </Badge>
                           ))
                         ) : (
@@ -540,12 +550,10 @@ export function TripFormModal({
                           key={item.meeting_point_name}
                           summary={item}
                           onSchedulePickup={handleSchedulePickup}
-                          onAssignTransport={(mp) => handleAssignTransport(mp, item.participant_count)}
                           onViewParticipants={(mp) => {
                             setSelectedMeetingPoint(mp)
                             setShowParticipantsModal(true)
                           }}
-                          onEditAssignment={(mp) => handleAssignTransport(mp, item.participant_count)}
                         />
                       ))}
                     </div>
@@ -593,16 +601,6 @@ export function TripFormModal({
           )}
         </DialogFooter>
       </DialogContent>
-
-      <TransportationAssignmentModal
-        isOpen={showAssignmentModal}
-        onClose={() => setShowAssignmentModal(false)}
-        tripId={tripId || ''}
-        meetingPointName={selectedMeetingPoint}
-        participantCount={selectedParticipantCount}
-        initialData={null}
-        onSuccess={handleAssignmentSuccess}
-      />
 
       <PickupScheduleForm
         isOpen={showScheduleForm}

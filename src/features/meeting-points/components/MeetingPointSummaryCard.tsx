@@ -13,17 +13,13 @@ interface MeetingPointSummaryCardProps {
     pickup_time?: string
   }
   onSchedulePickup: (meetingPointName: string) => void
-  onAssignTransport: (meetingPointName: string) => void
   onViewParticipants: (meetingPointName: string) => void
-  onEditAssignment?: (meetingPointName: string) => void
 }
 
 export function MeetingPointSummaryCard({
   summary,
   onSchedulePickup,
-  onAssignTransport,
-  onViewParticipants,
-  onEditAssignment
+  onViewParticipants
 }: MeetingPointSummaryCardProps) {
   const hasNoParticipants = summary.participant_count === 0
   const isCapacityWarning = summary.bus_capacity && summary.bus_capacity < summary.participant_count
@@ -201,27 +197,6 @@ export function MeetingPointSummaryCard({
                 </Button>
               )}
 
-              {!summary.has_transportation_assigned ? (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="w-full justify-start text-blue-600 hover:text-blue-700"
-                  onClick={() => onAssignTransport(summary.meeting_point_name)}
-                >
-                  <Bus className="h-4 w-4 mr-2" />
-                  Assign Bus & Driver
-                </Button>
-              ) : (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="w-full justify-start text-blue-600 hover:text-blue-700"
-                  onClick={() => onEditAssignment?.(summary.meeting_point_name)}
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit Bus & Driver
-                </Button>
-              )}
             </>
           )}
         </div>
