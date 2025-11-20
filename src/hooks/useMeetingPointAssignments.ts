@@ -32,31 +32,38 @@ export function useMeetingPointAssignments(tripId: string | null) {
 
       const { data: assignmentsData, error: fetchError } = await supabase
         .from('meeting_point_assignments')
-        .select(`
-          *,
-          meeting_point_buses(
-            buses(id, bus_number, plate_number, type, capacity, status)
-          ),
-          meeting_point_drivers(
-            drivers(id, name, phone, license_number, license_type, status)
-          )
-        `)
+        .select('*')
         .eq('trip_id', tripId)
         .order('created_at', { ascending: false })
 
       if (fetchError) throw fetchError
 
-      const enrichedAssignments = (assignmentsData || []).map((assignment: any) => {
-        // Extract first bus and driver from the junction tables
-        const buses = assignment.meeting_point_buses?.[0]?.buses || null
-        const drivers = assignment.meeting_point_drivers?.[0]?.drivers || null
+      if (!assignmentsData || assignmentsData.length === 0) {
+        setAssignments([])
+        return
+      }
 
-        return {
-          ...assignment,
-          buses,
-          drivers
-        }
-      })
+      const enrichedAssignments = await Promise.all(
+        assignmentsData.map(async (assignment: any) => {
+          const { data: busData } = await supabase
+            .from('meeting_point_buses')
+            .select('bus_id, buses(id, bus_number, plate_number, type, capacity, status)')
+            .eq('meeting_point_assignment_id', assignment.id)
+            .maybeSingle()
+
+          const { data: driverData } = await supabase
+            .from('meeting_point_drivers')
+            .select('driver_id, drivers(id, name, phone, license_number, license_type, status)')
+            .eq('meeting_point_assignment_id', assignment.id)
+            .maybeSingle()
+
+          return {
+            ...assignment,
+            buses: busData?.buses || null,
+            drivers: driverData?.drivers || null
+          }
+        })
+      )
 
       setAssignments(enrichedAssignments)
     } catch (err) {

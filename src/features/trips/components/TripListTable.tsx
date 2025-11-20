@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
-import { Edit, Trash2, Copy, Users, MapPin, AlertTriangle } from 'lucide-react'
+import { Edit, Trash2, Copy, Users, MapPin, AlertTriangle, Settings, CheckCircle2 } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 
 interface TripListTableProps {
@@ -62,6 +62,7 @@ export function TripListTable({
               <TableHead>Cost Plan</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Meeting Points</TableHead>
+              <TableHead>Assignment Status</TableHead>
               <TableHead>Kendaraan</TableHead>
               <TableHead>Driver</TableHead>
               <TableHead>Actions</TableHead>
@@ -109,6 +110,44 @@ export function TripListTable({
                   )}
                 </TableCell>
                 <TableCell>
+                  {trip.meeting_point_ids && trip.meeting_point_ids.length > 0 ? (
+                    (() => {
+                      const totalMeetingPoints = trip.meeting_point_ids.length
+                      const assignedCount = trip.meeting_point_assignment_count || 0
+                      const percentage = totalMeetingPoints > 0 ? Math.round((assignedCount / totalMeetingPoints) * 100) : 0
+
+                      return (
+                        <div className="flex items-center space-x-2">
+                          {percentage === 100 ? (
+                            <>
+                              <CheckCircle2 className="h-4 w-4 text-green-600" />
+                              <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50">
+                                {assignedCount}/{totalMeetingPoints} Assigned
+                              </Badge>
+                            </>
+                          ) : percentage > 0 ? (
+                            <>
+                              <AlertTriangle className="h-4 w-4 text-orange-600" />
+                              <Badge variant="outline" className="text-orange-600 border-orange-200 bg-orange-50">
+                                {assignedCount}/{totalMeetingPoints} Assigned
+                              </Badge>
+                            </>
+                          ) : (
+                            <>
+                              <AlertTriangle className="h-4 w-4 text-red-600" />
+                              <Badge variant="outline" className="text-red-600 border-red-200 bg-red-50">
+                                Belum Assigned
+                              </Badge>
+                            </>
+                          )}
+                        </div>
+                      )
+                    })()
+                  ) : (
+                    <span className="text-xs text-gray-400">-</span>
+                  )}
+                </TableCell>
+                <TableCell>
                   {trip.buses && trip.buses.length > 0 ? (
                     <div className="text-sm">
                       {trip.buses.map((bus: any, index: number) => (
@@ -139,12 +178,14 @@ export function TripListTable({
                 <TableCell>
                   <div className="flex space-x-2">
                     <Button
-                      variant="outline"
+                      variant="default"
                       size="sm"
                       onClick={() => onEdit(trip)}
-                      title="Edit Trip"
+                      title="Manage Trip Operations"
+                      className="bg-blue-600 hover:bg-blue-700"
                     >
-                      <Edit className="w-4 h-4" />
+                      <Settings className="w-4 h-4 mr-1" />
+                      Manage
                     </Button>
                     <Button
                       variant="outline"

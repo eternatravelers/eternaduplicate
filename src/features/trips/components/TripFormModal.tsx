@@ -1,13 +1,22 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
-import { Plus, Users, Bus, UserCheck } from 'lucide-react'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Plus, Users, Bus, UserCheck, MapPin, Clock, CheckCircle2, AlertCircle, Info } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { MeetingPointSelector } from './MeetingPointSelector'
+import { MeetingPointSummaryCard } from '@/features/meeting-points/components/MeetingPointSummaryCard'
+import { PickupScheduleTimeline } from '@/features/meeting-points/components/PickupScheduleTimeline'
+import { TransportationAssignmentModal } from '@/features/meeting-points/components/TransportationAssignmentModal'
+import { PickupScheduleForm } from '@/features/meeting-points/components/PickupScheduleForm'
+import { useMeetingPointSummary } from '@/hooks/useMeetingPointSummary'
+import { useMeetingPointAssignments } from '@/hooks/useMeetingPointAssignments'
+import { usePickupSchedules } from '@/hooks/usePickupSchedules'
 
 interface TripFormModalProps {
   isOpen: boolean
@@ -42,6 +51,13 @@ export function TripFormModal({
   onAddTripType,
   title
 }: TripFormModalProps) {
+  const [activeTab, setActiveTab] = useState('basic')
+  const [showAssignmentModal, setShowAssignmentModal] = useState(false)
+  const [showScheduleForm, setShowScheduleForm] = useState(false)
+  const [selectedMeetingPoint, setSelectedMeetingPoint] = useState<string>('')
+  const [selectedParticipantCount, setSelectedParticipantCount] = useState(0)
+  const [editingSchedule, setEditingSchedule] = useState<any>(null)
+
   const [formData, setFormData] = useState<any>({
     name: '',
     trip_type: '',
@@ -60,6 +76,30 @@ export function TripFormModal({
     meeting_point_ids: [],
     primary_meeting_point_id: undefined
   })
+
+  const tripId = initialData?.id
+  const { summary, loading: summaryLoading, refetch: refetchSummary } = useMeetingPointSummary(tripId || null)
+  const { assignments } = useMeetingPointAssignments(tripId || null)
+  const { schedules } = usePickupSchedules(tripId || null)
+
+  const enrichedSummary = useMemo(() => {
+    return summary.map(item => {
+      const assignment = assignments.find(a => a.meeting_point_name === item.meeting_point_name)
+      const schedule = schedules.find(s => s.meeting_point_name === item.meeting_point_name)
+
+      return {
+        ...item,
+        bus_number: assignment?.buses?.bus_number,
+        bus_capacity: assignment?.buses?.capacity,
+        driver_name: assignment?.drivers?.name,
+        pickup_time: schedule?.pickup_time
+      }
+    })
+  }, [summary, assignments, schedules])
+
+  const totalMeetingPoints = enrichedSummary.length
+  const assignedMeetingPoints = enrichedSummary.filter(s => s.has_transportation_assigned).length
+  const scheduledMeetingPoints = enrichedSummary.filter(s => s.has_pickup_schedule).length
 
   useEffect(() => {
     if (initialData) {
@@ -81,8 +121,36 @@ export function TripFormModal({
         meeting_point_ids: initialData.meeting_point_ids || [],
         primary_meeting_point_id: initialData.primary_meeting_point_id
       })
+    } else {
+      setActiveTab('basic')
     }
   }, [initialData])
+
+  const handleAssignTransport = (meetingPointName: string, participantCount: number) => {
+    setSelectedMeetingPoint(meetingPointName)
+    setSelectedParticipantCount(participantCount)
+    setShowAssignmentModal(true)
+  }
+
+  const handleSchedulePickup = (meetingPointName: string) => {
+    setSelectedMeetingPoint(meetingPointName)
+    setEditingSchedule(null)
+    setShowScheduleForm(true)
+  }
+
+  const handleEditSchedule = (schedule: any) => {
+    setSelectedMeetingPoint(schedule.meeting_point_name)
+    setEditingSchedule(schedule)
+    setShowScheduleForm(true)
+  }
+
+  const handleAssignmentSuccess = () => {
+    refetchSummary()
+  }
+
+  const handleScheduleSuccess = () => {
+    refetchSummary()
+  }
 
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -93,18 +161,71 @@ export function TripFormModal({
     await onSubmit(formData)
   }
 
+  const isEditMode = !!initialData
+
   if (!isOpen) return null
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl">
+      <DialogContent className="max-w-6xl">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
-        
+
         <div className="max-h-[calc(90vh-120px)] overflow-y-auto px-4">
-          <form id="trip-form" onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-6">
+          {isEditMode && (
+            <div className="mb-4 flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center space-x-4 text-sm">
+                <div className="flex items-center space-x-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-600" />
+                  <span className="text-gray-700">Step 1: Info Dasar</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-600" />
+                  <span className="text-gray-700">Step 2: Meeting Points</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  {assignedMeetingPoints === totalMeetingPoints && totalMeetingPoints > 0 ? (
+                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                  ) : (
+                    <AlertCircle className="h-4 w-4 text-orange-600" />
+                  )}
+                  <span className="text-gray-700">Step 3: Transportasi ({assignedMeetingPoints}/{totalMeetingPoints})</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  {scheduledMeetingPoints > 0 ? (
+                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                  ) : (
+                    <AlertCircle className="h-4 w-4 text-gray-400" />
+                  )}
+                  <span className="text-gray-700">Step 4: Jadwal ({scheduledMeetingPoints} terjadwal)</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="basic">
+                <Info className="h-4 w-4 mr-2" />
+                Informasi Dasar
+              </TabsTrigger>
+              <TabsTrigger value="meeting-points">
+                <MapPin className="h-4 w-4 mr-2" />
+                Meeting Points
+              </TabsTrigger>
+              <TabsTrigger value="transport" disabled={!isEditMode}>
+                <Bus className="h-4 w-4 mr-2" />
+                Transportasi
+              </TabsTrigger>
+              <TabsTrigger value="schedule" disabled={!isEditMode}>
+                <Clock className="h-4 w-4 mr-2" />
+                Jadwal
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="basic">
+              <form id="trip-form" onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="name">Trip Name</Label>
@@ -305,36 +426,189 @@ export function TripFormModal({
                   onChange={(e) => handleInputChange('additional_facilities', e.target.value)}
                 />
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {!initialData && (
                   <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
                     <div className="flex items-start space-x-3">
                       <Users className="h-5 w-5 text-blue-600 mt-0.5" />
                       <div className="text-sm text-blue-800">
-                        <p className="font-medium mb-1">Assignment Sumber Daya</p>
+                        <p className="font-medium mb-1">Langkah Selanjutnya</p>
                         <p>
-                          Setelah trip dibuat, Anda dapat melakukan assignment tour leader, kendaraan, dan driver 
-                          di halaman <strong>"Sumber Daya Operasional"</strong> → tombol <strong>"Assignment ke Trip"</strong>.
+                          Setelah trip dibuat, Anda dapat:
                         </p>
+                        <ul className="list-disc list-inside mt-2 space-y-1">
+                          <li>Pilih meeting points di tab Meeting Points</li>
+                          <li>Assign transportasi per meeting point di tab Transportasi</li>
+                          <li>Atur jadwal penjemputan di tab Jadwal</li>
+                          <li>Assign tour leader di halaman Sumber Daya Operasional</li>
+                        </ul>
                       </div>
                     </div>
                   </div>
                 )}
               </div>
-            </div>
-          </form>
+            </form>
+          </TabsContent>
+
+            <TabsContent value="meeting-points">
+              <div className="space-y-6">
+                <MeetingPointSelector
+                  selectedMeetingPointIds={formData.meeting_point_ids}
+                  primaryMeetingPointId={formData.primary_meeting_point_id}
+                  onChange={(selectedIds, primaryId) => {
+                    setFormData((prev: any) => ({
+                      ...prev,
+                      meeting_point_ids: selectedIds,
+                      primary_meeting_point_id: primaryId
+                    }))
+                  }}
+                />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="transport">
+              <div className="space-y-6">
+                {!isEditMode ? (
+                  <Alert>
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      Simpan trip terlebih dahulu untuk mengakses fitur assignment transportasi.
+                    </AlertDescription>
+                  </Alert>
+                ) : enrichedSummary.length === 0 ? (
+                  <Alert>
+                    <Info className="h-4 w-4" />
+                    <AlertDescription>
+                      Belum ada meeting point untuk trip ini. Pilih meeting points di tab Meeting Points terlebih dahulu.
+                    </AlertDescription>
+                  </Alert>
+                ) : (
+                  <>
+                    <div className="grid gap-4 md:grid-cols-3">
+                      <div className="p-4 border rounded-lg bg-blue-50 border-blue-200">
+                        <div className="flex items-center space-x-3">
+                          <MapPin className="h-8 w-8 text-blue-600" />
+                          <div>
+                            <div className="text-2xl font-bold text-blue-700">{totalMeetingPoints}</div>
+                            <div className="text-sm text-blue-600">Meeting Points</div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="p-4 border rounded-lg bg-green-50 border-green-200">
+                        <div className="flex items-center space-x-3">
+                          <Bus className="h-8 w-8 text-green-600" />
+                          <div>
+                            <div className="text-2xl font-bold text-green-700">{assignedMeetingPoints}</div>
+                            <div className="text-sm text-green-600">Assigned</div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="p-4 border rounded-lg bg-orange-50 border-orange-200">
+                        <div className="flex items-center space-x-3">
+                          <AlertCircle className="h-8 w-8 text-orange-600" />
+                          <div>
+                            <div className="text-2xl font-bold text-orange-700">{totalMeetingPoints - assignedMeetingPoints}</div>
+                            <div className="text-sm text-orange-600">Belum Assigned</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {initialData?.buses && initialData.buses.length > 0 && (
+                      <Alert className="bg-blue-50 border-blue-200">
+                        <Bus className="h-4 w-4 text-blue-600" />
+                        <AlertDescription className="text-blue-900">
+                          <strong>Pool Bus Trip Ini:</strong>
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {initialData.buses.map((bus: any) => (
+                              <Badge key={bus.id} variant="outline" className="bg-white">
+                                {bus.bus_number} - {bus.plate_number} (kapasitas: {bus.capacity})
+                              </Badge>
+                            ))}
+                          </div>
+                        </AlertDescription>
+                      </Alert>
+                    )}
+
+                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                      {enrichedSummary.map((item) => (
+                        <MeetingPointSummaryCard
+                          key={item.meeting_point_name}
+                          summary={item}
+                          onSchedulePickup={handleSchedulePickup}
+                          onAssignTransport={(mp) => handleAssignTransport(mp, item.participant_count)}
+                          onViewParticipants={() => {}}
+                          onEditAssignment={(mp) => handleAssignTransport(mp, item.participant_count)}
+                        />
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="schedule">
+              <div className="space-y-6">
+                {!isEditMode ? (
+                  <Alert>
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      Simpan trip terlebih dahulu untuk mengakses fitur jadwal penjemputan.
+                    </AlertDescription>
+                  </Alert>
+                ) : enrichedSummary.length === 0 ? (
+                  <Alert>
+                    <Info className="h-4 w-4" />
+                    <AlertDescription>
+                      Belum ada meeting point untuk trip ini. Pilih meeting points di tab Meeting Points terlebih dahulu.
+                    </AlertDescription>
+                  </Alert>
+                ) : (
+                  <PickupScheduleTimeline
+                    tripId={tripId}
+                    onEdit={handleEditSchedule}
+                    onRefresh={refetchSummary}
+                  />
+                )}
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
-        
+
         <DialogFooter className="px-4">
           <Button type="button" variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button type="submit" form="trip-form" disabled={creating || updating}>
-            {creating || updating ? 'Saving...' : 'Save Trip'}
-          </Button>
+          {(activeTab === 'basic' || activeTab === 'meeting-points') && (
+            <Button type="submit" form="trip-form" disabled={creating || updating}>
+              {creating || updating ? 'Saving...' : 'Save Trip'}
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
+
+      <TransportationAssignmentModal
+        isOpen={showAssignmentModal}
+        onClose={() => setShowAssignmentModal(false)}
+        tripId={tripId || ''}
+        meetingPointName={selectedMeetingPoint}
+        participantCount={selectedParticipantCount}
+        initialData={null}
+        onSuccess={handleAssignmentSuccess}
+      />
+
+      <PickupScheduleForm
+        isOpen={showScheduleForm}
+        onClose={() => {
+          setShowScheduleForm(false)
+          setEditingSchedule(null)
+        }}
+        tripId={tripId || ''}
+        meetingPointName={selectedMeetingPoint}
+        initialData={editingSchedule}
+        onSuccess={handleScheduleSuccess}
+      />
     </Dialog>
   )
 }

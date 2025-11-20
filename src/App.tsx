@@ -14,7 +14,6 @@ const MasterMeetingPointsPage = lazy(() => import('@/features/master-data/pages/
 const SalesPage = lazy(() => import('@/features/sales/pages/SalesPage').then(m => ({ default: m.SalesPage })))
 const OperationalResourcesPage = lazy(() => import('@/features/operational-resources/pages/OperationalResourcesPage').then(m => ({ default: m.OperationalResourcesPage })))
 const OperationsPage = lazy(() => import('@/features/operations/pages/OperationsPage').then(m => ({ default: m.OperationsPage })))
-const MeetingPointOperationsPage = lazy(() => import('@/features/meeting-points/pages/MeetingPointOperationsPage').then(m => ({ default: m.MeetingPointOperationsPage })))
 const ReportsPage = lazy(() => import('@/features/finance/pages/ReportsPage').then(m => ({ default: m.ReportsPage })))
 const AnalyticsPage = lazy(() => import('@/features/analytics/pages/AnalyticsPage').then(m => ({ default: m.AnalyticsPage })))
 const CostPlansPage = lazy(() => import('@/features/cost-plans/pages/CostPlansPage').then(m => ({ default: m.CostPlansPage })))
@@ -75,8 +74,6 @@ function AppContent() {
               )
             case 'operations':
               return <OperationsPage />
-            case 'meeting-points':
-              return <MeetingPointOperationsPage />
             case 'reports':
               return (
                 <SuperAdminRoute>

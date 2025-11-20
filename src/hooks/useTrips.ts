@@ -11,6 +11,7 @@ type Trip = Database['public']['Tables']['trips']['Row'] & {
   participant_count?: number
   meeting_point_ids?: string[]
   primary_meeting_point_id?: string
+  meeting_point_assignment_count?: number
 }
 
 export function useTrips() {
@@ -98,22 +99,31 @@ export function useTrips() {
         
       if (error) throw error
 
-      // Calculate participant count for each trip and flatten destinations, tour_leaders, buses, drivers, meeting_points
-      const tripsWithCount = data?.map(trip => {
-        const meetingPoints = trip.trip_meeting_points || []
-        const primaryMeetingPoint = meetingPoints.find((mp: any) => mp.is_primary)
+      // Calculate participant count and assignment count for each trip
+      const tripsWithCount = await Promise.all(
+        (data || []).map(async trip => {
+          const meetingPoints = trip.trip_meeting_points || []
+          const primaryMeetingPoint = meetingPoints.find((mp: any) => mp.is_primary)
 
-        return {
-          ...trip,
-          participant_count: trip.participants?.length || 0,
-          destinations: trip.trip_destinations?.map(td => td.destinations).filter(Boolean) || [],
-          tour_leaders: trip.trip_tour_leaders?.map(ttl => ttl.tour_leaders).filter(Boolean) || [],
-          buses: trip.trip_buses?.map(tb => tb.buses).filter(Boolean) || [],
-          drivers: trip.trip_drivers?.map(td => td.drivers).filter(Boolean) || [],
-          meeting_point_ids: meetingPoints.map((mp: any) => mp.meeting_point_id),
-          primary_meeting_point_id: primaryMeetingPoint?.meeting_point_id
-        }
-      }) || []
+          // Get assignment count for this trip
+          const { count: assignmentCount } = await supabase
+            .from('meeting_point_assignments')
+            .select('*', { count: 'exact', head: true })
+            .eq('trip_id', trip.id)
+
+          return {
+            ...trip,
+            participant_count: trip.participants?.length || 0,
+            destinations: trip.trip_destinations?.map(td => td.destinations).filter(Boolean) || [],
+            tour_leaders: trip.trip_tour_leaders?.map(ttl => ttl.tour_leaders).filter(Boolean) || [],
+            buses: trip.trip_buses?.map(tb => tb.buses).filter(Boolean) || [],
+            drivers: trip.trip_drivers?.map(td => td.drivers).filter(Boolean) || [],
+            meeting_point_ids: meetingPoints.map((mp: any) => mp.meeting_point_id),
+            primary_meeting_point_id: primaryMeetingPoint?.meeting_point_id,
+            meeting_point_assignment_count: assignmentCount || 0
+          }
+        })
+      )
 
       setTrips(tripsWithCount)
     } catch (err) {

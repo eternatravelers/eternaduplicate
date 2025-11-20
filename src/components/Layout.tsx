@@ -90,8 +90,7 @@ const menuItems: MenuItem[] = [
     icon: CheckSquare,
     type: 'category',
     children: [
-      { id: 'operations', label: 'Trip Monitoring', icon: CheckSquare, type: 'item' },
-      { id: 'meeting-points', label: 'Meeting Point Operations', icon: MapPin, type: 'item' }
+      { id: 'operations', label: 'Trip Monitoring', icon: CheckSquare, type: 'item' }
     ]
   },
   {
