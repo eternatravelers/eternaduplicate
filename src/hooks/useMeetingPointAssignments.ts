@@ -34,8 +34,12 @@ export function useMeetingPointAssignments(tripId: string | null) {
         .from('meeting_point_assignments')
         .select(`
           *,
-          buses(id, bus_number, plate_number, type, capacity, status),
-          drivers(id, name, phone, license_number, license_type, status)
+          meeting_point_buses(
+            buses(id, bus_number, plate_number, type, capacity, status)
+          ),
+          meeting_point_drivers(
+            drivers(id, name, phone, license_number, license_type, status)
+          )
         `)
         .eq('trip_id', tripId)
         .order('created_at', { ascending: false })
@@ -43,10 +47,14 @@ export function useMeetingPointAssignments(tripId: string | null) {
       if (fetchError) throw fetchError
 
       const enrichedAssignments = (assignmentsData || []).map((assignment: any) => {
+        // Extract first bus and driver from the junction tables
+        const buses = assignment.meeting_point_buses?.[0]?.buses || null
+        const drivers = assignment.meeting_point_drivers?.[0]?.drivers || null
+
         return {
           ...assignment,
-          buses: assignment.buses || null,
-          drivers: assignment.drivers || null
+          buses,
+          drivers
         }
       })
 
@@ -76,38 +84,10 @@ export function useCreateMeetingPointAssignment() {
       setLoading(true)
       setError(null)
 
-      // Validate bus_id if provided
-      if (assignmentData.bus_id) {
-        const { data: busExists, error: busCheckError } = await supabase
-          .from('buses')
-          .select('id')
-          .eq('id', assignmentData.bus_id)
-          .maybeSingle()
-
-        if (busCheckError) throw new Error(`Failed to verify bus: ${busCheckError.message}`)
-        if (!busExists) throw new Error('Bus tidak ditemukan. Silakan pilih bus yang valid.')
-      }
-
-      // Validate driver_id if provided
-      if (assignmentData.driver_id) {
-        const { data: driverExists, error: driverCheckError } = await supabase
-          .from('drivers')
-          .select('id')
-          .eq('id', assignmentData.driver_id)
-          .maybeSingle()
-
-        if (driverCheckError) throw new Error(`Failed to verify driver: ${driverCheckError.message}`)
-        if (!driverExists) throw new Error('Driver tidak ditemukan. Silakan pilih driver yang valid.')
-      }
-
       const { data, error: insertError } = await supabase
         .from('meeting_point_assignments')
         .insert([assignmentData])
-        .select(`
-          *,
-          buses(id, bus_number, plate_number, type, capacity, status),
-          drivers(id, name, phone, license_number, license_type, status)
-        `)
+        .select()
         .maybeSingle()
 
       if (insertError) throw insertError
@@ -135,39 +115,11 @@ export function useUpdateMeetingPointAssignment() {
       setLoading(true)
       setError(null)
 
-      // Validate bus_id if provided
-      if (assignmentData.bus_id) {
-        const { data: busExists, error: busCheckError } = await supabase
-          .from('buses')
-          .select('id')
-          .eq('id', assignmentData.bus_id)
-          .maybeSingle()
-
-        if (busCheckError) throw new Error(`Failed to verify bus: ${busCheckError.message}`)
-        if (!busExists) throw new Error('Bus tidak ditemukan. Silakan pilih bus yang valid.')
-      }
-
-      // Validate driver_id if provided
-      if (assignmentData.driver_id) {
-        const { data: driverExists, error: driverCheckError } = await supabase
-          .from('drivers')
-          .select('id')
-          .eq('id', assignmentData.driver_id)
-          .maybeSingle()
-
-        if (driverCheckError) throw new Error(`Failed to verify driver: ${driverCheckError.message}`)
-        if (!driverExists) throw new Error('Driver tidak ditemukan. Silakan pilih driver yang valid.')
-      }
-
       const { data, error: updateError } = await supabase
         .from('meeting_point_assignments')
         .update(assignmentData)
         .eq('id', id)
-        .select(`
-          *,
-          buses(id, bus_number, plate_number, type, capacity, status),
-          drivers(id, name, phone, license_number, license_type, status)
-        `)
+        .select()
         .maybeSingle()
 
       if (updateError) throw updateError
