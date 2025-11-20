@@ -6,7 +6,8 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
-import { MapPin, Plus, Search, Edit, Trash2, Navigation } from 'lucide-react'
+import { MapPin, Plus, Search, Edit, Trash2, Navigation, AlertCircle } from 'lucide-react'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useMeetingPoints, useCreateMeetingPoint, useUpdateMeetingPoint, useDeleteMeetingPoint } from '@/hooks/useMeetingPoints'
 import { useAuth } from '@/hooks/useAuth'
 
@@ -14,6 +15,7 @@ export function MasterMeetingPointsPage() {
   const [showAddForm, setShowAddForm] = useState(false)
   const [editingPoint, setEditingPoint] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
   const { meetingPoints, loading, refetch } = useMeetingPoints()
   const { createMeetingPoint, loading: creating } = useCreateMeetingPoint()
@@ -30,12 +32,19 @@ export function MasterMeetingPointsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setSubmitError(null)
+
+    console.log('Submitting form with data:', formData)
+    console.log('Editing point ID:', editingPoint)
 
     const { data, error } = editingPoint
       ? await updateMeetingPoint(editingPoint, formData)
       : await createMeetingPoint(formData)
 
+    console.log('Submit result:', { data, error })
+
     if (!error) {
+      console.log('Success! Closing form and refreshing list')
       setShowAddForm(false)
       setEditingPoint(null)
       setFormData({
@@ -45,6 +54,9 @@ export function MasterMeetingPointsPage() {
         display_order: 0
       })
       refetch()
+    } else {
+      console.error('Submit error:', error)
+      setSubmitError(error)
     }
   }
 
@@ -61,6 +73,7 @@ export function MasterMeetingPointsPage() {
 
   const handleAddNew = () => {
     setEditingPoint(null)
+    setSubmitError(null)
     setFormData({
       name: '',
       description: '',
@@ -73,6 +86,7 @@ export function MasterMeetingPointsPage() {
   const handleCancel = () => {
     setShowAddForm(false)
     setEditingPoint(null)
+    setSubmitError(null)
     setFormData({
       name: '',
       description: '',
@@ -182,6 +196,12 @@ export function MasterMeetingPointsPage() {
           </CardHeader>
           <CardContent className="pt-6">
             <form onSubmit={handleSubmit} className="space-y-6">
+              {submitError && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{submitError}</AlertDescription>
+                </Alert>
+              )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="name" className="text-sm font-medium">

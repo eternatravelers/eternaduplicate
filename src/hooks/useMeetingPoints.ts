@@ -50,6 +50,8 @@ export function useCreateMeetingPoint() {
       setLoading(true)
       setError(null)
 
+      console.log('Creating meeting point with data:', data)
+
       // Check if meeting point with same name already exists
       const { data: existingPoint, error: checkError } = await supabase
         .from('meeting_points')
@@ -57,8 +59,15 @@ export function useCreateMeetingPoint() {
         .eq('name', data.name)
         .maybeSingle()
 
-      if (checkError) throw new Error(`Failed to check existing meeting point: ${checkError.message}`)
-      if (existingPoint) throw new Error('Meeting point dengan nama ini sudah ada. Silakan gunakan nama yang berbeda.')
+      if (checkError) {
+        console.error('Error checking existing meeting point:', checkError)
+        throw new Error(`Gagal mengecek meeting point: ${checkError.message}`)
+      }
+
+      if (existingPoint) {
+        console.log('Meeting point already exists:', existingPoint)
+        throw new Error('Meeting point dengan nama ini sudah ada. Silakan gunakan nama yang berbeda.')
+      }
 
       const { data: newPoint, error: insertError } = await supabase
         .from('meeting_points')
@@ -66,12 +75,19 @@ export function useCreateMeetingPoint() {
         .select()
         .maybeSingle()
 
-      if (insertError) throw insertError
-      if (!newPoint) throw new Error('Failed to create meeting point')
+      if (insertError) {
+        console.error('Error inserting meeting point:', insertError)
+        throw new Error(`Gagal menyimpan meeting point: ${insertError.message}`)
+      }
 
+      if (!newPoint) {
+        throw new Error('Meeting point berhasil dibuat tapi tidak dapat mengambil data')
+      }
+
+      console.log('Meeting point created successfully:', newPoint)
       return { data: newPoint, error: null }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to create meeting point'
+      const errorMessage = err instanceof Error ? err.message : 'Gagal membuat meeting point'
       setError(errorMessage)
       console.error('Error creating meeting point:', err)
       return { data: null, error: errorMessage }
