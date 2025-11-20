@@ -14,6 +14,7 @@ import { MeetingPointSummaryCard } from '@/features/meeting-points/components/Me
 import { PickupScheduleTimeline } from '@/features/meeting-points/components/PickupScheduleTimeline'
 import { TransportationAssignmentModal } from '@/features/meeting-points/components/TransportationAssignmentModal'
 import { PickupScheduleForm } from '@/features/meeting-points/components/PickupScheduleForm'
+import { MeetingPointParticipantsModal } from '@/features/meeting-points/components/MeetingPointParticipantsModal'
 import { TripStatusManagement } from './TripStatusManagement'
 import { useMeetingPointSummary } from '@/hooks/useMeetingPointSummary'
 import { useMeetingPointAssignments } from '@/hooks/useMeetingPointAssignments'
@@ -55,6 +56,7 @@ export function TripFormModal({
   const [activeTab, setActiveTab] = useState('basic')
   const [showAssignmentModal, setShowAssignmentModal] = useState(false)
   const [showScheduleForm, setShowScheduleForm] = useState(false)
+  const [showParticipantsModal, setShowParticipantsModal] = useState(false)
   const [selectedMeetingPoint, setSelectedMeetingPoint] = useState<string>('')
   const [selectedParticipantCount, setSelectedParticipantCount] = useState(0)
   const [editingSchedule, setEditingSchedule] = useState<any>(null)
@@ -539,7 +541,10 @@ export function TripFormModal({
                           summary={item}
                           onSchedulePickup={handleSchedulePickup}
                           onAssignTransport={(mp) => handleAssignTransport(mp, item.participant_count)}
-                          onViewParticipants={() => {}}
+                          onViewParticipants={(mp) => {
+                            setSelectedMeetingPoint(mp)
+                            setShowParticipantsModal(true)
+                          }}
                           onEditAssignment={(mp) => handleAssignTransport(mp, item.participant_count)}
                         />
                       ))}
@@ -609,6 +614,16 @@ export function TripFormModal({
         meetingPointName={selectedMeetingPoint}
         initialData={editingSchedule}
         onSuccess={handleScheduleSuccess}
+      />
+
+      <MeetingPointParticipantsModal
+        isOpen={showParticipantsModal}
+        onClose={() => {
+          setShowParticipantsModal(false)
+          setSelectedMeetingPoint('')
+        }}
+        tripId={tripId || ''}
+        meetingPointName={selectedMeetingPoint}
       />
     </Dialog>
   )
