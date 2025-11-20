@@ -41,7 +41,7 @@ export function ResourceScheduleForm({
     pickup_datetime: initialData?.pickup_datetime || '',
     return_datetime: initialData?.return_datetime || '',
     status: initialData?.status || 'scheduled',
-    capacity_allocated: initialData?.capacity_allocated || 0,
+    participant_count: initialData?.participant_count || 0,
     notes: initialData?.notes || ''
   })
 
@@ -66,7 +66,7 @@ export function ResourceScheduleForm({
         pickup_datetime: initialData.pickup_datetime || '',
         return_datetime: initialData.return_datetime || '',
         status: initialData.status || 'scheduled',
-        capacity_allocated: initialData.capacity_allocated || 0,
+        participant_count: initialData.participant_count || 0,
         notes: initialData.notes || ''
       })
     }
@@ -133,7 +133,7 @@ export function ResourceScheduleForm({
         pickup_datetime: '',
         return_datetime: '',
         status: 'scheduled',
-        capacity_allocated: 0,
+        participant_count: 0,
         notes: ''
       })
       setConflictInfo(null)
@@ -340,13 +340,13 @@ export function ResourceScheduleForm({
 
             {formData.resource_type === 'bus' && (
               <div className="space-y-2">
-                <Label htmlFor="capacity_allocated">Kapasitas Terisi</Label>
+                <Label htmlFor="participant_count">Kapasitas Terisi</Label>
                 <Input
-                  id="capacity_allocated"
+                  id="participant_count"
                   type="number"
                   min="0"
-                  value={formData.capacity_allocated}
-                  onChange={(e) => setFormData({ ...formData, capacity_allocated: parseInt(e.target.value) || 0 })}
+                  value={formData.participant_count}
+                  onChange={(e) => setFormData({ ...formData, participant_count: parseInt(e.target.value) || 0 })}
                   placeholder="Jumlah kursi terisi"
                 />
               </div>

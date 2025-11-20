@@ -169,11 +169,11 @@ export function ResourceScheduleTimeline({
                           </span>
                         </div>
 
-                        {schedule.resource_type === 'bus' && schedule.capacity_allocated > 0 && (
+                        {schedule.resource_type === 'bus' && schedule.participant_count > 0 && (
                           <div className="flex items-center space-x-2 text-gray-600">
                             <Users className="h-4 w-4" />
                             <span className="font-medium">Kapasitas Terisi:</span>
-                            <span>{schedule.capacity_allocated} / {schedule.buses?.capacity || 0} kursi</span>
+                            <span>{schedule.participant_count} / {schedule.buses?.capacity || 0} kursi</span>
                           </div>
                         )}
 

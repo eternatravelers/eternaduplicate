@@ -11,7 +11,7 @@ interface ResourceSchedule {
   pickup_datetime: string
   return_datetime: string
   status: 'scheduled' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled'
-  capacity_allocated: number
+  participant_count: number
   notes?: string
   created_by?: string
   created_at: string
@@ -267,36 +267,57 @@ export function useCheckResourceConflict() {
       setChecking(true)
       setError(null)
 
-      const { data: isAvailable, error: checkError } = await supabase.rpc(
-        'check_resource_time_conflict',
-        {
-          p_resource_type: resourceType,
-          p_resource_id: resourceId,
-          p_pickup_datetime: pickupDatetime,
-          p_return_datetime: returnDatetime,
-          p_exclude_schedule_id: excludeScheduleId || null
-        }
-      )
+      // Check for conflicts manually by querying existing schedules
+      let query = supabase
+        .from('resource_schedules')
+        .select('id, trip_id, pickup_datetime, return_datetime, status')
+        .eq('resource_type', resourceType)
+        .eq('resource_id', resourceId)
+        .in('status', ['scheduled', 'confirmed', 'in_progress'])
 
-      if (checkError) throw checkError
+      if (excludeScheduleId) {
+        query = query.neq('id', excludeScheduleId)
+      }
 
-      if (!isAvailable) {
-        const { data: conflicts, error: conflictError } = await supabase.rpc(
-          'get_conflicting_schedules',
-          {
-            p_resource_type: resourceType,
-            p_resource_id: resourceId,
-            p_pickup_datetime: pickupDatetime,
-            p_return_datetime: returnDatetime,
-            p_exclude_schedule_id: excludeScheduleId || null
+      const { data: existingSchedules, error: fetchError } = await query
+
+      if (fetchError) throw fetchError
+
+      // Check for time overlaps
+      const pickupTime = new Date(pickupDatetime).getTime()
+      const returnTime = new Date(returnDatetime).getTime()
+
+      const conflicts = existingSchedules?.filter(schedule => {
+        const schedulePickup = new Date(schedule.pickup_datetime).getTime()
+        const scheduleReturn = new Date(schedule.return_datetime).getTime()
+
+        // Check if time ranges overlap
+        return (pickupTime < scheduleReturn && returnTime > schedulePickup)
+      }) || []
+
+      if (conflicts.length > 0) {
+        // Fetch trip names for conflicts
+        const tripIds = conflicts.map(c => c.trip_id)
+        const { data: trips } = await supabase
+          .from('trips')
+          .select('id, name')
+          .in('id', tripIds)
+
+        const enrichedConflicts = conflicts.map(conflict => {
+          const trip = trips?.find(t => t.id === conflict.trip_id)
+          return {
+            schedule_id: conflict.id,
+            trip_id: conflict.trip_id,
+            trip_name: trip?.name || 'N/A',
+            pickup_datetime: conflict.pickup_datetime,
+            return_datetime: conflict.return_datetime,
+            status: conflict.status
           }
-        )
-
-        if (conflictError) throw conflictError
+        })
 
         return {
           hasConflict: true,
-          conflicts: conflicts || []
+          conflicts: enrichedConflicts
         }
       }
 
