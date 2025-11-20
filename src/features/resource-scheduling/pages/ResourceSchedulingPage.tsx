@@ -284,12 +284,12 @@ export function ResourceSchedulingPage() {
 
             <div className="space-y-2">
               <Label>Trip</Label>
-              <Select value={filters.tripId} onValueChange={(value) => setFilters({ ...filters, tripId: value })}>
+              <Select value={filters.tripId || 'all'} onValueChange={(value) => setFilters({ ...filters, tripId: value === 'all' ? '' : value })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Semua trip" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Semua trip</SelectItem>
+                  <SelectItem value="all">Semua trip</SelectItem>
                   {trips.map((trip) => (
                     <SelectItem key={trip.id} value={trip.id}>{trip.name}</SelectItem>
                   ))}
@@ -299,12 +299,12 @@ export function ResourceSchedulingPage() {
 
             <div className="space-y-2">
               <Label>Status</Label>
-              <Select value={filters.status} onValueChange={(value) => setFilters({ ...filters, status: value })}>
+              <Select value={filters.status || 'all'} onValueChange={(value) => setFilters({ ...filters, status: value === 'all' ? '' : value })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Semua status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Semua status</SelectItem>
+                  <SelectItem value="all">Semua status</SelectItem>
                   <SelectItem value="scheduled">Scheduled</SelectItem>
                   <SelectItem value="confirmed">Confirmed</SelectItem>
                   <SelectItem value="in_progress">In Progress</SelectItem>

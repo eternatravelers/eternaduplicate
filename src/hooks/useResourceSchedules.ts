@@ -55,13 +55,7 @@ export function useResourceSchedules(filters?: {
 
       let query = supabase
         .from('resource_schedules')
-        .select(`
-          *,
-          trips:trip_id(name, departure_date, return_date),
-          buses:resource_id(plate_number, model, capacity),
-          drivers:resource_id(name, license_number),
-          tour_leaders:resource_id(name, experience_years)
-        `)
+        .select('*')
         .order('pickup_datetime', { ascending: true })
 
       if (filters?.resourceType) {
@@ -83,11 +77,68 @@ export function useResourceSchedules(filters?: {
         query = query.eq('status', filters.status)
       }
 
-      const { data, error: fetchError } = await query
+      const { data: schedulesData, error: fetchError } = await query
 
       if (fetchError) throw fetchError
 
-      setSchedules(data || [])
+      if (!schedulesData || schedulesData.length === 0) {
+        setSchedules([])
+        return
+      }
+
+      // Fetch related data separately
+      const tripIds = [...new Set(schedulesData.map(s => s.trip_id))]
+      const busIds = schedulesData.filter(s => s.resource_type === 'bus').map(s => s.resource_id)
+      const driverIds = schedulesData.filter(s => s.resource_type === 'driver').map(s => s.resource_id)
+      const tourLeaderIds = schedulesData.filter(s => s.resource_type === 'tour_leader').map(s => s.resource_id)
+
+      // Fetch trips
+      const { data: trips } = await supabase
+        .from('trips')
+        .select('id, name, departure_date, return_date')
+        .in('id', tripIds)
+
+      // Fetch buses
+      const { data: buses } = busIds.length > 0 ? await supabase
+        .from('buses')
+        .select('id, plate_number, model, capacity')
+        .in('id', busIds) : { data: [] }
+
+      // Fetch drivers
+      const { data: drivers } = driverIds.length > 0 ? await supabase
+        .from('drivers')
+        .select('id, name, license_number')
+        .in('id', driverIds) : { data: [] }
+
+      // Fetch tour leaders
+      const { data: tourLeaders } = tourLeaderIds.length > 0 ? await supabase
+        .from('tour_leaders')
+        .select('id, name, experience_years')
+        .in('id', tourLeaderIds) : { data: [] }
+
+      // Map data together
+      const enrichedSchedules = schedulesData.map(schedule => {
+        const trip = trips?.find(t => t.id === schedule.trip_id)
+        let resourceData = null
+
+        if (schedule.resource_type === 'bus') {
+          resourceData = buses?.find(b => b.id === schedule.resource_id)
+        } else if (schedule.resource_type === 'driver') {
+          resourceData = drivers?.find(d => d.id === schedule.resource_id)
+        } else if (schedule.resource_type === 'tour_leader') {
+          resourceData = tourLeaders?.find(tl => tl.id === schedule.resource_id)
+        }
+
+        return {
+          ...schedule,
+          trips: trip ? { name: trip.name, departure_date: trip.departure_date, return_date: trip.return_date } : undefined,
+          buses: schedule.resource_type === 'bus' ? resourceData : undefined,
+          drivers: schedule.resource_type === 'driver' ? resourceData : undefined,
+          tour_leaders: schedule.resource_type === 'tour_leader' ? resourceData : undefined
+        }
+      })
+
+      setSchedules(enrichedSchedules)
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch schedules'
       setError(errorMessage)

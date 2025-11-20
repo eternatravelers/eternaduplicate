@@ -270,14 +270,14 @@ export function ResourceScheduleForm({
           <div className="space-y-2">
             <Label htmlFor="meeting_point_id">Meeting Point (Opsional)</Label>
             <Select
-              value={formData.meeting_point_id}
-              onValueChange={(value) => setFormData({ ...formData, meeting_point_id: value })}
+              value={formData.meeting_point_id || 'none'}
+              onValueChange={(value) => setFormData({ ...formData, meeting_point_id: value === 'none' ? '' : value })}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Pilih meeting point (opsional)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Tidak ada meeting point spesifik</SelectItem>
+                <SelectItem value="none">Tidak ada meeting point spesifik</SelectItem>
                 {meetingPoints.map((mp) => (
                   <SelectItem key={mp.id} value={mp.id}>
                     {mp.name}
