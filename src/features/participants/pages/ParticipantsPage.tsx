@@ -15,9 +15,11 @@ import { ParticipantDeletionSummary } from '../components/ParticipantDeletionSum
 import { FileSpreadsheet, AlertCircle } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useAuth } from '@/hooks/useAuth'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
 export function ParticipantsPage() {
   const [editingParticipant, setEditingParticipant] = useState<string | null>(null)
+  const [showEditModal, setShowEditModal] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [importError, setImportError] = useState<string>('')
@@ -57,6 +59,7 @@ export function ParticipantsPage() {
       }
 
       setEditingParticipant(null)
+      setShowEditModal(false)
       refetch()
     } catch (err) {
       setOperationError(err instanceof Error ? err.message : 'Terjadi kesalahan saat menyimpan data peserta')
@@ -64,22 +67,8 @@ export function ParticipantsPage() {
   }
 
   const handleEdit = (participant: any) => {
-    const formData = {
-      trip_id: participant.trip_id || '',
-      sales_id: participant.sales_id || '',
-      full_name: participant.full_name,
-      email: participant.email,
-      phone: participant.phone,
-      address: participant.address,
-      participant_count: participant.participant_count || '',
-      package_price: participant.package_price || '',
-      dp_amount: participant.dp_amount || '',
-      dp_transfer_date: participant.dp_transfer_date,
-      additional_requests: participant.additional_requests || '',
-      meeting_point_details: participant.meeting_point_details || ''
-    }
     setEditingParticipant(participant.id)
-    setActiveTab('individual')
+    setShowEditModal(true)
   }
 
   const handleAddNew = () => {
@@ -89,6 +78,7 @@ export function ParticipantsPage() {
 
   const handleCancel = () => {
     setEditingParticipant(null)
+    setShowEditModal(false)
   }
 
   const handleDelete = async (id: string, reason?: string, permanent: boolean = false) => {
@@ -316,6 +306,24 @@ export function ParticipantsPage() {
         sales={sales}
         importing={creating}
       />
+
+      <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Peserta</DialogTitle>
+          </DialogHeader>
+          <ParticipantForm
+            initialData={editingParticipant ? participants.find(p => p.id === editingParticipant) : undefined}
+            onSubmit={handleSubmit}
+            onCancel={handleCancel}
+            trips={trips}
+            sales={sales}
+            creating={creating}
+            updating={updating}
+            editingParticipant={editingParticipant}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
