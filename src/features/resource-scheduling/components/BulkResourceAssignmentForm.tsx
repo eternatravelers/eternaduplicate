@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { SimpleMultiSelect } from '@/components/ui/simple-multi-select'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Card } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Bus, UserCheck, Users, AlertTriangle, CheckCircle2, Loader2, Calendar } from 'lucide-react'
@@ -177,21 +178,6 @@ export function BulkResourceAssignmentForm({
     }
   }
 
-  const busOptions = buses.map(b => ({
-    value: b.id,
-    label: `${b.bus_number} (${b.capacity} seats)`
-  }))
-
-  const driverOptions = drivers.map(d => ({
-    value: d.id,
-    label: d.name
-  }))
-
-  const tourLeaderOptions = tourLeaders.map(tl => ({
-    value: tl.id,
-    label: tl.name
-  }))
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -274,80 +260,110 @@ export function BulkResourceAssignmentForm({
             )}
 
             <div className="grid gap-6">
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Bus className="h-5 w-5 text-blue-600" />
-                  <Label>Buses</Label>
-                </div>
-                <SimpleMultiSelect
-                  options={busOptions}
-                  selected={selectedBuses}
-                  onChange={setSelectedBuses}
-                  placeholder="Pilih bus..."
-                />
-                {selectedBuses.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {selectedBuses.map(busId => {
-                      const bus = buses.find(b => b.id === busId)
-                      return bus ? (
-                        <Badge key={busId} variant="secondary">
+              <Card className="p-4">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Bus className="h-5 w-5 text-blue-600" />
+                      <Label className="text-base font-semibold">Buses</Label>
+                    </div>
+                    <Badge variant="secondary">{selectedBuses.length} dipilih</Badge>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 max-h-48 overflow-y-auto">
+                    {buses.map(bus => (
+                      <div key={bus.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`bus-${bus.id}`}
+                          checked={selectedBuses.includes(bus.id)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedBuses([...selectedBuses, bus.id])
+                            } else {
+                              setSelectedBuses(selectedBuses.filter(id => id !== bus.id))
+                            }
+                          }}
+                        />
+                        <label
+                          htmlFor={`bus-${bus.id}`}
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                        >
                           {bus.bus_number} ({bus.capacity} seats)
-                        </Badge>
-                      ) : null
-                    })}
+                        </label>
+                      </div>
+                    ))}
                   </div>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <UserCheck className="h-5 w-5 text-green-600" />
-                  <Label>Drivers</Label>
                 </div>
-                <SimpleMultiSelect
-                  options={driverOptions}
-                  selected={selectedDrivers}
-                  onChange={setSelectedDrivers}
-                  placeholder="Pilih driver..."
-                />
-                {selectedDrivers.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {selectedDrivers.map(driverId => {
-                      const driver = drivers.find(d => d.id === driverId)
-                      return driver ? (
-                        <Badge key={driverId} variant="secondary">
+              </Card>
+
+              <Card className="p-4">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <UserCheck className="h-5 w-5 text-green-600" />
+                      <Label className="text-base font-semibold">Drivers</Label>
+                    </div>
+                    <Badge variant="secondary">{selectedDrivers.length} dipilih</Badge>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 max-h-48 overflow-y-auto">
+                    {drivers.map(driver => (
+                      <div key={driver.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`driver-${driver.id}`}
+                          checked={selectedDrivers.includes(driver.id)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedDrivers([...selectedDrivers, driver.id])
+                            } else {
+                              setSelectedDrivers(selectedDrivers.filter(id => id !== driver.id))
+                            }
+                          }}
+                        />
+                        <label
+                          htmlFor={`driver-${driver.id}`}
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                        >
                           {driver.name}
-                        </Badge>
-                      ) : null
-                    })}
+                        </label>
+                      </div>
+                    ))}
                   </div>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Users className="h-5 w-5 text-orange-600" />
-                  <Label>Tour Leaders</Label>
                 </div>
-                <SimpleMultiSelect
-                  options={tourLeaderOptions}
-                  selected={selectedTourLeaders}
-                  onChange={setSelectedTourLeaders}
-                  placeholder="Pilih tour leader..."
-                />
-                {selectedTourLeaders.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {selectedTourLeaders.map(tlId => {
-                      const tl = tourLeaders.find(t => t.id === tlId)
-                      return tl ? (
-                        <Badge key={tlId} variant="secondary">
-                          {tl.name}
-                        </Badge>
-                      ) : null
-                    })}
+              </Card>
+
+              <Card className="p-4">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Users className="h-5 w-5 text-orange-600" />
+                      <Label className="text-base font-semibold">Tour Leaders</Label>
+                    </div>
+                    <Badge variant="secondary">{selectedTourLeaders.length} dipilih</Badge>
                   </div>
-                )}
-              </div>
+                  <div className="grid grid-cols-2 gap-3 max-h-48 overflow-y-auto">
+                    {tourLeaders.map(tl => (
+                      <div key={tl.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`tl-${tl.id}`}
+                          checked={selectedTourLeaders.includes(tl.id)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedTourLeaders([...selectedTourLeaders, tl.id])
+                            } else {
+                              setSelectedTourLeaders(selectedTourLeaders.filter(id => id !== tl.id))
+                            }
+                          }}
+                        />
+                        <label
+                          htmlFor={`tl-${tl.id}`}
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                        >
+                          {tl.name}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </Card>
             </div>
 
             {checkingConflicts && (
