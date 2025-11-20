@@ -181,16 +181,12 @@ export function TripFormModal({
                   <span className="text-gray-700">Step 1: Info Dasar</span>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <CheckCircle2 className="h-4 w-4 text-green-600" />
-                  <span className="text-gray-700">Step 2: Meeting Points</span>
-                </div>
-                <div className="flex items-center space-x-2">
                   {assignedMeetingPoints === totalMeetingPoints && totalMeetingPoints > 0 ? (
                     <CheckCircle2 className="h-4 w-4 text-green-600" />
                   ) : (
                     <AlertCircle className="h-4 w-4 text-orange-600" />
                   )}
-                  <span className="text-gray-700">Step 3: Transportasi ({assignedMeetingPoints}/{totalMeetingPoints})</span>
+                  <span className="text-gray-700">Step 2: Transportasi ({assignedMeetingPoints}/{totalMeetingPoints})</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   {scheduledMeetingPoints > 0 ? (
@@ -198,21 +194,17 @@ export function TripFormModal({
                   ) : (
                     <AlertCircle className="h-4 w-4 text-gray-400" />
                   )}
-                  <span className="text-gray-700">Step 4: Jadwal ({scheduledMeetingPoints} terjadwal)</span>
+                  <span className="text-gray-700">Step 3: Jadwal ({scheduledMeetingPoints} terjadwal)</span>
                 </div>
               </div>
             </div>
           )}
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="basic">
                 <Info className="h-4 w-4 mr-2" />
                 Informasi Dasar
-              </TabsTrigger>
-              <TabsTrigger value="meeting-points">
-                <MapPin className="h-4 w-4 mr-2" />
-                Meeting Points
               </TabsTrigger>
               <TabsTrigger value="transport" disabled={!isEditMode}>
                 <Bus className="h-4 w-4 mr-2" />
@@ -438,7 +430,6 @@ export function TripFormModal({
                           Setelah trip dibuat, Anda dapat:
                         </p>
                         <ul className="list-disc list-inside mt-2 space-y-1">
-                          <li>Pilih meeting points di tab Meeting Points</li>
                           <li>Assign transportasi per meeting point di tab Transportasi</li>
                           <li>Atur jadwal penjemputan di tab Jadwal</li>
                           <li>Assign tour leader di halaman Sumber Daya Operasional</li>
@@ -451,21 +442,6 @@ export function TripFormModal({
             </form>
           </TabsContent>
 
-            <TabsContent value="meeting-points">
-              <div className="space-y-6">
-                <MeetingPointSelector
-                  selectedMeetingPointIds={formData.meeting_point_ids}
-                  primaryMeetingPointId={formData.primary_meeting_point_id}
-                  onChange={(selectedIds, primaryId) => {
-                    setFormData((prev: any) => ({
-                      ...prev,
-                      meeting_point_ids: selectedIds,
-                      primary_meeting_point_id: primaryId
-                    }))
-                  }}
-                />
-              </div>
-            </TabsContent>
 
             <TabsContent value="transport">
               <div className="space-y-6">
@@ -480,7 +456,7 @@ export function TripFormModal({
                   <Alert>
                     <Info className="h-4 w-4" />
                     <AlertDescription>
-                      Belum ada meeting point untuk trip ini. Pilih meeting points di tab Meeting Points terlebih dahulu.
+                      Belum ada meeting point untuk trip ini. Pilih meeting points di tab Informasi Dasar terlebih dahulu.
                     </AlertDescription>
                   </Alert>
                 ) : (
@@ -561,7 +537,7 @@ export function TripFormModal({
                   <Alert>
                     <Info className="h-4 w-4" />
                     <AlertDescription>
-                      Belum ada meeting point untuk trip ini. Pilih meeting points di tab Meeting Points terlebih dahulu.
+                      Belum ada meeting point untuk trip ini. Pilih meeting points di tab Informasi Dasar terlebih dahulu.
                     </AlertDescription>
                   </Alert>
                 ) : (
