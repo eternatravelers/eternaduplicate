@@ -17,6 +17,7 @@ interface AssignedTripsModalProps {
     status: string
     quota?: number
     participant_count?: number
+    meeting_points?: string[]
   }>
   resourceName: string
   resourceType: 'Tour Leader' | 'Bus' | 'Driver'
@@ -115,6 +116,7 @@ export function AssignedTripsModal({
                 <TableHeader>
                   <TableRow>
                     <TableHead>Nama Trip</TableHead>
+                    <TableHead>Meeting Point</TableHead>
                     <TableHead>Tanggal Keberangkatan</TableHead>
                     <TableHead>Tanggal Kembali</TableHead>
                     <TableHead>Status</TableHead>
@@ -127,11 +129,25 @@ export function AssignedTripsModal({
                     const departureDate = new Date(trip.departure_date)
                     const today = new Date()
                     const daysUntilDeparture = Math.ceil((departureDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-                    
+
                     return (
                       <TableRow key={trip.id}>
                         <TableCell>
                           <div className="font-medium text-gray-900">{trip.name}</div>
+                        </TableCell>
+                        <TableCell>
+                          {trip.meeting_points && trip.meeting_points.length > 0 ? (
+                            <div className="flex flex-col gap-1">
+                              {trip.meeting_points.map((mp, idx) => (
+                                <div key={idx} className="flex items-center space-x-1 text-xs">
+                                  <MapPin className="h-3 w-3 text-blue-600" />
+                                  <span>{mp}</span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-gray-400 text-xs">-</span>
+                          )}
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center space-x-2">

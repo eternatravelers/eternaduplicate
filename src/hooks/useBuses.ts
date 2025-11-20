@@ -26,6 +26,7 @@ export function useBuses() {
         .select(`
           *,
           resource_schedules!resource_schedules_bus_id_fkey (
+            meeting_point_name,
             trips (
               id,
               name,
@@ -38,18 +39,30 @@ export function useBuses() {
 
       if (error) throw error
 
-      // Process data to include assigned trips from resource_schedules
+      // Process data to include assigned trips with meeting points from resource_schedules
       const busesWithAssignments = data?.map(bus => {
-        const uniqueTrips = new Map()
+        const tripMap = new Map()
         bus.resource_schedules?.forEach((rs: any) => {
           // Include trips that are not deleted or cancelled
           if (rs.trips && !['deleted', 'cancelled'].includes(rs.trips.status)) {
-            uniqueTrips.set(rs.trips.id, rs.trips)
+            const existingTrip = tripMap.get(rs.trips.id)
+            if (existingTrip) {
+              // If trip already exists, append meeting point to array
+              if (rs.meeting_point_name && !existingTrip.meeting_points.includes(rs.meeting_point_name)) {
+                existingTrip.meeting_points.push(rs.meeting_point_name)
+              }
+            } else {
+              // Add new trip with meeting point
+              tripMap.set(rs.trips.id, {
+                ...rs.trips,
+                meeting_points: rs.meeting_point_name ? [rs.meeting_point_name] : []
+              })
+            }
           }
         })
         return {
           ...bus,
-          assignedTrips: Array.from(uniqueTrips.values())
+          assignedTrips: Array.from(tripMap.values())
         }
       }) || []
 

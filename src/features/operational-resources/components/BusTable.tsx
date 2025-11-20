@@ -128,14 +128,21 @@ export function BusTable({
                     <div className="space-y-1">
                       {bus.assignedTrips && bus.assignedTrips.length > 0 ? (
                         <div className="flex items-center space-x-2">
-                          <div className="flex flex-wrap gap-1">
+                          <div className="flex flex-col gap-2 flex-1">
                             {bus.assignedTrips.slice(0, 2).map((trip: any) => (
-                              <Badge key={trip.id} variant="outline" className="text-xs">
-                                {trip.name}
-                              </Badge>
+                              <div key={trip.id} className="flex flex-col">
+                                <Badge variant="outline" className="text-xs w-fit">
+                                  {trip.name}
+                                </Badge>
+                                {trip.meeting_points && trip.meeting_points.length > 0 && (
+                                  <span className="text-xs text-gray-500 mt-1 ml-1">
+                                    📍 {trip.meeting_points.join(', ')}
+                                  </span>
+                                )}
+                              </div>
                             ))}
                             {bus.assignedTrips.length > 2 && (
-                              <Badge variant="outline" className="text-xs">
+                              <Badge variant="outline" className="text-xs w-fit">
                                 +{bus.assignedTrips.length - 2} lainnya
                               </Badge>
                             )}
