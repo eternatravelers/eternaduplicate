@@ -42,7 +42,8 @@ export function useTourLeaders() {
       const tourLeadersWithAssignments = data?.map(tl => {
         const uniqueTrips = new Map()
         tl.resource_schedules?.forEach((rs: any) => {
-          if (rs.trips && ['scheduled', 'confirmed', 'in_progress'].includes(rs.trips.status)) {
+          // Include trips that are not deleted or cancelled
+          if (rs.trips && !['deleted', 'cancelled'].includes(rs.trips.status)) {
             uniqueTrips.set(rs.trips.id, rs.trips)
           }
         })
@@ -191,7 +192,8 @@ export function useTourLeaderPerformance() {
         // Extract unique trips from resource_schedules
         const uniqueTrips = new Map()
         tl.resource_schedules?.forEach((rs: any) => {
-          if (rs.trips && ['scheduled', 'confirmed', 'in_progress'].includes(rs.trips.status)) {
+          // Include trips that are not deleted or cancelled
+          if (rs.trips && !['deleted', 'cancelled'].includes(rs.trips.status)) {
             uniqueTrips.set(rs.trips.id, rs.trips)
           }
         })

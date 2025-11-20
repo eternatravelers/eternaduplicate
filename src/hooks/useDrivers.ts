@@ -42,7 +42,8 @@ export function useDrivers() {
       const driversWithAssignments = data?.map(driver => {
         const uniqueTrips = new Map()
         driver.resource_schedules?.forEach((rs: any) => {
-          if (rs.trips && ['scheduled', 'confirmed', 'in_progress'].includes(rs.trips.status)) {
+          // Include trips that are not deleted or cancelled
+          if (rs.trips && !['deleted', 'cancelled'].includes(rs.trips.status)) {
             uniqueTrips.set(rs.trips.id, rs.trips)
           }
         })
