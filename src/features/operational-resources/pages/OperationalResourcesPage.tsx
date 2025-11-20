@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Plus, Bus, UserCheck, Settings, AlertCircle } from 'lucide-react'
+import { Plus, Bus, UserCheck, Settings, AlertCircle, Calendar } from 'lucide-react'
 import { BusForm } from '../components/BusForm'
 import { BusTable } from '../components/BusTable'
 import { DriverForm } from '../components/DriverForm'
@@ -13,6 +13,7 @@ import { TourLeaderTable } from '../components/TourLeaderTable'
 import { useBuses, useCreateBus, useUpdateBus, useDeleteBus } from '@/hooks/useBuses'
 import { useDrivers, useCreateDriver, useUpdateDriver, useDeleteDriver } from '@/hooks/useDrivers'
 import { useTourLeaders, useCreateTourLeader, useUpdateTourLeader, useDeleteTourLeader } from '@/hooks/useTourLeaders'
+import { ResourceSchedulingPage } from '@/features/resource-scheduling/pages/ResourceSchedulingPage'
 import { useTrips, useUpdateTrip } from '@/hooks/useTrips'
 
 export function OperationalResourcesPage() {
@@ -341,31 +342,37 @@ export function OperationalResourcesPage() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <div className="flex items-center justify-between">
-          <TabsList className="grid w-full max-w-lg grid-cols-3">
-            <TabsTrigger value="tour-leaders">Manajemen Tour Leader</TabsTrigger>
-            <TabsTrigger value="buses">Manajemen Bus</TabsTrigger>
-            <TabsTrigger value="drivers">Manajemen Driver</TabsTrigger>
+          <TabsList className="grid w-full max-w-2xl grid-cols-4">
+            <TabsTrigger value="tour-leaders">Tour Leader</TabsTrigger>
+            <TabsTrigger value="buses">Bus</TabsTrigger>
+            <TabsTrigger value="drivers">Driver</TabsTrigger>
+            <TabsTrigger value="scheduling">
+              <Calendar className="h-4 w-4 mr-2" />
+              Jadwal Resource
+            </TabsTrigger>
           </TabsList>
-          
-          <div className="flex space-x-2">
-            <Button
-              onClick={
-                activeTab === 'tour-leaders' ? handleTourLeaderAddNew :
-                activeTab === 'buses' ? handleBusAddNew :
-                handleDriverAddNew
-              }
-              className={
-                activeTab === 'tour-leaders' ? 'bg-purple-600 hover:bg-purple-700' :
-                activeTab === 'buses' ? 'bg-blue-600 hover:bg-blue-700' : 
-                'bg-green-600 hover:bg-green-700'
-              }
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              {activeTab === 'tour-leaders' ? 'Tambah Tour Leader' : 
-               activeTab === 'buses' ? 'Tambah Bus' : 
-               'Tambah Driver'}
-            </Button>
-          </div>
+
+          {activeTab !== 'scheduling' && (
+            <div className="flex space-x-2">
+              <Button
+                onClick={
+                  activeTab === 'tour-leaders' ? handleTourLeaderAddNew :
+                  activeTab === 'buses' ? handleBusAddNew :
+                  handleDriverAddNew
+                }
+                className={
+                  activeTab === 'tour-leaders' ? 'bg-purple-600 hover:bg-purple-700' :
+                  activeTab === 'buses' ? 'bg-blue-600 hover:bg-blue-700' :
+                  'bg-green-600 hover:bg-green-700'
+                }
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                {activeTab === 'tour-leaders' ? 'Tambah Tour Leader' :
+                 activeTab === 'buses' ? 'Tambah Bus' :
+                 'Tambah Driver'}
+              </Button>
+            </div>
+          )}
         </div>
 
         <TabsContent value="tour-leaders" className="space-y-6">
@@ -432,6 +439,10 @@ export function OperationalResourcesPage() {
             onDelete={handleDriverDelete}
             deleting={deletingDriver}
           />
+        </TabsContent>
+
+        <TabsContent value="scheduling">
+          <ResourceSchedulingPage />
         </TabsContent>
       </Tabs>
 

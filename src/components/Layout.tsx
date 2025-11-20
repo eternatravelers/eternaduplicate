@@ -57,10 +57,8 @@ const menuItems: MenuItem[] = [
     type: 'category',
     children: [
       { id: 'trips', label: 'Trip & Operasional', icon: MapPin, type: 'item' },
-      { id: 'destinations', label: 'Destinasi', icon: Globe, type: 'item' },
-      { id: 'master-meeting-points', label: 'Master Meeting Points', icon: MapPin, type: 'item' },
-      { id: 'operational-resources', label: 'Sumber Daya Operasional', icon: Settings, type: 'item' },
-      { id: 'resource-scheduling', label: 'Resource Scheduling', icon: Calendar, type: 'item' },
+      { id: 'destinations', label: 'Destinasi & Meeting Points', icon: Globe, type: 'item' },
+      { id: 'operational-resources', label: 'Sumber Daya & Jadwal', icon: Settings, type: 'item' },
       { id: 'cost-plans', label: 'Rencana Biaya', icon: Calculator, type: 'item' }
     ]
   },

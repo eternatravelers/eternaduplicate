@@ -5,14 +5,17 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
-import { MapPin, Plus, Search, Edit, Trash2, Globe } from 'lucide-react'
+import { MapPin, Plus, Search, Edit, Trash2, Globe, Navigation } from 'lucide-react'
 import { useDestinations, useCreateDestination, useUpdateDestination, useDeleteDestination } from '@/hooks/useDestinations'
 import { formatShortDate } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
+import { MasterMeetingPointsPage } from '@/features/master-data/pages/MasterMeetingPointsPage'
 
 export function Destinations() {
+  const [activeTab, setActiveTab] = useState('destinations')
   const [showAddForm, setShowAddForm] = useState(false)
   const [editingDestination, setEditingDestination] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
@@ -109,14 +112,33 @@ export function Destinations() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Manajemen Destinasi</h1>
-          <p className="text-gray-600 mt-2">Kelola destinasi wisata untuk trip Anda</p>
+          <h1 className="text-3xl font-bold">Manajemen Destinasi & Meeting Points</h1>
+          <p className="text-gray-600 mt-2">Kelola destinasi wisata dan titik kumpul</p>
         </div>
-        <Button onClick={handleAddNew} className="bg-blue-600 hover:bg-blue-700">
-          <Plus className="h-4 w-4 mr-2" />
-          Tambah Destinasi
-        </Button>
       </div>
+
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <div className="flex items-center justify-between">
+          <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsTrigger value="destinations">
+              <Globe className="h-4 w-4 mr-2" />
+              Destinasi
+            </TabsTrigger>
+            <TabsTrigger value="meeting-points">
+              <Navigation className="h-4 w-4 mr-2" />
+              Meeting Points
+            </TabsTrigger>
+          </TabsList>
+
+          {activeTab === 'destinations' && (
+            <Button onClick={handleAddNew} className="bg-blue-600 hover:bg-blue-700">
+              <Plus className="h-4 w-4 mr-2" />
+              Tambah Destinasi
+            </Button>
+          )}
+        </div>
+
+        <TabsContent value="destinations" className="space-y-6">
 
       {/* Stats Cards */}
       <div className="grid gap-6 md:grid-cols-3">
@@ -367,6 +389,12 @@ export function Destinations() {
           )}
         </CardContent>
       </Card>
+        </TabsContent>
+
+        <TabsContent value="meeting-points">
+          <MasterMeetingPointsPage />
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }
