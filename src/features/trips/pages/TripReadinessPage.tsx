@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -229,8 +229,9 @@ export function TripReadinessPage({
             details={buses}
             detailType="bus"
             onAction={() => {
-              setResourceFilter('bus')
-              setIsResourcesModalOpen(true)
+              if (onNavigateToResourceScheduling) {
+                onNavigateToResourceScheduling()
+              }
             }}
           />
 
@@ -240,8 +241,9 @@ export function TripReadinessPage({
             details={drivers}
             detailType="driver"
             onAction={() => {
-              setResourceFilter('driver')
-              setIsResourcesModalOpen(true)
+              if (onNavigateToResourceScheduling) {
+                onNavigateToResourceScheduling()
+              }
             }}
           />
 
@@ -251,8 +253,9 @@ export function TripReadinessPage({
             details={tourLeaders}
             detailType="tourLeader"
             onAction={() => {
-              setResourceFilter('tourLeader')
-              setIsResourcesModalOpen(true)
+              if (onNavigateToResourceScheduling) {
+                onNavigateToResourceScheduling()
+              }
             }}
           />
 

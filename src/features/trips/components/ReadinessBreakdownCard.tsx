@@ -215,7 +215,9 @@ export function ReadinessBreakdownCard({
             className="w-full"
             size="sm"
           >
-            {data.status === 'incomplete' ? 'Add' : 'Manage'} {config.title}
+            {['bus', 'driver', 'tourLeader'].includes(category)
+              ? 'Go to Resource Scheduling'
+              : `${data.status === 'incomplete' ? 'Add' : 'Manage'} ${config.title}`}
           </Button>
         )}
       </CardContent>
