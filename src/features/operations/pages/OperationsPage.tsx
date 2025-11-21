@@ -5,10 +5,9 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { MapPin, Activity, Calendar, Users, Monitor, CheckSquare, FileText, Phone, Search, Filter, Clock, AlertTriangle } from 'lucide-react'
+import { MapPin, Activity, Calendar, Users, Monitor, FileText, Phone, Search, Filter, Clock, AlertTriangle } from 'lucide-react'
 import { useTrips } from '@/hooks/useTrips'
 import { TripMonitoringCard } from '../components/TripMonitoringCard'
-import { ChecklistManager } from '../components/ChecklistManager'
 import { EnhancedChecklistManager } from '../components/EnhancedChecklistManager'
 import { DocumentManager } from '../components/DocumentManager'
 import { EmergencyContactsManager } from '../components/EmergencyContactsManager'
@@ -173,7 +172,7 @@ export function OperationsPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="monitoring">
             <Monitor className="h-4 w-4 mr-2" />
             Monitoring
@@ -181,10 +180,6 @@ export function OperationsPage() {
           <TabsTrigger value="timeline">
             <Clock className="h-4 w-4 mr-2" />
             Timeline
-          </TabsTrigger>
-          <TabsTrigger value="checklist">
-            <CheckSquare className="h-4 w-4 mr-2" />
-            Checklist
           </TabsTrigger>
           <TabsTrigger value="documents">
             <FileText className="h-4 w-4 mr-2" />
@@ -271,30 +266,6 @@ export function OperationsPage() {
             trips={activeTrips}
             onSelectTrip={handleSelectTripById}
           />
-        </TabsContent>
-
-        <TabsContent value="checklist" className="space-y-6">
-          {selectedTrip ? (
-            <EnhancedChecklistManager
-              tripId={selectedTrip.id}
-              tripName={selectedTrip.name}
-              tripDepartureDate={selectedTrip.departure_date}
-            />
-          ) : (
-            <div className="text-center py-12 text-gray-500">
-              <CheckSquare className="h-16 w-16 mx-auto mb-4 opacity-30" />
-              <h3 className="text-lg font-medium mb-2">Pilih Trip untuk Checklist</h3>
-              <p className="text-sm mb-4">
-                Pilih trip dari tab "Trip Monitoring" untuk melihat checklist operasional
-              </p>
-              <Button
-                variant="outline"
-                onClick={() => setActiveTab('monitoring')}
-              >
-                Lihat Trip Monitoring
-              </Button>
-            </div>
-          )}
         </TabsContent>
 
         <TabsContent value="documents" className="space-y-6">
