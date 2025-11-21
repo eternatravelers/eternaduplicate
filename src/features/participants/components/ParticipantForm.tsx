@@ -100,9 +100,9 @@ export function ParticipantForm({
       } else if (selectedTrip.status === 'draft') {
         setQuotaWarning('Trip ini masih dalam status draft. Pendaftaran akan aktif setelah trip dibuka.')
       } else if (selectedTrip.status === 'open' && !selectedTrip.can_accept_registrations) {
-        setQuotaWarning('Pendaftaran untuk trip ini sudah ditutup (quota penuh).')
+        setQuotaWarning('Pendaftaran untuk trip ini sudah ditutup (kuota penuh).')
       } else if (selectedTrip.available_quota !== null && selectedTrip.available_quota !== undefined && selectedTrip.available_quota <= 5 && selectedTrip.available_quota > 0) {
-        setQuotaWarning(`Hanya tersisa ${selectedTrip.available_quota} seat untuk trip ini!`)
+        setQuotaWarning(`Hanya tersisa ${selectedTrip.available_quota} orang untuk trip ini!`)
       }
     }
   }, [formData.trip_id, selectedTrip, editingParticipant])
@@ -161,24 +161,30 @@ export function ParticipantForm({
               </div>
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <span className="text-blue-700">Quota:</span>
+                  <span className="text-blue-700">Terdaftar:</span>
                   <span className="ml-2 font-semibold text-blue-900">
-                    {selectedTrip.confirmed_participant_count || 0}/{selectedTrip.quota || '-'}
+                    {((selectedTrip.confirmed_participant_count || 0) + (selectedTrip.pending_participant_count || 0))} dari {selectedTrip.quota || '-'} orang
                   </span>
                 </div>
                 {selectedTrip.available_quota !== null && selectedTrip.available_quota !== undefined && (
                   <div>
-                    <span className="text-blue-700">Sisa:</span>
+                    <span className="text-blue-700">Sisa Kuota:</span>
                     <span className="ml-2 font-semibold text-blue-900">
-                      {selectedTrip.available_quota} seat
+                      {selectedTrip.available_quota} orang
                     </span>
                   </div>
                 )}
+                <div>
+                  <span className="text-green-700">Confirmed:</span>
+                  <span className="ml-2 font-semibold text-green-800">
+                    {selectedTrip.confirmed_participant_count || 0} orang
+                  </span>
+                </div>
                 {selectedTrip.pending_participant_count > 0 && (
                   <div>
-                    <span className="text-blue-700">Pending:</span>
-                    <span className="ml-2 font-semibold text-orange-700">
-                      {selectedTrip.pending_participant_count}
+                    <span className="text-orange-700">Pending:</span>
+                    <span className="ml-2 font-semibold text-orange-800">
+                      {selectedTrip.pending_participant_count} orang
                     </span>
                   </div>
                 )}
@@ -197,16 +203,19 @@ export function ParticipantForm({
                   <SelectValue placeholder="Pilih trip" />
                 </SelectTrigger>
                 <SelectContent>
-                  {trips.map(trip => (
-                    <SelectItem key={trip.id} value={trip.id}>
-                      {trip.name} - {formatShortDate(trip.departure_date)}
-                      {trip.available_quota !== null && trip.available_quota !== undefined && (
-                        <span className="ml-2 text-xs text-gray-500">
-                          ({trip.available_quota} seat tersisa)
-                        </span>
-                      )}
-                    </SelectItem>
-                  ))}
+                  {trips.map(trip => {
+                    const totalRegistered = (trip.confirmed_participant_count || 0) + (trip.pending_participant_count || 0)
+                    return (
+                      <SelectItem key={trip.id} value={trip.id}>
+                        {trip.name} - {formatShortDate(trip.departure_date)}
+                        {trip.quota && (
+                          <span className="ml-2 text-xs text-gray-500">
+                            ({totalRegistered}/{trip.quota} orang, sisa {trip.available_quota || 0})
+                          </span>
+                        )}
+                      </SelectItem>
+                    )
+                  })}
                 </SelectContent>
               </Select>
             </div>

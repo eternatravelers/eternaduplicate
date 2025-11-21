@@ -199,11 +199,19 @@ export function GroupRegistrationForm({
                   <SelectValue placeholder="Pilih trip" />
                 </SelectTrigger>
                 <SelectContent>
-                  {trips.map(trip => (
-                    <SelectItem key={trip.id} value={trip.id}>
-                      {trip.name} - {formatShortDate(trip.departure_date)}
-                    </SelectItem>
-                  ))}
+                  {trips.map(trip => {
+                    const totalRegistered = (trip.confirmed_participant_count || 0) + (trip.pending_participant_count || 0)
+                    return (
+                      <SelectItem key={trip.id} value={trip.id}>
+                        {trip.name} - {formatShortDate(trip.departure_date)}
+                        {trip.quota && (
+                          <span className="ml-2 text-xs text-gray-500">
+                            ({totalRegistered}/{trip.quota} orang, sisa {trip.available_quota || 0})
+                          </span>
+                        )}
+                      </SelectItem>
+                    )
+                  })}
                 </SelectContent>
               </Select>
             </div>
