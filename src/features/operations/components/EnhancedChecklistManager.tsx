@@ -453,14 +453,14 @@ export function EnhancedChecklistManager({ tripId, tripName, tripDepartureDate }
                   <div>
                     <Label htmlFor="days">Deadline (H-X)</Label>
                     <Select
-                      value={newChecklistForm.days_before_departure}
-                      onValueChange={(value) => setNewChecklistForm({ ...newChecklistForm, days_before_departure: value, deadline_date: '' })}
+                      value={newChecklistForm.days_before_departure || 'none'}
+                      onValueChange={(value) => setNewChecklistForm({ ...newChecklistForm, days_before_departure: value === 'none' ? '' : value, deadline_date: '' })}
                     >
                       <SelectTrigger className="mt-1">
                         <SelectValue placeholder="Pilih..." />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Tidak ada</SelectItem>
+                        <SelectItem value="none">Tidak ada</SelectItem>
                         <SelectItem value="30">H-30</SelectItem>
                         <SelectItem value="14">H-14</SelectItem>
                         <SelectItem value="7">H-7</SelectItem>
@@ -705,14 +705,14 @@ export function EnhancedChecklistManager({ tripId, tripName, tripDepartureDate }
                     <div>
                       <Label htmlFor="edit-days">Deadline (H-X)</Label>
                       <Select
-                        value={editChecklistForm.days_before_departure}
-                        onValueChange={(value) => setEditChecklistForm({ ...editChecklistForm, days_before_departure: value, deadline_date: '' })}
+                        value={editChecklistForm.days_before_departure || 'none'}
+                        onValueChange={(value) => setEditChecklistForm({ ...editChecklistForm, days_before_departure: value === 'none' ? '' : value, deadline_date: '' })}
                       >
                         <SelectTrigger className="mt-1">
                           <SelectValue placeholder="Pilih..." />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Tidak ada</SelectItem>
+                          <SelectItem value="none">Tidak ada</SelectItem>
                           <SelectItem value="30">H-30</SelectItem>
                           <SelectItem value="14">H-14</SelectItem>
                           <SelectItem value="7">H-7</SelectItem>
