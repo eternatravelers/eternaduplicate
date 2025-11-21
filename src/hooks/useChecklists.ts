@@ -20,6 +20,7 @@ export function useChecklists(tripId: string, filterOptions?: {
   const fetchChecklists = async () => {
     try {
       setLoading(true)
+      setError(null)
       let query = supabase
         .from('checklists')
         .select('*')
@@ -144,18 +145,24 @@ export function useDeleteChecklist() {
       setLoading(true)
       setError(null)
 
-      const { error } = await supabase
+      console.log('Deleting checklist:', id)
+
+      const { error, count } = await supabase
         .from('checklists')
         .delete()
         .eq('id', id)
+        .select()
+
+      console.log('Delete result:', { error, count })
 
       if (error) throw error
 
-      return { error: null }
+      return { error: null, success: true }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+      console.error('Delete error:', errorMessage)
       setError(errorMessage)
-      return { error: errorMessage }
+      return { error: errorMessage, success: false }
     } finally {
       setLoading(false)
     }
