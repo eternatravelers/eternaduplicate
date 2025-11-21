@@ -426,13 +426,6 @@ export function useUpdateTrip() {
 
       return { data: updatedTrip, error: null }
     } catch (err: any) {
-      console.error('Full error object:', err)
-      console.error('Error keys:', Object.keys(err))
-      console.error('Error message:', err?.message)
-      console.error('Error details:', err?.details)
-      console.error('Error hint:', err?.hint)
-      console.error('Error code:', err?.code)
-
       let errorMessage = 'Terjadi kesalahan saat mengupdate trip'
 
       // Handle PostgreSQL errors from triggers (RAISE EXCEPTION)
@@ -455,6 +448,7 @@ export function useUpdateTrip() {
         errorMessage = err
       }
 
+      console.error('Error updating trip:', errorMessage)
       setError(errorMessage)
       return { data: null, error: errorMessage }
     } finally {
