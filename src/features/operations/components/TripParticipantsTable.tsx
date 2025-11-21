@@ -1,9 +1,10 @@
 import React, { useState, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Users, Phone, Mail, MapPin, DollarSign, Filter } from 'lucide-react'
+import { Users, Phone, Mail, MapPin, DollarSign, Filter, X } from 'lucide-react'
 import { useParticipants } from '@/hooks/useParticipants'
 import { formatCurrency, formatShortDate } from '@/lib/utils'
 
@@ -145,13 +146,53 @@ export function TripParticipantsTable({ tripId, tripName }: TripParticipantsTabl
       {meetingPoints.length > 0 && (
         <Card className="border-blue-200">
           <CardHeader>
-            <CardTitle className="flex items-center space-x-2 text-blue-800">
-              <MapPin className="h-5 w-5" />
-              <span>Breakdown Meeting Point</span>
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center space-x-2 text-blue-800">
+                <MapPin className="h-5 w-5" />
+                <span>Breakdown Meeting Point</span>
+                {selectedMeetingPoint !== 'all' && (
+                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-300">
+                    Filter Aktif
+                  </Badge>
+                )}
+              </CardTitle>
+              {selectedMeetingPoint !== 'all' && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedMeetingPoint('all')}
+                  className="flex items-center space-x-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                >
+                  <X className="h-4 w-4" />
+                  <span>Clear Filter</span>
+                </Button>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+              {/* All Meeting Points Card */}
+              <div
+                className={`p-4 rounded-lg border transition-colors cursor-pointer ${
+                  selectedMeetingPoint === 'all'
+                    ? 'bg-blue-600 border-blue-700 text-white'
+                    : 'bg-gradient-to-br from-blue-50 to-blue-100 border-blue-300 hover:from-blue-100 hover:to-blue-200'
+                }`}
+                onClick={() => setSelectedMeetingPoint('all')}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className={`font-semibold mb-1 ${selectedMeetingPoint === 'all' ? 'text-white' : 'text-blue-900'}`}>
+                      Semua Meeting Point
+                    </div>
+                    <div className={`text-sm ${selectedMeetingPoint === 'all' ? 'text-blue-100' : 'text-blue-700'}`}>
+                      {participants.length} registrasi • {totalParticipants} peserta
+                    </div>
+                  </div>
+                  <MapPin className={`h-5 w-5 flex-shrink-0 mt-1 ${selectedMeetingPoint === 'all' ? 'text-white' : 'text-blue-600'}`} />
+                </div>
+              </div>
+
               {meetingPoints.map(point => {
                 const count = participants.filter(p => {
                   const meetingPoint = p.meeting_point_details || p.trips?.meeting_point
@@ -167,34 +208,46 @@ export function TripParticipantsTable({ tripId, tripName }: TripParticipantsTabl
                 return (
                   <div
                     key={point}
-                    className="p-4 bg-blue-50 rounded-lg border border-blue-200 hover:bg-blue-100 transition-colors cursor-pointer"
+                    className={`p-4 rounded-lg border transition-colors cursor-pointer ${
+                      selectedMeetingPoint === point
+                        ? 'bg-blue-600 border-blue-700 text-white ring-2 ring-blue-300'
+                        : 'bg-blue-50 border-blue-200 hover:bg-blue-100'
+                    }`}
                     onClick={() => setSelectedMeetingPoint(point)}
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <div className="font-medium text-blue-900 mb-1">{point}</div>
-                        <div className="text-sm text-blue-700">
+                        <div className={`font-medium mb-1 ${selectedMeetingPoint === point ? 'text-white' : 'text-blue-900'}`}>
+                          {point}
+                        </div>
+                        <div className={`text-sm ${selectedMeetingPoint === point ? 'text-blue-100' : 'text-blue-700'}`}>
                           {count} registrasi • {peopleCount} peserta
                         </div>
                       </div>
-                      <MapPin className="h-4 w-4 text-blue-600 flex-shrink-0 mt-1" />
+                      <MapPin className={`h-4 w-4 flex-shrink-0 mt-1 ${selectedMeetingPoint === point ? 'text-white' : 'text-blue-600'}`} />
                     </div>
                   </div>
                 )
               })}
               {participants.some(p => !p.meeting_point_details && !p.trips?.meeting_point) && (
                 <div
-                  className="p-4 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors cursor-pointer"
+                  className={`p-4 rounded-lg border transition-colors cursor-pointer ${
+                    selectedMeetingPoint === 'none'
+                      ? 'bg-gray-600 border-gray-700 text-white ring-2 ring-gray-300'
+                      : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                  }`}
                   onClick={() => setSelectedMeetingPoint('none')}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <div className="font-medium text-gray-700 mb-1">Tanpa Meeting Point</div>
-                      <div className="text-sm text-gray-600">
+                      <div className={`font-medium mb-1 ${selectedMeetingPoint === 'none' ? 'text-white' : 'text-gray-700'}`}>
+                        Tanpa Meeting Point
+                      </div>
+                      <div className={`text-sm ${selectedMeetingPoint === 'none' ? 'text-gray-100' : 'text-gray-600'}`}>
                         {participants.filter(p => !p.meeting_point_details && !p.trips?.meeting_point).length} registrasi
                       </div>
                     </div>
-                    <MapPin className="h-4 w-4 text-gray-400 flex-shrink-0 mt-1" />
+                    <MapPin className={`h-4 w-4 flex-shrink-0 mt-1 ${selectedMeetingPoint === 'none' ? 'text-white' : 'text-gray-400'}`} />
                   </div>
                 </div>
               )}
