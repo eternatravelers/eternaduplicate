@@ -7,11 +7,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Progress } from '@/components/ui/progress'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import {
   CheckSquare, Clock, AlertTriangle, CheckCircle, User, Calendar,
   MessageSquare, History, Filter, MoreVertical, Edit2, Trash2, UserPlus,
-  Check, X, CalendarClock, AlertCircle
+  Check, X, CalendarClock, AlertCircle, Plus
 } from 'lucide-react'
 import {
   useChecklists,
@@ -20,8 +21,8 @@ import {
   useChecklistComments,
   useAddChecklistComment,
   useChecklistHistory,
-  useBulkChecklistOperations,
-  useAssignChecklist,
+  useCreateChecklist,
+  useDeleteChecklist,
   useUpdateChecklistNotes
 } from '@/hooks/useChecklists'
 import {
@@ -48,25 +49,37 @@ interface EnhancedChecklistManagerProps {
 
 export function EnhancedChecklistManager({ tripId, tripName, tripDepartureDate }: EnhancedChecklistManagerProps) {
   const [filterStatus, setFilterStatus] = useState<string>('all')
-  const [filterAssignedToMe, setFilterAssignedToMe] = useState(false)
-  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set())
-  const [showBulkActions, setShowBulkActions] = useState(false)
   const [selectedChecklistForDetails, setSelectedChecklistForDetails] = useState<any>(null)
   const [showDetailsDialog, setShowDetailsDialog] = useState(false)
   const [newComment, setNewComment] = useState('')
   const [editingNotes, setEditingNotes] = useState(false)
   const [notesValue, setNotesValue] = useState('')
+  const [showAddForm, setShowAddForm] = useState<string | null>(null)
+  const [editingChecklist, setEditingChecklist] = useState(false)
+  const [newChecklistForm, setNewChecklistForm] = useState({
+    title: '',
+    description: '',
+    priority: 'medium' as 'high' | 'medium' | 'low',
+    days_before_departure: '',
+    deadline_date: ''
+  })
+  const [editChecklistForm, setEditChecklistForm] = useState({
+    title: '',
+    description: '',
+    priority: 'medium' as 'high' | 'medium' | 'low',
+    days_before_departure: '',
+    deadline_date: ''
+  })
 
   const filterOptions = {
     status: filterStatus === 'all' ? undefined : filterStatus,
-    assignedToMe: filterAssignedToMe
   }
 
   const { checklists, loading, refetch } = useChecklists(tripId, filterOptions)
   const { toggleChecklistItem, updateChecklist, loading: updating } = useUpdateChecklist()
   const { initializeDefaultChecklist, loading: initializing } = useInitializeDefaultChecklist()
-  const { bulkComplete, bulkAssign } = useBulkChecklistOperations()
-  const { assignChecklist } = useAssignChecklist()
+  const { createChecklist, loading: creating } = useCreateChecklist()
+  const { deleteChecklist, loading: deleting } = useDeleteChecklist()
   const { updateNotes } = useUpdateChecklistNotes()
   const { addComment } = useAddChecklistComment()
   const { comments, refetch: refetchComments } = useChecklistComments(selectedChecklistForDetails?.id || '')
@@ -86,23 +99,47 @@ export function EnhancedChecklistManager({ tripId, tripName, tripDepartureDate }
     }
   }
 
-  const handleToggleSelection = (id: string) => {
-    const newSelection = new Set(selectedItems)
-    if (newSelection.has(id)) {
-      newSelection.delete(id)
-    } else {
-      newSelection.add(id)
+  const handleAddChecklist = async (category: string) => {
+    if (!newChecklistForm.title.trim()) return
+
+    const checklistData: any = {
+      trip_id: tripId,
+      title: newChecklistForm.title,
+      description: newChecklistForm.description,
+      priority: newChecklistForm.priority,
+      category,
+      status: 'pending',
+      completed: false
     }
-    setSelectedItems(newSelection)
-    setShowBulkActions(newSelection.size > 0)
+
+    if (newChecklistForm.days_before_departure) {
+      checklistData.days_before_departure = parseInt(newChecklistForm.days_before_departure)
+    }
+
+    if (newChecklistForm.deadline_date) {
+      checklistData.deadline_date = newChecklistForm.deadline_date
+    }
+
+    const { error } = await createChecklist(checklistData)
+    if (!error) {
+      setNewChecklistForm({
+        title: '',
+        description: '',
+        priority: 'medium',
+        days_before_departure: '',
+        deadline_date: ''
+      })
+      setShowAddForm(null)
+      refetch()
+    }
   }
 
-  const handleBulkComplete = async () => {
-    const { error } = await bulkComplete(Array.from(selectedItems))
-    if (!error) {
-      setSelectedItems(new Set())
-      setShowBulkActions(false)
-      refetch()
+  const handleDeleteChecklist = async (id: string) => {
+    if (confirm('Apakah Anda yakin ingin menghapus checklist ini?')) {
+      const { error } = await deleteChecklist(id)
+      if (!error) {
+        refetch()
+      }
     }
   }
 
@@ -110,7 +147,44 @@ export function EnhancedChecklistManager({ tripId, tripName, tripDepartureDate }
     setSelectedChecklistForDetails(checklist)
     setNotesValue(checklist.notes || '')
     setEditingNotes(false)
+    setEditingChecklist(false)
+    setEditChecklistForm({
+      title: checklist.title || '',
+      description: checklist.description || '',
+      priority: checklist.priority || 'medium',
+      days_before_departure: checklist.days_before_departure?.toString() || '',
+      deadline_date: checklist.deadline_date || ''
+    })
     setShowDetailsDialog(true)
+  }
+
+  const handleSaveChecklistEdit = async () => {
+    if (!selectedChecklistForDetails || !editChecklistForm.title.trim()) return
+
+    const updateData: any = {
+      title: editChecklistForm.title,
+      description: editChecklistForm.description,
+      priority: editChecklistForm.priority,
+    }
+
+    if (editChecklistForm.days_before_departure) {
+      updateData.days_before_departure = parseInt(editChecklistForm.days_before_departure)
+    } else {
+      updateData.days_before_departure = null
+    }
+
+    if (editChecklistForm.deadline_date) {
+      updateData.deadline_date = editChecklistForm.deadline_date
+    } else {
+      updateData.deadline_date = null
+    }
+
+    const { error } = await updateChecklist(selectedChecklistForDetails.id, updateData)
+    if (!error) {
+      setEditingChecklist(false)
+      refetch()
+      setShowDetailsDialog(false)
+    }
   }
 
   const handleAddComment = async () => {
@@ -193,7 +267,6 @@ export function EnhancedChecklistManager({ tripId, tripName, tripDepartureDate }
   }
 
   const renderChecklistItem = (item: any) => {
-    const isSelected = selectedItems.has(item.id)
     const hasNotes = item.notes && item.notes.trim().length > 0
     const isOverdue = item.status === 'overdue'
 
@@ -202,7 +275,7 @@ export function EnhancedChecklistManager({ tripId, tripName, tripDepartureDate }
         key={item.id}
         className={`flex items-start space-x-3 p-4 border rounded-lg hover:bg-gray-50 transition-colors ${
           isOverdue ? 'border-red-200 bg-red-50' : ''
-        } ${isSelected ? 'bg-blue-50 border-blue-300' : ''}`}
+        }`}
       >
         <Checkbox
           checked={item.completed}
@@ -222,20 +295,14 @@ export function EnhancedChecklistManager({ tripId, tripName, tripDepartureDate }
                     H-{item.days_before_departure}
                   </Badge>
                 )}
+                {getPriorityBadge(item.priority)}
               </div>
               <p className={`text-sm mb-2 ${item.completed ? 'line-through text-gray-400' : 'text-gray-600'}`}>
                 {item.description}
               </p>
               <div className="flex flex-wrap items-center gap-2">
-                {getPriorityBadge(item.priority)}
                 {getStatusBadge(item.status)}
                 {item.deadline_date && getDeadlineBadge(item.deadline_date)}
-                {item.assigned_to && (
-                  <Badge variant="outline" className="flex items-center space-x-1">
-                    <User className="h-3 w-3" />
-                    <span>Assigned</span>
-                  </Badge>
-                )}
                 {hasNotes && (
                   <Badge variant="outline" className="flex items-center space-x-1">
                     <Edit2 className="h-3 w-3" />
@@ -244,13 +311,23 @@ export function EnhancedChecklistManager({ tripId, tripName, tripDepartureDate }
                 )}
               </div>
             </div>
-            <div className="flex items-center space-x-2">
-              {showBulkActions && (
-                <Checkbox
-                  checked={isSelected}
-                  onCheckedChange={() => handleToggleSelection(item.id)}
-                />
-              )}
+            <div className="flex items-center space-x-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleShowDetails(item)}
+              >
+                <Edit2 className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                onClick={() => handleDeleteChecklist(item.id)}
+                disabled={deleting}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm">
@@ -263,25 +340,8 @@ export function EnhancedChecklistManager({ tripId, tripName, tripDepartureDate }
                     Details & Komentar
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => handleShowDetails(item)}>
-                    <Edit2 className="h-4 w-4 mr-2" />
-                    Edit Notes
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleShowDetails(item)}>
                     <History className="h-4 w-4 mr-2" />
                     Lihat History
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleToggleSelection(item.id)}>
-                    {isSelected ? (
-                      <>
-                        <X className="h-4 w-4 mr-2" />
-                        Batalkan Pilih
-                      </>
-                    ) : (
-                      <>
-                        <CheckSquare className="h-4 w-4 mr-2" />
-                        Pilih Item
-                      </>
-                    )}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -348,6 +408,109 @@ export function EnhancedChecklistManager({ tripId, tripName, tripDepartureDate }
         <CardContent>
           <div className="space-y-3">
             {items.map(renderChecklistItem)}
+
+            {/* Add new checklist form */}
+            {showAddForm === category ? (
+              <div className="p-4 border-2 border-dashed border-blue-300 rounded-lg bg-blue-50/50 space-y-3">
+                <div>
+                  <Label htmlFor="title">Judul Checklist *</Label>
+                  <Input
+                    id="title"
+                    value={newChecklistForm.title}
+                    onChange={(e) => setNewChecklistForm({ ...newChecklistForm, title: e.target.value })}
+                    placeholder="Misal: Konfirmasi Bus & Sopir"
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="description">Deskripsi</Label>
+                  <Textarea
+                    id="description"
+                    value={newChecklistForm.description}
+                    onChange={(e) => setNewChecklistForm({ ...newChecklistForm, description: e.target.value })}
+                    placeholder="Detail tambahan tentang checklist ini"
+                    className="mt-1"
+                    rows={2}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="priority">Prioritas</Label>
+                    <Select
+                      value={newChecklistForm.priority}
+                      onValueChange={(value: any) => setNewChecklistForm({ ...newChecklistForm, priority: value })}
+                    >
+                      <SelectTrigger className="mt-1">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="high">Tinggi</SelectItem>
+                        <SelectItem value="medium">Sedang</SelectItem>
+                        <SelectItem value="low">Rendah</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="days">Deadline (H-X)</Label>
+                    <Select
+                      value={newChecklistForm.days_before_departure}
+                      onValueChange={(value) => setNewChecklistForm({ ...newChecklistForm, days_before_departure: value, deadline_date: '' })}
+                    >
+                      <SelectTrigger className="mt-1">
+                        <SelectValue placeholder="Pilih..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">Tidak ada</SelectItem>
+                        <SelectItem value="30">H-30</SelectItem>
+                        <SelectItem value="14">H-14</SelectItem>
+                        <SelectItem value="7">H-7</SelectItem>
+                        <SelectItem value="3">H-3</SelectItem>
+                        <SelectItem value="1">H-1</SelectItem>
+                        <SelectItem value="0">Hari-H</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => handleAddChecklist(category)}
+                    disabled={creating || !newChecklistForm.title.trim()}
+                    size="sm"
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    <Check className="h-4 w-4 mr-2" />
+                    {creating ? 'Menambah...' : 'Tambah'}
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setShowAddForm(null)
+                      setNewChecklistForm({
+                        title: '',
+                        description: '',
+                        priority: 'medium',
+                        days_before_departure: '',
+                        deadline_date: ''
+                      })
+                    }}
+                    variant="outline"
+                    size="sm"
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    Batal
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAddForm(category)}
+                className="w-full border-dashed"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Tambah Checklist Baru
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -429,60 +592,23 @@ export function EnhancedChecklistManager({ tripId, tripName, tripDepartureDate }
         </CardContent>
       </Card>
 
-      {/* Filters and bulk actions */}
+      {/* Filters */}
       <Card>
         <CardContent className="pt-6">
-          <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-            <div className="flex gap-2 flex-wrap">
-              <Select value={filterStatus} onValueChange={setFilterStatus}>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Semua Status</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="in_progress">Dalam Proses</SelectItem>
-                  <SelectItem value="completed">Selesai</SelectItem>
-                  <SelectItem value="overdue">Terlambat</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button
-                variant={filterAssignedToMe ? 'default' : 'outline'}
-                onClick={() => setFilterAssignedToMe(!filterAssignedToMe)}
-                size="sm"
-              >
-                <User className="h-4 w-4 mr-2" />
-                Tugas Saya
-              </Button>
-              <Button
-                variant={showBulkActions ? 'default' : 'outline'}
-                onClick={() => {
-                  setShowBulkActions(!showBulkActions)
-                  if (showBulkActions) {
-                    setSelectedItems(new Set())
-                  }
-                }}
-                size="sm"
-              >
-                <CheckSquare className="h-4 w-4 mr-2" />
-                Mode Pilih Multiple
-              </Button>
-            </div>
-
-            {showBulkActions && selectedItems.size > 0 && (
-              <div className="flex gap-2">
-                <Badge variant="outline" className="px-3 py-1">
-                  {selectedItems.size} item terpilih
-                </Badge>
-                <Button size="sm" onClick={handleBulkComplete}>
-                  <Check className="h-4 w-4 mr-2" />
-                  Selesaikan Semua
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => setSelectedItems(new Set())}>
-                  Batalkan
-                </Button>
-              </div>
-            )}
+          <div className="flex gap-2 items-center">
+            <Filter className="h-4 w-4 text-gray-500" />
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Semua Status</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="in_progress">Dalam Proses</SelectItem>
+                <SelectItem value="completed">Selesai</SelectItem>
+                <SelectItem value="overdue">Terlambat</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
       </Card>
@@ -521,31 +647,126 @@ export function EnhancedChecklistManager({ tripId, tripName, tripDepartureDate }
       <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
         <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center space-x-2">
-              <CheckSquare className="h-5 w-5" />
-              <span>{selectedChecklistForDetails?.title}</span>
-            </DialogTitle>
+            <div className="flex items-center justify-between">
+              <DialogTitle className="flex items-center space-x-2">
+                <CheckSquare className="h-5 w-5" />
+                <span>{selectedChecklistForDetails?.title}</span>
+              </DialogTitle>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setEditingChecklist(!editingChecklist)}
+              >
+                {editingChecklist ? 'Batalkan' : 'Edit Checklist'}
+              </Button>
+            </div>
           </DialogHeader>
 
           {selectedChecklistForDetails && (
             <div className="space-y-6">
-              {/* Details */}
-              <div>
-                <h4 className="font-semibold mb-2">Deskripsi</h4>
-                <p className="text-sm text-gray-600">{selectedChecklistForDetails.description}</p>
-              </div>
+              {editingChecklist ? (
+                <div className="space-y-4 p-4 border rounded-lg bg-blue-50/50">
+                  <div>
+                    <Label htmlFor="edit-title">Judul Checklist *</Label>
+                    <Input
+                      id="edit-title"
+                      value={editChecklistForm.title}
+                      onChange={(e) => setEditChecklistForm({ ...editChecklistForm, title: e.target.value })}
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-description">Deskripsi</Label>
+                    <Textarea
+                      id="edit-description"
+                      value={editChecklistForm.description}
+                      onChange={(e) => setEditChecklistForm({ ...editChecklistForm, description: e.target.value })}
+                      className="mt-1"
+                      rows={2}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label htmlFor="edit-priority">Prioritas</Label>
+                      <Select
+                        value={editChecklistForm.priority}
+                        onValueChange={(value: any) => setEditChecklistForm({ ...editChecklistForm, priority: value })}
+                      >
+                        <SelectTrigger className="mt-1">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="high">Tinggi</SelectItem>
+                          <SelectItem value="medium">Sedang</SelectItem>
+                          <SelectItem value="low">Rendah</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="edit-days">Deadline (H-X)</Label>
+                      <Select
+                        value={editChecklistForm.days_before_departure}
+                        onValueChange={(value) => setEditChecklistForm({ ...editChecklistForm, days_before_departure: value, deadline_date: '' })}
+                      >
+                        <SelectTrigger className="mt-1">
+                          <SelectValue placeholder="Pilih..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Tidak ada</SelectItem>
+                          <SelectItem value="30">H-30</SelectItem>
+                          <SelectItem value="14">H-14</SelectItem>
+                          <SelectItem value="7">H-7</SelectItem>
+                          <SelectItem value="3">H-3</SelectItem>
+                          <SelectItem value="1">H-1</SelectItem>
+                          <SelectItem value="0">Hari-H</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <Button
+                    onClick={handleSaveChecklistEdit}
+                    disabled={updating || !editChecklistForm.title.trim()}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    {updating ? 'Menyimpan...' : 'Simpan Perubahan'}
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  {/* Details */}
+                  <div>
+                    <h4 className="font-semibold mb-2">Deskripsi</h4>
+                    <p className="text-sm text-gray-600">{selectedChecklistForDetails.description || 'Tidak ada deskripsi'}</p>
+                  </div>
 
-              {/* Status Info */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h4 className="font-semibold mb-2">Status</h4>
-                  {getStatusBadge(selectedChecklistForDetails.status)}
-                </div>
-                <div>
-                  <h4 className="font-semibold mb-2">Prioritas</h4>
-                  {getPriorityBadge(selectedChecklistForDetails.priority)}
-                </div>
-              </div>
+                  {/* Status Info */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <h4 className="font-semibold mb-2">Status</h4>
+                      {getStatusBadge(selectedChecklistForDetails.status)}
+                    </div>
+                    <div>
+                      <h4 className="font-semibold mb-2">Prioritas</h4>
+                      {getPriorityBadge(selectedChecklistForDetails.priority)}
+                    </div>
+                  </div>
+
+                  {/* Deadline info */}
+                  {(selectedChecklistForDetails.days_before_departure || selectedChecklistForDetails.deadline_date) && (
+                    <div>
+                      <h4 className="font-semibold mb-2">Deadline</h4>
+                      <div className="flex gap-2 items-center">
+                        {selectedChecklistForDetails.days_before_departure && (
+                          <Badge variant="outline">
+                            H-{selectedChecklistForDetails.days_before_departure}
+                          </Badge>
+                        )}
+                        {selectedChecklistForDetails.deadline_date && getDeadlineBadge(selectedChecklistForDetails.deadline_date)}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
 
               {/* Notes Section */}
               <div>
