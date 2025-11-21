@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -38,6 +38,16 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { formatDistanceToNow, format, isPast, isFuture } from 'date-fns'
 import { id as localeId } from 'date-fns/locale'
 
@@ -56,6 +66,8 @@ export function EnhancedChecklistManager({ tripId, tripName, tripDepartureDate }
   const [notesValue, setNotesValue] = useState('')
   const [showAddForm, setShowAddForm] = useState<string | null>(null)
   const [editingChecklist, setEditingChecklist] = useState(false)
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+  const [checklistToDelete, setChecklistToDelete] = useState<string | null>(null)
   const [newChecklistForm, setNewChecklistForm] = useState({
     title: '',
     description: '',
@@ -71,9 +83,9 @@ export function EnhancedChecklistManager({ tripId, tripName, tripDepartureDate }
     deadline_date: ''
   })
 
-  const filterOptions = {
+  const filterOptions = useMemo(() => ({
     status: filterStatus === 'all' ? undefined : filterStatus,
-  }
+  }), [filterStatus])
 
   const { checklists, loading, refetch } = useChecklists(tripId, filterOptions)
   const { toggleChecklistItem, updateChecklist, loading: updating } = useUpdateChecklist()
@@ -134,12 +146,19 @@ export function EnhancedChecklistManager({ tripId, tripName, tripDepartureDate }
     }
   }
 
-  const handleDeleteChecklist = async (id: string) => {
-    if (confirm('Apakah Anda yakin ingin menghapus checklist ini?')) {
-      const { error } = await deleteChecklist(id)
-      if (!error) {
-        refetch()
-      }
+  const handleDeleteClick = (id: string) => {
+    setChecklistToDelete(id)
+    setDeleteConfirmOpen(true)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!checklistToDelete) return
+
+    const { error } = await deleteChecklist(checklistToDelete)
+    if (!error) {
+      setDeleteConfirmOpen(false)
+      setChecklistToDelete(null)
+      refetch()
     }
   }
 
@@ -323,7 +342,7 @@ export function EnhancedChecklistManager({ tripId, tripName, tripDepartureDate }
                 variant="ghost"
                 size="sm"
                 className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                onClick={() => handleDeleteChecklist(item.id)}
+                onClick={() => handleDeleteClick(item.id)}
                 disabled={deleting}
               >
                 <Trash2 className="h-4 w-4" />
@@ -841,6 +860,29 @@ export function EnhancedChecklistManager({ tripId, tripName, tripDepartureDate }
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus Checklist?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Apakah Anda yakin ingin menghapus checklist ini? Tindakan ini tidak dapat dibatalkan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setChecklistToDelete(null)}>
+              Batal
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {deleting ? 'Menghapus...' : 'Hapus'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

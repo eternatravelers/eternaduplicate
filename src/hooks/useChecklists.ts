@@ -57,6 +57,7 @@ export function useChecklists(tripId: string, filterOptions?: {
 
   useEffect(() => {
     fetchChecklists()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tripId, filterOptions?.status, filterOptions?.assignedToMe, filterOptions?.category])
 
   return { checklists, loading, error, refetch: fetchChecklists }
