@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
-import { Edit, Trash2, Copy, Users, MapPin, AlertTriangle, Settings, CheckCircle2, Bus } from 'lucide-react'
+import { Edit, Trash2, Copy, Users, MapPin, AlertTriangle, Settings, CheckCircle2, Bus, Activity } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 import { TripResourceSummary } from './TripResourceSummary'
 
@@ -15,6 +15,7 @@ interface TripListTableProps {
   onDelete: (id: string) => void
   onViewParticipants: (trip: any) => void
   onViewResources?: (trip: any) => void
+  onViewReadiness?: (trip: any) => void
   onNavigateToResourceScheduling?: (tripId: string) => void
   isSuperAdmin: boolean
   deleting: boolean
@@ -27,6 +28,7 @@ export function TripListTable({
   onDelete,
   onViewParticipants,
   onViewResources,
+  onViewReadiness,
   onNavigateToResourceScheduling,
   isSuperAdmin,
   deleting
@@ -129,12 +131,14 @@ export function TripListTable({
                   )}
                 </TableCell>
                 <TableCell>
-                  <Badge variant="outline" className={getReadinessBadgeColor(trip.readiness_score || 0)}>
-                    {trip.readiness_score || 0}%
-                  </Badge>
-                  {!trip.can_accept_registrations && trip.status === 'open' && (
-                    <div className="text-xs text-red-600 mt-1">Pendaftaran ditutup</div>
-                  )}
+                  <div className="cursor-pointer" onClick={() => onViewReadiness && onViewReadiness(trip)}>
+                    <Badge variant="outline" className={`${getReadinessBadgeColor(trip.readiness_score || 0)} hover:opacity-80 transition-opacity`}>
+                      {trip.readiness_score || 0}%
+                    </Badge>
+                    {!trip.can_accept_registrations && trip.status === 'open' && (
+                      <div className="text-xs text-red-600 mt-1">Pendaftaran ditutup</div>
+                    )}
+                  </div>
                 </TableCell>
                 <TableCell>{formatCurrency(trip.price || 0)}</TableCell>
                 <TableCell>
@@ -184,6 +188,17 @@ export function TripListTable({
                       <Settings className="w-4 h-4 mr-1" />
                       Manage
                     </Button>
+                    {onViewReadiness && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onViewReadiness(trip)}
+                        title="Status Kesiapan"
+                        className="text-orange-600 hover:text-orange-700"
+                      >
+                        <Activity className="w-4 h-4" />
+                      </Button>
+                    )}
                     <Button
                       variant="outline"
                       size="sm"

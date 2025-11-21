@@ -19,6 +19,7 @@ const CostPlansPage = lazy(() => import('@/features/cost-plans/pages/CostPlansPa
 const TrashTransactionsPage = lazy(() => import('@/features/finance/pages/TrashTransactionsPage').then(m => ({ default: m.TrashTransactionsPage })))
 const FinancePage = lazy(() => import('@/features/finance/pages/FinancePage').then(m => ({ default: m.FinancePage })))
 const TripParticipantsPage = lazy(() => import('@/features/trips/pages/TripParticipantsPage').then(m => ({ default: m.TripParticipantsPage })))
+const TripReadinessPage = lazy(() => import('@/features/trips/pages/TripReadinessPage').then(m => ({ default: m.TripReadinessPage })))
 const UserManagementPage = lazy(() => import('@/features/user-management/pages/UserManagementPage').then(m => ({ default: m.UserManagementPage })))
 
 function LoadingFallback() {
@@ -35,6 +36,7 @@ function AppContent() {
   const [activeTab, setActiveTab] = useState('dashboard')
   const [selectedTripForParticipants, setSelectedTripForParticipants] = useState<{id: string, name: string} | null>(null)
   const [selectedTripIdForScheduling, setSelectedTripIdForScheduling] = useState<string | null>(null)
+  const [selectedTripForReadiness, setSelectedTripForReadiness] = useState<string | null>(null)
   const { isSuperAdmin, isAdmin, userRole } = useAuth()
 
   console.log('[AppContent] Auth state:', {
@@ -58,6 +60,10 @@ function AppContent() {
                 onViewTripParticipants={(trip) => {
                   setSelectedTripForParticipants(trip)
                   setActiveTab('trip-participants')
+                }}
+                onViewTripReadiness={(tripId) => {
+                  setSelectedTripForReadiness(tripId)
+                  setActiveTab('trip-readiness')
                 }}
                 onNavigateToResourceScheduling={(tripId) => {
                   setSelectedTripIdForScheduling(tripId)
@@ -110,6 +116,20 @@ function AppContent() {
                   tripId={selectedTripForParticipants.id}
                   tripName={selectedTripForParticipants.name}
                   onBack={() => setActiveTab('trips')}
+                />
+              ) : (
+                <Dashboard />
+              )
+            case 'trip-readiness':
+              return selectedTripForReadiness ? (
+                <TripReadinessPage
+                  tripId={selectedTripForReadiness}
+                  onBack={() => {
+                    setSelectedTripForReadiness(null)
+                    setActiveTab('trips')
+                  }}
+                  onNavigateToMeetingPoints={() => setActiveTab('destinations')}
+                  onNavigateToCostPlans={() => setActiveTab('cost-plans')}
                 />
               ) : (
                 <Dashboard />

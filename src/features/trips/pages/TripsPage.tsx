@@ -18,10 +18,11 @@ import { useAuth } from '@/hooks/useAuth'
 
 interface TripsPageProps {
   onViewTripParticipants?: (trip: {id: string, name: string}) => void
+  onViewTripReadiness?: (tripId: string) => void
   onNavigateToResourceScheduling?: (tripId: string) => void
 }
 
-export function TripsPage({ onViewTripParticipants, onNavigateToResourceScheduling }: TripsPageProps = {}) {
+export function TripsPage({ onViewTripParticipants, onViewTripReadiness, onNavigateToResourceScheduling }: TripsPageProps = {}) {
   const { trips, loading, refetch } = useTrips()
   const { tourLeaders } = useTourLeaders()
   const { destinations } = useDestinations()
@@ -139,6 +140,12 @@ export function TripsPage({ onViewTripParticipants, onNavigateToResourceScheduli
     setIsResourcesModalOpen(true)
   }
 
+  const handleViewReadiness = (trip: any) => {
+    if (onViewTripReadiness) {
+      onViewTripReadiness(trip.id)
+    }
+  }
+
   if (loading) {
     return <div className="flex justify-center items-center h-64">Loading...</div>
   }
@@ -219,6 +226,7 @@ export function TripsPage({ onViewTripParticipants, onNavigateToResourceScheduli
         onDelete={handleDelete}
         onViewParticipants={handleViewParticipants}
         onViewResources={handleViewResources}
+        onViewReadiness={handleViewReadiness}
         onNavigateToResourceScheduling={onNavigateToResourceScheduling}
         isSuperAdmin={isSuperAdmin}
         deleting={deleting}
