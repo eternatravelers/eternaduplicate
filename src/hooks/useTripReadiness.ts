@@ -138,8 +138,8 @@ export function useTripReadiness(tripId: string) {
         .from('checklists')
         .select('*')
         .eq('trip_id', tripId)
+        .order('completed', { ascending: true })
         .order('priority', { ascending: false })
-        .order('due_date', { ascending: true })
 
       if (checklistsError) throw checklistsError
 
