@@ -205,11 +205,6 @@ export function EnhancedChecklistManager({ tripId, tripName, tripDepartureDate }
         } ${isSelected ? 'bg-blue-50 border-blue-300' : ''}`}
       >
         <Checkbox
-          checked={isSelected}
-          onCheckedChange={() => handleToggleSelection(item.id)}
-          className="mt-1"
-        />
-        <Checkbox
           checked={item.completed}
           onCheckedChange={() => handleToggleItem(item.id, item.completed)}
           disabled={updating}
@@ -249,27 +244,48 @@ export function EnhancedChecklistManager({ tripId, tripName, tripDepartureDate }
                 )}
               </div>
             </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm">
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => handleShowDetails(item)}>
-                  <MessageSquare className="h-4 w-4 mr-2" />
-                  Details & Komentar
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleShowDetails(item)}>
-                  <Edit2 className="h-4 w-4 mr-2" />
-                  Edit Notes
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleShowDetails(item)}>
-                  <History className="h-4 w-4 mr-2" />
-                  Lihat History
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <div className="flex items-center space-x-2">
+              {showBulkActions && (
+                <Checkbox
+                  checked={isSelected}
+                  onCheckedChange={() => handleToggleSelection(item.id)}
+                />
+              )}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => handleShowDetails(item)}>
+                    <MessageSquare className="h-4 w-4 mr-2" />
+                    Details & Komentar
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleShowDetails(item)}>
+                    <Edit2 className="h-4 w-4 mr-2" />
+                    Edit Notes
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleShowDetails(item)}>
+                    <History className="h-4 w-4 mr-2" />
+                    Lihat History
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleToggleSelection(item.id)}>
+                    {isSelected ? (
+                      <>
+                        <X className="h-4 w-4 mr-2" />
+                        Batalkan Pilih
+                      </>
+                    ) : (
+                      <>
+                        <CheckSquare className="h-4 w-4 mr-2" />
+                        Pilih Item
+                      </>
+                    )}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
         </div>
       </div>
@@ -438,9 +454,22 @@ export function EnhancedChecklistManager({ tripId, tripName, tripDepartureDate }
                 <User className="h-4 w-4 mr-2" />
                 Tugas Saya
               </Button>
+              <Button
+                variant={showBulkActions ? 'default' : 'outline'}
+                onClick={() => {
+                  setShowBulkActions(!showBulkActions)
+                  if (showBulkActions) {
+                    setSelectedItems(new Set())
+                  }
+                }}
+                size="sm"
+              >
+                <CheckSquare className="h-4 w-4 mr-2" />
+                Mode Pilih Multiple
+              </Button>
             </div>
 
-            {showBulkActions && (
+            {showBulkActions && selectedItems.size > 0 && (
               <div className="flex gap-2">
                 <Badge variant="outline" className="px-3 py-1">
                   {selectedItems.size} item terpilih
