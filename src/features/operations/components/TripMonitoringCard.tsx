@@ -3,8 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
-import { MapPin, Users, Calendar, Clock, Phone, Navigation } from 'lucide-react'
+import { MapPin, Users, Calendar, Clock, Phone, Navigation, Bus, UserCircle, Briefcase, AlertCircle } from 'lucide-react'
 import { formatShortDate } from '@/lib/utils'
+import { useTripReadiness } from '@/hooks/useTripReadiness'
 
 interface TripMonitoringCardProps {
   trip: any
@@ -12,14 +13,19 @@ interface TripMonitoringCardProps {
 }
 
 export function TripMonitoringCard({ trip, onViewDetails }: TripMonitoringCardProps) {
+  const { data: readinessData } = useTripReadiness(trip.id)
   const today = new Date()
   const departureDate = new Date(trip.departure_date)
   const returnDate = new Date(trip.return_date)
-  
+
   // Calculate trip status
   const isUpcoming = departureDate > today
   const isOngoing = departureDate <= today && returnDate >= today
   const isCompleted = returnDate < today
+
+  // Calculate readiness score
+  const readinessScore = readinessData ?
+    Object.values(readinessData.readinessBreakdown).reduce((sum, item) => sum + item.score, 0) : 0
   
   // Calculate days until departure or days remaining
   const daysUntilDeparture = Math.ceil((departureDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
@@ -51,10 +57,17 @@ export function TripMonitoringCard({ trip, onViewDetails }: TripMonitoringCardPr
   }
 
   const getUrgencyColor = () => {
+    if (readinessScore < 70) return 'border-red-300 bg-red-50'
     if (isOngoing) return 'border-green-200 bg-green-50'
     if (isUpcoming && daysUntilDeparture <= 3) return 'border-orange-200 bg-orange-50'
     if (isUpcoming && daysUntilDeparture <= 7) return 'border-yellow-200 bg-yellow-50'
     return 'border-gray-200'
+  }
+
+  const getReadinessColor = () => {
+    if (readinessScore >= 90) return 'text-green-600 bg-green-100'
+    if (readinessScore >= 70) return 'text-yellow-600 bg-yellow-100'
+    return 'text-red-600 bg-red-100'
   }
 
   return (
@@ -82,6 +95,54 @@ export function TripMonitoringCard({ trip, onViewDetails }: TripMonitoringCardPr
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Readiness Score */}
+        <div className="p-3 bg-white border rounded-lg">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-gray-700">Kesiapan Trip</span>
+            <Badge className={getReadinessColor()}>
+              {readinessScore}%
+            </Badge>
+          </div>
+          <Progress value={readinessScore} className="h-2" />
+          {readinessScore < 70 && (
+            <div className="flex items-center space-x-1 mt-2 text-xs text-red-600">
+              <AlertCircle className="h-3 w-3" />
+              <span>Butuh perhatian</span>
+            </div>
+          )}
+        </div>
+
+        {/* Resources Summary */}
+        <div className="grid grid-cols-3 gap-2">
+          <div className="flex items-center space-x-2 p-2 bg-blue-50 rounded">
+            <Bus className="h-4 w-4 text-blue-600" />
+            <div>
+              <div className="text-xs text-gray-600">Bus</div>
+              <div className="text-sm font-bold text-blue-700">
+                {readinessData?.buses.length || 0}
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center space-x-2 p-2 bg-purple-50 rounded">
+            <UserCircle className="h-4 w-4 text-purple-600" />
+            <div>
+              <div className="text-xs text-gray-600">Driver</div>
+              <div className="text-sm font-bold text-purple-700">
+                {readinessData?.drivers.length || 0}
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center space-x-2 p-2 bg-green-50 rounded">
+            <Briefcase className="h-4 w-4 text-green-600" />
+            <div>
+              <div className="text-xs text-gray-600">Guide</div>
+              <div className="text-sm font-bold text-green-700">
+                {readinessData?.tourLeaders.length || 0}
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Trip Dates */}
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div className="flex items-center space-x-2">

@@ -3,18 +3,25 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { MapPin, Activity, Calendar, Users, Monitor, CheckSquare, FileText, Phone } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { MapPin, Activity, Calendar, Users, Monitor, CheckSquare, FileText, Phone, Search, Filter, Clock, AlertTriangle } from 'lucide-react'
 import { useTrips } from '@/hooks/useTrips'
 import { TripMonitoringCard } from '../components/TripMonitoringCard'
 import { ChecklistManager } from '../components/ChecklistManager'
 import { DocumentManager } from '../components/DocumentManager'
 import { EmergencyContactsManager } from '../components/EmergencyContactsManager'
+import { AttentionRequiredSection } from '../components/AttentionRequiredSection'
+import { TimelineView } from '../components/TimelineView'
 import { formatShortDate } from '@/lib/utils'
 
 export function OperationsPage() {
   const [activeTab, setActiveTab] = useState('monitoring')
   const [selectedTrip, setSelectedTrip] = useState<any>(null)
   const [showTripDetails, setShowTripDetails] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [readinessFilter, setReadinessFilter] = useState('all')
   const { trips, loading: tripsLoading } = useTrips()
 
   // Filter trips for monitoring
@@ -47,6 +54,23 @@ export function OperationsPage() {
     setShowTripDetails(true)
   }
 
+  const handleSelectTripById = (tripId: string) => {
+    const trip = trips.find(t => t.id === tripId)
+    if (trip) {
+      handleViewTripDetails(trip)
+    }
+  }
+
+  // Filter trips based on search and filters
+  const filteredTrips = activeTrips.filter(trip => {
+    const matchesSearch = trip.name.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesStatus = statusFilter === 'all' ||
+      (statusFilter === 'ongoing' && ongoingTrips.includes(trip)) ||
+      (statusFilter === 'upcoming' && upcomingTrips.includes(trip))
+    // Readiness filter would use actual readiness data
+    return matchesSearch && matchesStatus
+  })
+
   if (tripsLoading) {
     return (
       <div className="space-y-6">
@@ -70,6 +94,12 @@ export function OperationsPage() {
           <span>Real-time monitoring</span>
         </div>
       </div>
+
+      {/* Attention Required Section */}
+      <AttentionRequiredSection
+        trips={activeTrips}
+        onSelectTrip={handleSelectTripById}
+      />
 
       {/* Quick Stats */}
       <div className="grid gap-6 md:grid-cols-4">
@@ -137,15 +167,73 @@ export function OperationsPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="monitoring">Trip Monitoring</TabsTrigger>
-          <TabsTrigger value="checklist">Checklist</TabsTrigger>
-          <TabsTrigger value="documents">Dokumen</TabsTrigger>
-          <TabsTrigger value="emergency">Kontak Darurat</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="monitoring">
+            <Monitor className="h-4 w-4 mr-2" />
+            Monitoring
+          </TabsTrigger>
+          <TabsTrigger value="timeline">
+            <Clock className="h-4 w-4 mr-2" />
+            Timeline
+          </TabsTrigger>
+          <TabsTrigger value="checklist">
+            <CheckSquare className="h-4 w-4 mr-2" />
+            Checklist
+          </TabsTrigger>
+          <TabsTrigger value="documents">
+            <FileText className="h-4 w-4 mr-2" />
+            Dokumen
+          </TabsTrigger>
+          <TabsTrigger value="emergency">
+            <Phone className="h-4 w-4 mr-2" />
+            Emergency
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="monitoring" className="space-y-6">
-          {activeTrips.length === 0 ? (
+          {/* Search and Filters */}
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex flex-col md:flex-row gap-4">
+                <div className="flex-1">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      placeholder="Cari trip..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-40">
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Semua Status</SelectItem>
+                      <SelectItem value="ongoing">Sedang Berjalan</SelectItem>
+                      <SelectItem value="upcoming">Akan Datang</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select value={readinessFilter} onValueChange={setReadinessFilter}>
+                    <SelectTrigger className="w-40">
+                      <SelectValue placeholder="Kesiapan" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Semua</SelectItem>
+                      <SelectItem value="high">≥90%</SelectItem>
+                      <SelectItem value="medium">70-89%</SelectItem>
+                      <SelectItem value="low">&lt;70%</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {filteredTrips.length === 0 ? (
             <div className="text-center py-12 text-gray-500">
               <Monitor className="h-16 w-16 mx-auto mb-4 opacity-30" />
               <h3 className="text-lg font-medium mb-2">Tidak ada trip aktif</h3>
@@ -161,7 +249,7 @@ export function OperationsPage() {
             </div>
           ) : (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {activeTrips.map((trip) => (
+              {filteredTrips.map((trip) => (
                 <TripMonitoringCard
                   key={trip.id}
                   trip={trip}
@@ -170,6 +258,13 @@ export function OperationsPage() {
               ))}
             </div>
           )}
+        </TabsContent>
+
+        <TabsContent value="timeline" className="space-y-6">
+          <TimelineView
+            trips={activeTrips}
+            onSelectTrip={handleSelectTripById}
+          />
         </TabsContent>
 
         <TabsContent value="checklist" className="space-y-6">
