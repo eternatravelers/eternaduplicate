@@ -116,8 +116,11 @@ export function ActionItemsList({ items, onActionClick }: ActionItemsListProps) 
                   onClick={() => onActionClick(item.action)}
                   size="sm"
                   variant={item.priority === 'high' ? 'default' : 'outline'}
+                  className="whitespace-nowrap"
                 >
-                  Take Action
+                  {['assign-bus', 'assign-driver', 'assign-tour-leader'].includes(item.action)
+                    ? 'Go to Scheduling'
+                    : 'Take Action'}
                   <ArrowRight className="h-4 w-4 ml-1" />
                 </Button>
               </div>

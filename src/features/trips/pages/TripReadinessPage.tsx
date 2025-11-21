@@ -17,24 +17,23 @@ import { format, differenceInDays } from 'date-fns'
 import { useTripReadiness } from '@/hooks/useTripReadiness'
 import { ReadinessBreakdownCard } from '../components/ReadinessBreakdownCard'
 import { ActionItemsList } from '../components/ActionItemsList'
-import { TripResourcesModal } from '../components/TripResourcesModal'
 
 interface TripReadinessPageProps {
   tripId: string
   onBack: () => void
   onNavigateToMeetingPoints?: () => void
   onNavigateToCostPlans?: () => void
+  onNavigateToResourceScheduling?: () => void
 }
 
 export function TripReadinessPage({
   tripId,
   onBack,
   onNavigateToMeetingPoints,
-  onNavigateToCostPlans
+  onNavigateToCostPlans,
+  onNavigateToResourceScheduling
 }: TripReadinessPageProps) {
   const { data, loading, error, refetch } = useTripReadiness(tripId)
-  const [isResourcesModalOpen, setIsResourcesModalOpen] = useState(false)
-  const [resourceFilter, setResourceFilter] = useState<'bus' | 'driver' | 'tourLeader' | null>(null)
 
   if (loading) {
     return (
@@ -92,16 +91,12 @@ export function TripReadinessPage({
   const handleActionClick = (action: string) => {
     switch (action) {
       case 'assign-bus':
-        setResourceFilter('bus')
-        setIsResourcesModalOpen(true)
-        break
       case 'assign-driver':
-        setResourceFilter('driver')
-        setIsResourcesModalOpen(true)
-        break
       case 'assign-tour-leader':
-        setResourceFilter('tourLeader')
-        setIsResourcesModalOpen(true)
+        // Redirect to Resource Scheduling page for proper assignment with conflict prevention
+        if (onNavigateToResourceScheduling) {
+          onNavigateToResourceScheduling()
+        }
         break
       case 'set-cost-plan':
         if (onNavigateToCostPlans) onNavigateToCostPlans()
@@ -114,12 +109,6 @@ export function TripReadinessPage({
         document.getElementById('checklist-section')?.scrollIntoView({ behavior: 'smooth' })
         break
     }
-  }
-
-  const handleResourcesModalClose = () => {
-    setIsResourcesModalOpen(false)
-    setResourceFilter(null)
-    refetch()
   }
 
   return (
@@ -298,14 +287,6 @@ export function TripReadinessPage({
         </div>
       </div>
 
-      {/* Resources Modal */}
-      <TripResourcesModal
-        open={isResourcesModalOpen}
-        onOpenChange={handleResourcesModalClose}
-        trip={trip}
-        onUpdate={refetch}
-        initialFilter={resourceFilter}
-      />
     </div>
   )
 }

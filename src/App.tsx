@@ -130,6 +130,7 @@ function AppContent() {
                   }}
                   onNavigateToMeetingPoints={() => setActiveTab('destinations')}
                   onNavigateToCostPlans={() => setActiveTab('cost-plans')}
+                  onNavigateToResourceScheduling={() => setActiveTab('resource-scheduling')}
                 />
               ) : (
                 <Dashboard />
