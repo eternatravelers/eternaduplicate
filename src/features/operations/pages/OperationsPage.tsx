@@ -9,6 +9,7 @@ import { MapPin, Activity, Calendar, Users, Monitor, CheckSquare, FileText, Phon
 import { useTrips } from '@/hooks/useTrips'
 import { TripMonitoringCard } from '../components/TripMonitoringCard'
 import { ChecklistManager } from '../components/ChecklistManager'
+import { EnhancedChecklistManager } from '../components/EnhancedChecklistManager'
 import { DocumentManager } from '../components/DocumentManager'
 import { EmergencyContactsManager } from '../components/EmergencyContactsManager'
 import { AttentionRequiredSection } from '../components/AttentionRequiredSection'
@@ -274,9 +275,10 @@ export function OperationsPage() {
 
         <TabsContent value="checklist" className="space-y-6">
           {selectedTrip ? (
-            <ChecklistManager
+            <EnhancedChecklistManager
               tripId={selectedTrip.id}
               tripName={selectedTrip.name}
+              tripDepartureDate={selectedTrip.departure_date}
             />
           ) : (
             <div className="text-center py-12 text-gray-500">
@@ -285,7 +287,7 @@ export function OperationsPage() {
               <p className="text-sm mb-4">
                 Pilih trip dari tab "Trip Monitoring" untuk melihat checklist operasional
               </p>
-              <Button 
+              <Button
                 variant="outline"
                 onClick={() => setActiveTab('monitoring')}
               >
@@ -318,9 +320,10 @@ export function OperationsPage() {
           </DialogHeader>
           {selectedTrip && (
             <div className="mt-4">
-              <ChecklistManager
+              <EnhancedChecklistManager
                 tripId={selectedTrip.id}
                 tripName={selectedTrip.name}
+                tripDepartureDate={selectedTrip.departure_date}
               />
             </div>
           )}
