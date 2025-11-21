@@ -21,6 +21,7 @@ const FinancePage = lazy(() => import('@/features/finance/pages/FinancePage').th
 const TripParticipantsPage = lazy(() => import('@/features/trips/pages/TripParticipantsPage').then(m => ({ default: m.TripParticipantsPage })))
 const TripReadinessPage = lazy(() => import('@/features/trips/pages/TripReadinessPage').then(m => ({ default: m.TripReadinessPage })))
 const UserManagementPage = lazy(() => import('@/features/user-management/pages/UserManagementPage').then(m => ({ default: m.UserManagementPage })))
+const ChecklistTemplatesPage = lazy(() => import('@/features/checklist-templates/pages/ChecklistTemplatesPage').then(m => ({ default: m.ChecklistTemplatesPage })))
 
 function LoadingFallback() {
   return (
@@ -98,6 +99,8 @@ function AppContent() {
               )
             case 'cost-plans':
               return <CostPlansPage />
+            case 'checklist-templates':
+              return <ChecklistTemplatesPage />
             case 'trash':
               return (
                 <SuperAdminRoute>

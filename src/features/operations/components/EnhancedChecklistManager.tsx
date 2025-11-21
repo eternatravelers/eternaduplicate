@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import {
   CheckSquare, Clock, AlertTriangle, CheckCircle, User, Calendar,
   MessageSquare, History, Filter, MoreVertical, Edit2, Trash2, UserPlus,
-  Check, X, CalendarClock, AlertCircle, Plus
+  Check, X, CalendarClock, AlertCircle, Plus, FileText
 } from 'lucide-react'
 import {
   useChecklists,
@@ -25,6 +25,7 @@ import {
   useDeleteChecklist,
   useUpdateChecklistNotes
 } from '@/hooks/useChecklists'
+import { useChecklistTemplates, useApplyChecklistTemplate } from '@/hooks/useChecklistTemplates'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -68,6 +69,8 @@ export function EnhancedChecklistManager({ tripId, tripName, tripDepartureDate }
   const [editingChecklist, setEditingChecklist] = useState(false)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [checklistToDelete, setChecklistToDelete] = useState<string | null>(null)
+  const [showTemplateDialog, setShowTemplateDialog] = useState(false)
+  const [selectedTemplateId, setSelectedTemplateId] = useState('')
   const [newChecklistForm, setNewChecklistForm] = useState({
     title: '',
     description: '',
@@ -96,6 +99,8 @@ export function EnhancedChecklistManager({ tripId, tripName, tripDepartureDate }
   const { addComment } = useAddChecklistComment()
   const { comments, refetch: refetchComments } = useChecklistComments(selectedChecklistForDetails?.id || '')
   const { history } = useChecklistHistory(selectedChecklistForDetails?.id || '')
+  const { templates } = useChecklistTemplates()
+  const { applyTemplate, loading: applyingTemplate } = useApplyChecklistTemplate()
 
   const handleToggleItem = async (id: string, completed: boolean) => {
     const { error } = await toggleChecklistItem(id, !completed)
@@ -107,6 +112,17 @@ export function EnhancedChecklistManager({ tripId, tripName, tripDepartureDate }
   const handleInitializeChecklist = async () => {
     const { error } = await initializeDefaultChecklist(tripId)
     if (!error) {
+      refetch()
+    }
+  }
+
+  const handleApplyTemplate = async () => {
+    if (!selectedTemplateId) return
+
+    const { error } = await applyTemplate(selectedTemplateId, tripId, tripDepartureDate)
+    if (!error) {
+      setShowTemplateDialog(false)
+      setSelectedTemplateId('')
       refetch()
     }
   }
@@ -399,15 +415,25 @@ export function EnhancedChecklistManager({ tripId, tripName, tripDepartureDate }
               <CheckSquare className="h-12 w-12 mx-auto mb-4 opacity-30" />
               <h3 className="text-lg font-medium mb-2">Belum ada checklist</h3>
               <p className="text-sm mb-4">
-                Inisialisasi checklist default untuk trip ini
+                Inisialisasi checklist default atau gunakan template
               </p>
-              <Button
-                onClick={handleInitializeChecklist}
-                disabled={initializing}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                {initializing ? 'Menginisialisasi...' : 'Inisialisasi Checklist'}
-              </Button>
+              <div className="flex gap-2 justify-center">
+                <Button
+                  onClick={handleInitializeChecklist}
+                  disabled={initializing}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  {initializing ? 'Menginisialisasi...' : 'Inisialisasi Checklist'}
+                </Button>
+                <Button
+                  onClick={() => setShowTemplateDialog(true)}
+                  variant="outline"
+                  className="border-blue-600 text-blue-600 hover:bg-blue-50"
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  Gunakan Template
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -892,6 +918,50 @@ export function EnhancedChecklistManager({ tripId, tripName, tripDepartureDate }
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Apply Template Dialog */}
+      <Dialog open={showTemplateDialog} onOpenChange={setShowTemplateDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Gunakan Template Checklist</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Pilih Template</Label>
+              <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih template..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {templates.map((template) => (
+                    <SelectItem key={template.id} value={template.id}>
+                      {template.name} ({template.items?.length || 0} items)
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {selectedTemplateId && (
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  Template akan menambahkan {templates.find(t => t.id === selectedTemplateId)?.items?.length || 0} checklist items ke trip ini.
+                </p>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowTemplateDialog(false)}>
+              Batal
+            </Button>
+            <Button
+              onClick={handleApplyTemplate}
+              disabled={!selectedTemplateId || applyingTemplate}
+            >
+              {applyingTemplate ? 'Menerapkan...' : 'Terapkan Template'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

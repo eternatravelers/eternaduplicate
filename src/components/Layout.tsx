@@ -22,6 +22,7 @@ import {
   Settings,
   Trash2,
   Calendar,
+  ListChecks,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -60,7 +61,8 @@ const menuItems: MenuItem[] = [
       { id: 'operations', label: 'Monitoring Operasional', icon: CheckSquare, type: 'item' },
       { id: 'destinations', label: 'Destinasi & Meeting Points', icon: Globe, type: 'item' },
       { id: 'operational-resources', label: 'Sumber Daya & Jadwal', icon: Settings, type: 'item' },
-      { id: 'cost-plans', label: 'Rencana Biaya', icon: Calculator, type: 'item' }
+      { id: 'cost-plans', label: 'Rencana Biaya', icon: Calculator, type: 'item' },
+      { id: 'checklist-templates', label: 'Template Checklist', icon: ListChecks, type: 'item' }
     ]
   },
   {
