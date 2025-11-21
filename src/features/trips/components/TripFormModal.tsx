@@ -61,7 +61,7 @@ export function TripFormModal({
     driver_ids: [],
     pricing_type: 'per_person',
     cost_plan_id: '',
-    status: 'active',
+    status: 'draft',
     meeting_point_ids: [],
     primary_meeting_point_id: undefined
   })
@@ -105,7 +105,7 @@ export function TripFormModal({
         driver_ids: [],
         pricing_type: initialData.pricing_type || 'per_person',
         cost_plan_id: initialData.cost_plan_id || '',
-        status: initialData.status || 'active',
+        status: initialData.status || 'draft',
         meeting_point_ids: initialData.meeting_point_ids || [],
         primary_meeting_point_id: initialData.primary_meeting_point_id
       })
@@ -316,8 +316,10 @@ export function TripFormModal({
                       <SelectValue placeholder="Pilih status" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="active">Aktif</SelectItem>
                       <SelectItem value="draft">Draft</SelectItem>
+                      <SelectItem value="open">Terbuka</SelectItem>
+                      <SelectItem value="confirmed">Terkonfirmasi</SelectItem>
+                      <SelectItem value="ongoing">Berjalan</SelectItem>
                       <SelectItem value="completed">Selesai</SelectItem>
                       <SelectItem value="cancelled">Dibatalkan</SelectItem>
                     </SelectContent>
