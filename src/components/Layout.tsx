@@ -56,7 +56,8 @@ const menuItems: MenuItem[] = [
     icon: Plane,
     type: 'category',
     children: [
-      { id: 'trips', label: 'Trip & Operasional', icon: MapPin, type: 'item' },
+      { id: 'trips', label: 'Trip & Jadwal', icon: MapPin, type: 'item' },
+      { id: 'operations', label: 'Monitoring Operasional', icon: CheckSquare, type: 'item' },
       { id: 'destinations', label: 'Destinasi & Meeting Points', icon: Globe, type: 'item' },
       { id: 'operational-resources', label: 'Sumber Daya & Jadwal', icon: Settings, type: 'item' },
       { id: 'cost-plans', label: 'Rencana Biaya', icon: Calculator, type: 'item' }
@@ -82,15 +83,6 @@ const menuItems: MenuItem[] = [
       { id: 'reports', label: 'Laporan', icon: FileText, type: 'item' },
       { id: 'analytics', label: 'Analisis', icon: BarChart, type: 'item' },
       { id: 'trash', label: 'Sampah', icon: Trash2, type: 'item' }
-    ]
-  },
-  {
-    id: 'operations-category',
-    label: 'Operasional',
-    icon: CheckSquare,
-    type: 'category',
-    children: [
-      { id: 'operations', label: 'Trip Monitoring', icon: CheckSquare, type: 'item' }
     ]
   },
   {
@@ -146,7 +138,6 @@ export function Layout({ children, activeTab, onTabChange, onViewTripParticipant
         if (item.id === 'dashboard') return true
         if (item.id === 'travel-management') return true
         if (item.id === 'customer-management') return true
-        if (item.id === 'operations-category') return true
         if (item.id === 'finance-reports') return false
         if (item.id === 'user-management') return false
         return false
