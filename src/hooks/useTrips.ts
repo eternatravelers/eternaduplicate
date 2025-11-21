@@ -259,8 +259,19 @@ export function useCreateTrip() {
         if (tmpError) throw tmpError
       }
       return { data: newTrip, error: null }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+    } catch (err: any) {
+      let errorMessage = 'Unknown error'
+
+      if (err instanceof Error) {
+        errorMessage = err.message
+      } else if (err?.message) {
+        errorMessage = err.message
+      } else if (err?.error_description) {
+        errorMessage = err.error_description
+      } else if (typeof err === 'string') {
+        errorMessage = err
+      }
+
       setError(errorMessage)
       return { data: null, error: errorMessage }
     } finally {
@@ -414,8 +425,36 @@ export function useUpdateTrip() {
       }
 
       return { data: updatedTrip, error: null }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+    } catch (err: any) {
+      console.error('Full error object:', err)
+      console.error('Error keys:', Object.keys(err))
+      console.error('Error message:', err?.message)
+      console.error('Error details:', err?.details)
+      console.error('Error hint:', err?.hint)
+      console.error('Error code:', err?.code)
+
+      let errorMessage = 'Terjadi kesalahan saat mengupdate trip'
+
+      // Handle PostgreSQL errors from triggers (RAISE EXCEPTION)
+      if (err?.code === '23505') {
+        errorMessage = 'Data sudah ada (duplicate)'
+      } else if (err?.code?.startsWith('P') || err?.code === 'P0001') {
+        // P0001 = raise_exception from PostgreSQL
+        errorMessage = err?.message || err?.details || err?.hint || errorMessage
+      } else if (err?.message) {
+        errorMessage = err.message
+      } else if (err instanceof Error) {
+        errorMessage = err.message
+      } else if (err?.hint) {
+        errorMessage = err.hint
+      } else if (err?.details) {
+        errorMessage = err.details
+      } else if (err?.error_description) {
+        errorMessage = err.error_description
+      } else if (typeof err === 'string') {
+        errorMessage = err
+      }
+
       setError(errorMessage)
       return { data: null, error: errorMessage }
     } finally {
