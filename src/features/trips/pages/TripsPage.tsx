@@ -43,6 +43,7 @@ export function TripsPage({ onViewTripParticipants, onViewTripReadiness, onNavig
   const [isAddTripTypeModalOpen, setIsAddTripTypeModalOpen] = useState(false)
   const [isResourcesModalOpen, setIsResourcesModalOpen] = useState(false)
   const [selectedTrip, setSelectedTrip] = useState<any>(null)
+  const [submitError, setSubmitError] = useState<string | null>(null)
   const { isSuperAdmin } = useAuth()
 
   const [filters, setFilters] = useState<TripFilterState>({
@@ -62,11 +63,20 @@ export function TripsPage({ onViewTripParticipants, onViewTripReadiness, onNavig
 
   const handleSubmit = async (formData: any) => {
     try {
+      setSubmitError(null)
       if (selectedTrip && !isDuplicateModalOpen) {
-        await updateTrip(selectedTrip.id, formData)
+        const { error } = await updateTrip(selectedTrip.id, formData)
+        if (error) {
+          setSubmitError(error)
+          return
+        }
         setIsEditModalOpen(false)
       } else {
-        await createTrip(formData)
+        const { error } = await createTrip(formData)
+        if (error) {
+          setSubmitError(error)
+          return
+        }
         if (isDuplicateModalOpen) {
           setIsDuplicateModalOpen(false)
         } else {
@@ -74,8 +84,11 @@ export function TripsPage({ onViewTripParticipants, onViewTripReadiness, onNavig
         }
       }
       setSelectedTrip(null)
+      setSubmitError(null)
       refetch()
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Terjadi kesalahan saat menyimpan trip'
+      setSubmitError(errorMessage)
       console.error('Error saving trip:', error)
     }
   }
@@ -343,7 +356,10 @@ export function TripsPage({ onViewTripParticipants, onViewTripReadiness, onNavig
 
       <TripFormModal
         isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
+        onClose={() => {
+          setIsCreateModalOpen(false)
+          setSubmitError(null)
+        }}
         onSubmit={handleSubmit}
         tourLeaders={tourLeaders}
         destinations={destinations}
@@ -355,11 +371,15 @@ export function TripsPage({ onViewTripParticipants, onViewTripReadiness, onNavig
         updating={updating}
         onAddTripType={() => setIsAddTripTypeModalOpen(true)}
         title="Create New Trip"
+        error={submitError}
       />
 
       <TripFormModal
         isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
+        onClose={() => {
+          setIsEditModalOpen(false)
+          setSubmitError(null)
+        }}
         initialData={selectedTrip}
         onSubmit={handleSubmit}
         tourLeaders={tourLeaders}
@@ -372,11 +392,15 @@ export function TripsPage({ onViewTripParticipants, onViewTripReadiness, onNavig
         updating={updating}
         onAddTripType={() => setIsAddTripTypeModalOpen(true)}
         title="Edit Trip"
+        error={submitError}
       />
 
       <TripFormModal
         isOpen={isDuplicateModalOpen}
-        onClose={() => setIsDuplicateModalOpen(false)}
+        onClose={() => {
+          setIsDuplicateModalOpen(false)
+          setSubmitError(null)
+        }}
         initialData={selectedTrip}
         onSubmit={handleSubmit}
         tourLeaders={tourLeaders}
@@ -389,6 +413,7 @@ export function TripsPage({ onViewTripParticipants, onViewTripReadiness, onNavig
         updating={updating}
         onAddTripType={() => setIsAddTripTypeModalOpen(true)}
         title="Duplicate Trip"
+        error={submitError}
       />
 
       <TripTypeManagerModal

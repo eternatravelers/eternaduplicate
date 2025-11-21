@@ -27,6 +27,7 @@ interface TripFormModalProps {
   updating: boolean
   onAddTripType: () => void
   title: string
+  error?: string | null
 }
 
 export function TripFormModal({
@@ -43,7 +44,8 @@ export function TripFormModal({
   creating,
   updating,
   onAddTripType,
-  title
+  title,
+  error
 }: TripFormModalProps) {
   const [activeTab, setActiveTab] = useState('basic')
 
@@ -135,6 +137,13 @@ export function TripFormModal({
         </DialogHeader>
 
         <div className="max-h-[calc(90vh-120px)] overflow-y-auto px-4">
+          {error && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
             <TabsList className="grid w-full grid-cols-1">
               <TabsTrigger value="basic">
