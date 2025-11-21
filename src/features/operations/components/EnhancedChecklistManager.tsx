@@ -155,17 +155,12 @@ export function EnhancedChecklistManager({ tripId, tripName, tripDepartureDate }
     if (!checklistToDelete) return
 
     try {
-      console.log('Starting delete process for:', checklistToDelete)
       const result = await deleteChecklist(checklistToDelete)
-
-      console.log('Delete completed, result:', result)
 
       if (result.error) {
         alert(`Error menghapus checklist: ${result.error}`)
       } else {
-        console.log('Refetching checklists...')
-        await refetch()
-        console.log('Refetch completed')
+        refetch()
       }
     } catch (err) {
       console.error('Unexpected error:', err)
