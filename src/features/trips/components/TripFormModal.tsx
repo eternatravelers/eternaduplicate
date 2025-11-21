@@ -6,11 +6,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Plus, Bus, UserCheck, Info, CheckCircle2, Users, AlertCircle } from 'lucide-react'
+import { Plus, Bus, UserCheck, Info, Users, AlertCircle } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { MeetingPointSelector } from './MeetingPointSelector'
-import { TripStatusManagement } from './TripStatusManagement'
 import { useResourceSchedules } from '@/hooks/useResourceSchedules'
 
 interface TripFormModalProps {
@@ -137,14 +136,10 @@ export function TripFormModal({
 
         <div className="max-h-[calc(90vh-120px)] overflow-y-auto px-4">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-1">
               <TabsTrigger value="basic">
                 <Info className="h-4 w-4 mr-2" />
                 Informasi Dasar
-              </TabsTrigger>
-              <TabsTrigger value="status" disabled={!isEditMode}>
-                <CheckCircle2 className="h-4 w-4 mr-2" />
-                Status & Kesiapan
               </TabsTrigger>
             </TabsList>
 
@@ -373,27 +368,6 @@ export function TripFormModal({
               </div>
             </form>
           </TabsContent>
-
-            <TabsContent value="status">
-              {!isEditMode ? (
-                <Alert>
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    Simpan trip terlebih dahulu untuk mengakses fitur status management.
-                  </AlertDescription>
-                </Alert>
-              ) : (
-                <TripStatusManagement
-                  trip={initialData}
-                  onStatusChange={async (newStatus) => {
-                    handleInputChange('status', newStatus)
-                    const updatedData = { ...formData, status: newStatus }
-                    await onSubmit(updatedData)
-                  }}
-                  updating={updating}
-                />
-              )}
-            </TabsContent>
           </Tabs>
         </div>
 
@@ -401,11 +375,9 @@ export function TripFormModal({
           <Button type="button" variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          {(activeTab === 'basic' || activeTab === 'meeting-points') && (
-            <Button type="submit" form="trip-form" disabled={creating || updating}>
-              {creating || updating ? 'Saving...' : 'Save Trip'}
-            </Button>
-          )}
+          <Button type="submit" form="trip-form" disabled={creating || updating}>
+            {creating || updating ? 'Saving...' : 'Save Trip'}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
