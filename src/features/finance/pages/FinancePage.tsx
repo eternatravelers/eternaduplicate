@@ -1,6 +1,5 @@
 import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Plus, AlertCircle } from 'lucide-react'
 import { TransactionForm } from '../components/TransactionForm'
@@ -227,86 +226,44 @@ export function FinancePage() {
         transactionCount={filteredTransactions.length}
       />
 
-      <Tabs defaultValue="transactions" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="transactions">Transaksi</TabsTrigger>
-          <TabsTrigger value="reports">Laporan</TabsTrigger>
-          <TabsTrigger value="analytics">Analisis</TabsTrigger>
-        </TabsList>
+      {showAddForm && (
+        <TransactionForm
+          initialData={editingTransaction ? transactions.find(t => t.id === editingTransaction) : undefined}
+          onSubmit={handleFormSubmit}
+          onCancel={handleCancel}
+          trips={trips}
+          destinations={destinations}
+          creating={creating}
+          updating={updating}
+          editingTransaction={editingTransaction}
+        />
+      )}
 
-        <TabsContent value="transactions" className="space-y-6">
-          {showAddForm && (
-            <TransactionForm
-              initialData={editingTransaction ? transactions.find(t => t.id === editingTransaction) : undefined}
-              onSubmit={handleFormSubmit}
-              onCancel={handleCancel}
-              trips={trips}
-              destinations={destinations}
-              creating={creating}
-              updating={updating}
-              editingTransaction={editingTransaction}
-            />
-          )}
+      <TransactionFilter
+        dateFrom={dateFrom}
+        setDateFrom={setDateFrom}
+        dateTo={dateTo}
+        setDateTo={setDateTo}
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        filterType={filterType}
+        setFilterType={setFilterType}
+        selectedTrip={selectedTrip}
+        setSelectedTrip={setSelectedTrip}
+        trips={trips}
+        onReset={resetFilters}
+        showReportType={false}
+        showSearch={true}
+      />
 
-          <TransactionFilter
-            dateFrom={dateFrom}
-            setDateFrom={setDateFrom}
-            dateTo={dateTo}
-            setDateTo={setDateTo}
-            searchTerm={searchTerm}
-            setSearchTerm={setSearchTerm}
-            filterType={filterType}
-            setFilterType={setFilterType}
-            selectedTrip={selectedTrip}
-            setSelectedTrip={setSelectedTrip}
-            trips={trips}
-            onReset={resetFilters}
-            showReportType={false}
-            showSearch={true}
-          />
-
-          <TransactionTable
-            transactions={filteredTransactions}
-            searchTerm={searchTerm}
-            setSearchTerm={setSearchTerm}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            deleting={deleting}
-          />
-        </TabsContent>
-
-        <TabsContent value="reports" className="space-y-6">
-          <div className="text-center py-8 text-gray-500">
-            <div className="text-6xl mb-4">📊</div>
-            <h3 className="text-lg font-medium mb-2">Laporan Keuangan</h3>
-            <p className="text-sm mb-4">
-              Fitur laporan keuangan tersedia di menu "Laporan" di sidebar
-            </p>
-            <Button 
-              variant="outline"
-              onClick={() => window.location.hash = '#reports'}
-            >
-              Buka Halaman Laporan
-            </Button>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="analytics" className="space-y-6">
-          <div className="text-center py-8 text-gray-500">
-            <div className="text-6xl mb-4">📈</div>
-            <h3 className="text-lg font-medium mb-2">Analisis Keuangan</h3>
-            <p className="text-sm mb-4">
-              Fitur analisis keuangan tersedia di menu "Analisis" di sidebar
-            </p>
-            <Button 
-              variant="outline"
-              onClick={() => window.location.hash = '#analytics'}
-            >
-              Buka Halaman Analisis
-            </Button>
-          </div>
-        </TabsContent>
-      </Tabs>
+      <TransactionTable
+        transactions={filteredTransactions}
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        deleting={deleting}
+      />
     </div>
   )
 }
