@@ -158,8 +158,12 @@ export function ReadinessBreakdownCard({
                 <Badge className="bg-blue-100 text-blue-800 text-xs">Primary</Badge>
               )}
             </div>
-            <div className="text-xs text-gray-600 mt-1">{mp.address}</div>
-            <div className="text-xs text-gray-500">{mp.city}, {mp.province}</div>
+            {mp.address && (
+              <div className="text-xs text-gray-600 mt-1">{mp.address}</div>
+            )}
+            {mp.description && (
+              <div className="text-xs text-gray-500 mt-1">{mp.description}</div>
+            )}
           </div>
         ))
 

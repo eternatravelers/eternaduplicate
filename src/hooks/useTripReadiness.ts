@@ -122,8 +122,7 @@ export function useTripReadiness(tripId: string) {
             id,
             name,
             address,
-            city,
-            province
+            description
           )
         `)
         .eq('trip_id', tripId)
