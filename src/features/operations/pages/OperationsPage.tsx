@@ -25,15 +25,20 @@ export function OperationsPage() {
   const { trips, loading: tripsLoading } = useTrips()
 
   // Filter trips for monitoring
+  // Include trips that are: open (accepting registrations), confirmed (ready), or ongoing (in progress)
   const activeTrips = trips.filter(trip => {
     const today = new Date()
     const departureDate = new Date(trip.departure_date)
     const returnDate = new Date(trip.return_date)
-    
-    return trip.status === 'active' && (
-      departureDate >= today || 
+
+    // Only show trips that are not cancelled or deleted
+    const isActiveStatus = ['open', 'confirmed', 'ongoing'].includes(trip.status)
+
+    // Only show trips that are either upcoming or currently ongoing
+    const isRelevantTime = departureDate >= today ||
       (departureDate <= today && returnDate >= today)
-    )
+
+    return isActiveStatus && isRelevantTime
   })
 
   const upcomingTrips = activeTrips.filter(trip => {
