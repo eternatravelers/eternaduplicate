@@ -147,20 +147,25 @@ export function useDeleteChecklist() {
 
       console.log('Deleting checklist:', id)
 
-      const { error, count } = await supabase
+      const { error, data, count } = await supabase
         .from('checklists')
         .delete()
         .eq('id', id)
         .select()
 
-      console.log('Delete result:', { error, count })
+      console.log('Delete result:', { error, data, count })
 
-      if (error) throw error
+      if (error) {
+        console.error('Supabase delete error:', error)
+        const errorMsg = error.message || error.hint || JSON.stringify(error)
+        throw new Error(errorMsg)
+      }
 
-      return { error: null, success: true }
+      console.log('Delete successful, deleted count:', count)
+      return { error: null, success: true, deletedCount: count }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error'
-      console.error('Delete error:', errorMessage)
+      console.error('Delete exception:', err)
+      const errorMessage = err instanceof Error ? err.message : (typeof err === 'object' ? JSON.stringify(err) : String(err))
       setError(errorMessage)
       return { error: errorMessage, success: false }
     } finally {
