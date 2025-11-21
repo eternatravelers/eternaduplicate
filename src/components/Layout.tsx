@@ -61,8 +61,7 @@ const menuItems: MenuItem[] = [
       { id: 'operations', label: 'Monitoring Operasional', icon: CheckSquare, type: 'item' },
       { id: 'destinations', label: 'Destinasi & Meeting Points', icon: Globe, type: 'item' },
       { id: 'operational-resources', label: 'Sumber Daya & Jadwal', icon: Settings, type: 'item' },
-      { id: 'cost-plans', label: 'Rencana Biaya', icon: Calculator, type: 'item' },
-      { id: 'checklist-templates', label: 'Template Checklist', icon: ListChecks, type: 'item' }
+      { id: 'templates', label: 'Template', icon: FileText, type: 'item' }
     ]
   },
   {

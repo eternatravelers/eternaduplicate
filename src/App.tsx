@@ -15,13 +15,12 @@ const OperationalResourcesPage = lazy(() => import('@/features/operational-resou
 const OperationsPage = lazy(() => import('@/features/operations/pages/OperationsPage').then(m => ({ default: m.OperationsPage })))
 const ReportsPage = lazy(() => import('@/features/finance/pages/ReportsPage').then(m => ({ default: m.ReportsPage })))
 const AnalyticsPage = lazy(() => import('@/features/analytics/pages/AnalyticsPage').then(m => ({ default: m.AnalyticsPage })))
-const CostPlansPage = lazy(() => import('@/features/cost-plans/pages/CostPlansPage').then(m => ({ default: m.CostPlansPage })))
+const TemplatesPage = lazy(() => import('@/features/templates/pages/TemplatesPage').then(m => ({ default: m.TemplatesPage })))
 const TrashTransactionsPage = lazy(() => import('@/features/finance/pages/TrashTransactionsPage').then(m => ({ default: m.TrashTransactionsPage })))
 const FinancePage = lazy(() => import('@/features/finance/pages/FinancePage').then(m => ({ default: m.FinancePage })))
 const TripParticipantsPage = lazy(() => import('@/features/trips/pages/TripParticipantsPage').then(m => ({ default: m.TripParticipantsPage })))
 const TripReadinessPage = lazy(() => import('@/features/trips/pages/TripReadinessPage').then(m => ({ default: m.TripReadinessPage })))
 const UserManagementPage = lazy(() => import('@/features/user-management/pages/UserManagementPage').then(m => ({ default: m.UserManagementPage })))
-const ChecklistTemplatesPage = lazy(() => import('@/features/checklist-templates/pages/ChecklistTemplatesPage').then(m => ({ default: m.ChecklistTemplatesPage })))
 
 function LoadingFallback() {
   return (
@@ -97,10 +96,8 @@ function AppContent() {
                   <AnalyticsPage />
                 </SuperAdminRoute>
               )
-            case 'cost-plans':
-              return <CostPlansPage />
-            case 'checklist-templates':
-              return <ChecklistTemplatesPage />
+            case 'templates':
+              return <TemplatesPage />
             case 'trash':
               return (
                 <SuperAdminRoute>
