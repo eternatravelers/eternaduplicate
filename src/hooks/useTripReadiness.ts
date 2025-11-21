@@ -55,11 +55,15 @@ export function useTripReadiness(tripId: string) {
 
       if (tripError) throw tripError
 
-      // Fetch buses
-      const { data: busesData, error: busesError } = await supabase
-        .from('trip_buses')
+      // Fetch resource schedules for this trip
+      const { data: schedules, error: schedulesError } = await supabase
+        .from('resource_schedules')
         .select(`
-          buses(
+          id,
+          bus_id,
+          driver_id,
+          tour_leader_id,
+          buses:bus_id(
             id,
             bus_number,
             plate_number,
@@ -67,36 +71,16 @@ export function useTripReadiness(tripId: string) {
             model,
             capacity,
             status
-          )
-        `)
-        .eq('trip_id', tripId)
-
-      if (busesError) throw busesError
-      const buses = busesData?.map(tb => tb.buses).filter(Boolean) || []
-
-      // Fetch drivers
-      const { data: driversData, error: driversError } = await supabase
-        .from('trip_drivers')
-        .select(`
-          drivers(
+          ),
+          drivers:driver_id(
             id,
             name,
             phone,
             license_number,
             license_type,
             status
-          )
-        `)
-        .eq('trip_id', tripId)
-
-      if (driversError) throw driversError
-      const drivers = driversData?.map(td => td.drivers).filter(Boolean) || []
-
-      // Fetch tour leaders
-      const { data: tourLeadersData, error: tourLeadersError } = await supabase
-        .from('trip_tour_leaders')
-        .select(`
-          tour_leaders(
+          ),
+          tour_leaders:tour_leader_id(
             id,
             name,
             email,
@@ -109,8 +93,28 @@ export function useTripReadiness(tripId: string) {
         `)
         .eq('trip_id', tripId)
 
-      if (tourLeadersError) throw tourLeadersError
-      const tourLeaders = tourLeadersData?.map(ttl => ttl.tour_leaders).filter(Boolean) || []
+      if (schedulesError) throw schedulesError
+
+      // Extract unique buses, drivers, and tour leaders from schedules
+      const busesMap = new Map()
+      const driversMap = new Map()
+      const tourLeadersMap = new Map()
+
+      schedules?.forEach(schedule => {
+        if (schedule.bus_id && schedule.buses) {
+          busesMap.set(schedule.bus_id, schedule.buses)
+        }
+        if (schedule.driver_id && schedule.drivers) {
+          driversMap.set(schedule.driver_id, schedule.drivers)
+        }
+        if (schedule.tour_leader_id && schedule.tour_leaders) {
+          tourLeadersMap.set(schedule.tour_leader_id, schedule.tour_leaders)
+        }
+      })
+
+      const buses = Array.from(busesMap.values())
+      const drivers = Array.from(driversMap.values())
+      const tourLeaders = Array.from(tourLeadersMap.values())
 
       // Fetch meeting points
       const { data: meetingPointsData, error: meetingPointsError } = await supabase

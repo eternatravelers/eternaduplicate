@@ -60,40 +60,6 @@ export function useTrips() {
             total_cost,
             cost_per_person
           ),
-          trip_tour_leaders!left(
-            tour_leaders(
-              id,
-              name,
-              email,
-              phone,
-              certification,
-              specialization,
-              experience_years,
-              status,
-              bio
-            )
-          ),
-          trip_buses!left(
-            buses(
-              id,
-              bus_number,
-              plate_number,
-              type,
-              model,
-              capacity,
-              status
-            )
-          ),
-          trip_drivers!left(
-            drivers(
-              id,
-              name,
-              phone,
-              license_number,
-              license_type,
-              status
-            )
-          ),
           participants!left(id),
           trip_meeting_points!left(
             meeting_point_id,
@@ -116,13 +82,43 @@ export function useTrips() {
             .select('*', { count: 'exact', head: true })
             .eq('trip_id', trip.id)
 
+          // Get resource schedules for this trip
+          const { data: schedules } = await supabase
+            .from('resource_schedules')
+            .select(`
+              bus_id,
+              driver_id,
+              tour_leader_id,
+              buses:bus_id(id, bus_number, plate_number, type, model, capacity, status),
+              drivers:driver_id(id, name, phone, license_number, license_type, status),
+              tour_leaders:tour_leader_id(id, name, email, phone, certification, specialization, experience_years, status, bio)
+            `)
+            .eq('trip_id', trip.id)
+
+          // Extract unique resources
+          const busesMap = new Map()
+          const driversMap = new Map()
+          const tourLeadersMap = new Map()
+
+          schedules?.forEach(schedule => {
+            if (schedule.bus_id && schedule.buses) {
+              busesMap.set(schedule.bus_id, schedule.buses)
+            }
+            if (schedule.driver_id && schedule.drivers) {
+              driversMap.set(schedule.driver_id, schedule.drivers)
+            }
+            if (schedule.tour_leader_id && schedule.tour_leaders) {
+              tourLeadersMap.set(schedule.tour_leader_id, schedule.tour_leaders)
+            }
+          })
+
           return {
             ...trip,
             participant_count: trip.participants?.length || 0,
             destinations: trip.trip_destinations?.map(td => td.destinations).filter(Boolean) || [],
-            tour_leaders: trip.trip_tour_leaders?.map(ttl => ttl.tour_leaders).filter(Boolean) || [],
-            buses: trip.trip_buses?.map(tb => tb.buses).filter(Boolean) || [],
-            drivers: trip.trip_drivers?.map(td => td.drivers).filter(Boolean) || [],
+            tour_leaders: Array.from(tourLeadersMap.values()),
+            buses: Array.from(busesMap.values()),
+            drivers: Array.from(driversMap.values()),
             meeting_point_ids: meetingPoints.map((mp: any) => mp.meeting_point_id),
             primary_meeting_point_id: primaryMeetingPoint?.meeting_point_id,
             meeting_point_assignment_count: assignmentCount || 0
