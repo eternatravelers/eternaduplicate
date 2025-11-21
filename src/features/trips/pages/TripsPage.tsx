@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Plus, Calendar, Users, MapPin, DollarSign } from 'lucide-react'
 import { TripFormModal } from '../components/TripFormModal'
-import { TripListTable } from '../components/TripListTable'
+import { TripListTableCompact } from '../components/TripListTableCompact'
+import { TripFilters, TripFilterState } from '../components/TripFilters'
 import { TripTypeManagerModal } from '../components/TripTypeManagerModal'
 import { TripResourcesModal } from '../components/TripResourcesModal'
 import { useTrips, useCreateTrip, useUpdateTrip, useDeleteTrip } from '@/hooks/useTrips'
@@ -43,6 +44,16 @@ export function TripsPage({ onViewTripParticipants, onViewTripReadiness, onNavig
   const [isResourcesModalOpen, setIsResourcesModalOpen] = useState(false)
   const [selectedTrip, setSelectedTrip] = useState<any>(null)
   const { isSuperAdmin } = useAuth()
+
+  const [filters, setFilters] = useState<TripFilterState>({
+    search: '',
+    statuses: [],
+    dateFrom: '',
+    dateTo: '',
+    readinessLevel: 'all',
+    quotaStatus: 'all',
+    sortBy: 'date-asc'
+  })
 
   // Refetch trips when component mounts or becomes visible
   useEffect(() => {
@@ -146,6 +157,100 @@ export function TripsPage({ onViewTripParticipants, onViewTripReadiness, onNavig
     }
   }
 
+  // Filter and sort trips
+  const filteredAndSortedTrips = useMemo(() => {
+    let filtered = [...trips]
+
+    // Search filter
+    if (filters.search) {
+      const searchLower = filters.search.toLowerCase()
+      filtered = filtered.filter(trip =>
+        trip.name.toLowerCase().includes(searchLower) ||
+        trip.trip_type?.toLowerCase().includes(searchLower)
+      )
+    }
+
+    // Status filter
+    if (filters.statuses.length > 0) {
+      filtered = filtered.filter(trip => filters.statuses.includes(trip.status))
+    }
+
+    // Date range filter
+    if (filters.dateFrom) {
+      filtered = filtered.filter(trip => new Date(trip.departure_date) >= new Date(filters.dateFrom))
+    }
+    if (filters.dateTo) {
+      filtered = filtered.filter(trip => new Date(trip.departure_date) <= new Date(filters.dateTo))
+    }
+
+    // Readiness level filter
+    if (filters.readinessLevel !== 'all') {
+      filtered = filtered.filter(trip => {
+        const score = trip.readiness_score || 0
+        switch (filters.readinessLevel) {
+          case 'ready':
+            return score >= 80
+          case 'needs-attention':
+            return score >= 50 && score < 80
+          case 'not-ready':
+            return score < 50
+          default:
+            return true
+        }
+      })
+    }
+
+    // Quota status filter
+    if (filters.quotaStatus !== 'all') {
+      filtered = filtered.filter(trip => {
+        if (!trip.quota) return filters.quotaStatus === 'all'
+        const percentage = (trip.confirmed_participant_count || 0) / trip.quota * 100
+        switch (filters.quotaStatus) {
+          case 'available':
+            return percentage < 100
+          case 'almost-full':
+            return percentage >= 80 && percentage < 100
+          case 'full':
+            return percentage >= 100
+          default:
+            return true
+        }
+      })
+    }
+
+    // Sort
+    filtered.sort((a, b) => {
+      switch (filters.sortBy) {
+        case 'date-asc':
+          return new Date(a.departure_date).getTime() - new Date(b.departure_date).getTime()
+        case 'date-desc':
+          return new Date(b.departure_date).getTime() - new Date(a.departure_date).getTime()
+        case 'name-asc':
+          return a.name.localeCompare(b.name)
+        case 'name-desc':
+          return b.name.localeCompare(a.name)
+        case 'readiness-desc':
+          return (b.readiness_score || 0) - (a.readiness_score || 0)
+        case 'participants-desc':
+          return (b.confirmed_participant_count || 0) - (a.confirmed_participant_count || 0)
+        default:
+          return 0
+      }
+    })
+
+    return filtered
+  }, [trips, filters])
+
+  // Count active filters
+  const activeFiltersCount = useMemo(() => {
+    let count = 0
+    if (filters.statuses.length > 0) count++
+    if (filters.dateFrom || filters.dateTo) count++
+    if (filters.readinessLevel !== 'all') count++
+    if (filters.quotaStatus !== 'all') count++
+    return count
+  }, [filters])
+
   if (loading) {
     return <div className="flex justify-center items-center h-64">Loading...</div>
   }
@@ -181,9 +286,9 @@ export function TripsPage({ onViewTripParticipants, onViewTripReadiness, onNavig
             <div className="flex items-center">
               <Users className="h-8 w-8 text-green-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Active Trips</p>
+                <p className="text-sm font-medium text-gray-600">Open Trips</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {trips.filter(trip => trip.status === 'active').length}
+                  {trips.filter(trip => ['open', 'confirmed'].includes(trip.status)).length}
                 </p>
               </div>
             </div>
@@ -209,18 +314,22 @@ export function TripsPage({ onViewTripParticipants, onViewTripReadiness, onNavig
             <div className="flex items-center">
               <DollarSign className="h-8 w-8 text-yellow-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {formatCurrency(trips.reduce((sum, trip) => sum + (trip.price || 0), 0))}
-                </p>
+                <p className="text-sm font-medium text-gray-600">Filtered Results</p>
+                <p className="text-2xl font-bold text-gray-900">{filteredAndSortedTrips.length}</p>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <TripListTable
-        trips={trips}
+      <TripFilters
+        filters={filters}
+        onFiltersChange={setFilters}
+        activeFiltersCount={activeFiltersCount}
+      />
+
+      <TripListTableCompact
+        trips={filteredAndSortedTrips}
         onEdit={handleEdit}
         onDuplicate={handleDuplicate}
         onDelete={handleDelete}
