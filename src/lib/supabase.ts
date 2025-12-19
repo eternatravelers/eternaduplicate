@@ -350,6 +350,9 @@ export type Database = {
           deleted_by_user_name: string | null
           deletion_reason: string | null
           parent_participant_id: string | null
+          payment_status: string | null
+          total_paid: number | null
+          remaining_payment: number | null
         }
         Insert: {
           id?: string
@@ -374,6 +377,9 @@ export type Database = {
           deleted_by_user_name?: string | null
           deletion_reason?: string | null
           parent_participant_id?: string | null
+          payment_status?: string | null
+          total_paid?: number | null
+          remaining_payment?: number | null
         }
         Update: {
           id?: string
@@ -398,6 +404,9 @@ export type Database = {
           deleted_by_user_name?: string | null
           deletion_reason?: string | null
           parent_participant_id?: string | null
+          payment_status?: string | null
+          total_paid?: number | null
+          remaining_payment?: number | null
         }
       }
       transactions: {
