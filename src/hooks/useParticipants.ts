@@ -52,8 +52,8 @@ export function useParticipants(filters?: ParticipantFilters) {
           total_paid,
           remaining_payment
         `)
-        .is('parent_participant_id', null)
-        .is('deleted_at', null)
+        .isNull('parent_participant_id')
+        .isNull('deleted_at')
 
       // Apply date filters
       if (filters?.startDate) {
@@ -160,7 +160,10 @@ export function useCreateParticipant() {
           updated_at,
           proof_of_transfer_url,
           meeting_point_details,
-          parent_participant_id
+          parent_participant_id,
+          payment_status,
+          total_paid,
+          remaining_payment
         `)
         .eq('id', insertResult.id)
         .single()
@@ -256,7 +259,10 @@ export function useUpdateParticipant() {
           updated_at,
           proof_of_transfer_url,
           meeting_point_details,
-          parent_participant_id
+          parent_participant_id,
+          payment_status,
+          total_paid,
+          remaining_payment
         `)
         .eq('id', id)
         .single()
@@ -425,7 +431,7 @@ export function useDeletedParticipants() {
           remaining_payment
         `)
         .not('deleted_at', 'is', null)
-        .is('parent_participant_id', null)
+        .isNull('parent_participant_id')
         .order('deleted_at', { ascending: false })
 
       if (error) throw error
@@ -509,7 +515,7 @@ export function useAllParticipants() {
           total_paid,
           remaining_payment
         `)
-        .is('deleted_at', null)
+        .isNull('deleted_at')
         .order('created_at', { ascending: false })
 
       if (error) throw error
