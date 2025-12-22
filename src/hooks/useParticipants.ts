@@ -50,10 +50,11 @@ export function useParticipants(filters?: ParticipantFilters) {
           parent_participant_id,
           payment_status,
           total_paid,
-          remaining_payment
+          remaining_payment,
+          deleted_at
         `)
         .isNull('parent_participant_id')
-        .isNull('deleted_at')
+        .is('deleted_at', null)
 
       // Apply date filters
       if (filters?.startDate) {
