@@ -164,7 +164,8 @@ export function useCreateParticipant() {
           parent_participant_id,
           payment_status,
           total_paid,
-          remaining_payment
+          remaining_payment,
+          deleted_at
         `)
         .eq('id', insertResult.id)
         .single()
@@ -263,7 +264,8 @@ export function useUpdateParticipant() {
           parent_participant_id,
           payment_status,
           total_paid,
-          remaining_payment
+          remaining_payment,
+          deleted_at
         `)
         .eq('id', id)
         .single()
@@ -514,7 +516,8 @@ export function useAllParticipants() {
           parent_participant_id,
           payment_status,
           total_paid,
-          remaining_payment
+          remaining_payment,
+          deleted_at
         `)
         .isNull('deleted_at')
         .order('created_at', { ascending: false })
