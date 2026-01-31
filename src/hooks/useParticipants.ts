@@ -188,6 +188,26 @@ export function useCreateParticipant() {
         throw new Error('Participant created but could not be fetched')
       }
 
+      // Step 2.5: Verify payment_installments record was created by trigger
+      if (newParticipant.dp_amount && newParticipant.dp_amount > 0) {
+        try {
+          const { data: paymentRecords, error: paymentCheckError } = await supabase
+            .from('payment_installments')
+            .select('id')
+            .eq('participant_id', insertResult.id)
+            .limit(1)
+
+          if (paymentCheckError) {
+            const paymentErrorDetails = `Payment installments check error - Code: ${paymentCheckError.code}, Message: ${paymentCheckError.message}, Details: ${paymentCheckError.details || 'N/A'}`
+            console.warn('Payment installments verification warning:', paymentErrorDetails)
+          } else if (!paymentRecords || paymentRecords.length === 0) {
+            console.warn('Warning: Payment installments record not created automatically for participant', insertResult.id)
+          }
+        } catch (paymentCheckErr) {
+          console.warn('Payment installments verification failed:', paymentCheckErr instanceof Error ? paymentCheckErr.message : 'Unknown error')
+        }
+      }
+
       // Step 3: Fetch trips data separately
       const { data: tripsData, error: tripsError } = await supabase
         .from('trips')
