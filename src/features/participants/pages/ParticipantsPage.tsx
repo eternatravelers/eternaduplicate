@@ -27,15 +27,18 @@ export function ParticipantsPage() {
   const [activeTab, setActiveTab] = useState('individual')
   const [operationError, setOperationError] = useState<string>('')
   const [successMessage, setSuccessMessage] = useState<string>('')
-  
+  const [isRefreshing, setIsRefreshing] = useState(false)
+
   const { participants, loading, refetch: baseRefetch } = useParticipants()
   const { deletedParticipants, loading: deletedLoading, refetch: refetchDeleted } = useDeletedParticipants()
   const { allParticipants } = useAllParticipants()
 
   const refetch = async () => {
     console.log('ParticipantsPage.refetch() called')
+    setIsRefreshing(true)
     await baseRefetch()
     console.log('ParticipantsPage.refetch() completed')
+    setIsRefreshing(false)
   }
   const { trips } = useTrips()
   const { sales } = useSales()
@@ -77,10 +80,19 @@ export function ParticipantsPage() {
 
       console.log('Calling refetch...')
       await refetch()
-      console.log('Refetch completed')
+      console.log('Refetch completed, participants count:', participants.length)
+
+      // Reset all filters to show the newly added/updated participant
+      setSearchTerm('')
+      setFilterStatus('all')
 
       setEditingParticipant(null)
       setShowEditModal(false)
+
+      // Small delay to ensure React state has fully updated
+      await new Promise(resolve => setTimeout(resolve, 100))
+
+      console.log('Switching to history tab')
       setActiveTab('history')
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Terjadi kesalahan saat menyimpan data peserta'
@@ -160,20 +172,39 @@ export function ParticipantsPage() {
     try {
       setOperationError('')
       setSuccessMessage('')
-      const { error } = await createParticipant(data, file)
 
-      if (error) {
-        setOperationError(error)
+      console.log('handleGroupSubmit started with data:', data)
+
+      const result = await createParticipant(data, file)
+
+      console.log('createParticipant result:', result)
+
+      if (result.error) {
+        console.error('Group registration failed:', result.error)
+        setOperationError(result.error)
         return
       }
 
       setSuccessMessage('Group berhasil didaftarkan')
       setTimeout(() => setSuccessMessage(''), 5000)
 
+      console.log('Calling refetch after group registration...')
       await refetch()
+      console.log('Refetch completed, participants count:', participants.length)
+
+      // Reset all filters to show the newly added participant
+      setSearchTerm('')
+      setFilterStatus('all')
+
+      // Small delay to ensure React state has fully updated
+      await new Promise(resolve => setTimeout(resolve, 100))
+
+      console.log('Switching to history tab')
       setActiveTab('history')
     } catch (err) {
-      setOperationError(err instanceof Error ? err.message : 'Terjadi kesalahan saat mendaftarkan group')
+      const errorMsg = err instanceof Error ? err.message : 'Terjadi kesalahan saat mendaftarkan group'
+      console.error('handleGroupSubmit caught error:', errorMsg)
+      setOperationError(errorMsg)
     }
   }
 
@@ -298,6 +329,7 @@ export function ParticipantsPage() {
             onDelete={handleDelete}
             deleting={deleting}
             onRefresh={refetch}
+            loading={loading || isRefreshing}
           />
         </TabsContent>
 

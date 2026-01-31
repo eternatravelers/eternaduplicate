@@ -47,6 +47,7 @@ interface ParticipantHistoryTableProps {
   onDelete: (id: string, reason?: string, permanent?: boolean) => Promise<void>;
   deleting: boolean;
   onRefresh: () => void;
+  loading?: boolean;
 }
 
 export function ParticipantHistoryTable({
@@ -58,7 +59,8 @@ export function ParticipantHistoryTable({
   onEdit,
   onDelete,
   deleting,
-  onRefresh
+  onRefresh,
+  loading = false
 }: ParticipantHistoryTableProps) {
   const [showGroupMembersModal, setShowGroupMembersModal] = useState(false);
   const [selectedGroupParticipant, setSelectedGroupParticipant] = useState<any>(null);
@@ -227,7 +229,16 @@ export function ParticipantHistoryTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredParticipants.length === 0 ? (
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={9} className="text-center py-8">
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                    <span className="text-gray-500">Memuat data...</span>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : filteredParticipants.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={9} className="text-center py-8 text-gray-500">
                   No participants found
