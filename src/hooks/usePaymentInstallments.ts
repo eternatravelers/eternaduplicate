@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 
 export interface PaymentInstallment {
@@ -20,19 +20,20 @@ export function usePaymentInstallments(participantId?: string) {
   const [installments, setInstallments] = useState<PaymentInstallment[]>([])
   const [loading, setLoading] = useState(true)
 
-  const fetchInstallments = async () => {
+  const fetchInstallments = useCallback(async () => {
+    if (!participantId) {
+      setInstallments([])
+      setLoading(false)
+      return
+    }
+
     try {
       setLoading(true)
-      let query = supabase
+      const { data, error } = await supabase
         .from('payment_installments')
         .select('*')
+        .eq('participant_id', participantId)
         .order('payment_date', { ascending: false })
-
-      if (participantId) {
-        query = query.eq('participant_id', participantId)
-      }
-
-      const { data, error } = await query
 
       if (error) throw error
       setInstallments(data || [])
@@ -42,11 +43,11 @@ export function usePaymentInstallments(participantId?: string) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [participantId])
 
   useEffect(() => {
     fetchInstallments()
-  }, [participantId])
+  }, [fetchInstallments])
 
   return { installments, loading, refetch: fetchInstallments }
 }
@@ -135,7 +136,7 @@ export function useDeletePaymentInstallment() {
   return { deleteInstallment, loading }
 }
 
-export function usePaymentSummary(participantId: string) {
+export function usePaymentSummary(participantId?: string) {
   const [summary, setSummary] = useState({
     totalPaid: 0,
     remainingPayment: 0,
@@ -146,7 +147,20 @@ export function usePaymentSummary(participantId: string) {
   })
   const [loading, setLoading] = useState(true)
 
-  const fetchSummary = async () => {
+  const fetchSummary = useCallback(async () => {
+    if (!participantId) {
+      setSummary({
+        totalPaid: 0,
+        remainingPayment: 0,
+        packagePrice: 0,
+        paymentStatus: 'belum_bayar',
+        paymentPercentage: 0,
+        installmentCount: 0
+      })
+      setLoading(false)
+      return
+    }
+
     try {
       setLoading(true)
 
@@ -183,13 +197,11 @@ export function usePaymentSummary(participantId: string) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [participantId])
 
   useEffect(() => {
-    if (participantId) {
-      fetchSummary()
-    }
-  }, [participantId])
+    fetchSummary()
+  }, [fetchSummary])
 
   return { summary, loading, refetch: fetchSummary }
 }
