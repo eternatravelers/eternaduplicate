@@ -72,7 +72,11 @@ export function useParticipants(filters?: ParticipantFilters) {
       const { data: participantsData, error: participantsError } = await participantsQuery
         .order('created_at', { ascending: false })
 
-      if (participantsError) throw participantsError
+      if (participantsError) {
+        const errorDetails = `Participants fetch error - Code: ${participantsError.code}, Message: ${participantsError.message}, Details: ${participantsError.details || 'N/A'}`
+        console.error('Participants error:', errorDetails)
+        throw new Error(errorDetails)
+      }
 
       // Fetch trips data separately
       const { data: tripsData, error: tripsError } = await supabase
@@ -138,7 +142,11 @@ export function useCreateParticipant() {
         .select('id')
         .single()
 
-      if (participantError) throw participantError
+      if (participantError) {
+        const errorDetails = `Insert Error - Code: ${participantError.code}, Message: ${participantError.message}, Details: ${participantError.details || 'N/A'}`
+        console.error('Participant insert error:', errorDetails)
+        throw new Error(errorDetails)
+      }
 
       // Step 2: Fetch the complete participant data separately
       const { data: newParticipant, error: fetchError } = await supabase
@@ -170,21 +178,37 @@ export function useCreateParticipant() {
         .eq('id', insertResult.id)
         .single()
 
-      if (fetchError) throw fetchError
+      if (fetchError) {
+        const errorDetails = `Fetch participant error - Code: ${fetchError.code}, Message: ${fetchError.message}, Details: ${fetchError.details || 'N/A'}`
+        console.error('Participant fetch error:', errorDetails)
+        throw new Error(errorDetails)
+      }
+
+      if (!newParticipant) {
+        throw new Error('Participant created but could not be fetched')
+      }
 
       // Step 3: Fetch trips data separately
       const { data: tripsData, error: tripsError } = await supabase
         .from('trips')
         .select('id, name, departure_date, meeting_point, trip_type')
 
-      if (tripsError) throw tripsError
+      if (tripsError) {
+        const errorDetails = `Fetch trips error - Code: ${tripsError.code}, Message: ${tripsError.message}`
+        console.error('Trips fetch error:', errorDetails)
+        throw new Error(errorDetails)
+      }
 
       // Step 4: Fetch sales data separately
       const { data: salesData, error: salesError } = await supabase
         .from('sales')
         .select('id, name, email, phone')
 
-      if (salesError) throw salesError
+      if (salesError) {
+        const errorDetails = `Fetch sales error - Code: ${salesError.code}, Message: ${salesError.message}`
+        console.error('Sales fetch error:', errorDetails)
+        throw new Error(errorDetails)
+      }
 
       // Step 5: Manually join participant with trip and sales data
       let tripData = null
@@ -208,6 +232,7 @@ export function useCreateParticipant() {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error'
       setError(errorMessage)
+      console.error('Create participant error:', errorMessage)
       return { data: null, error: errorMessage }
     } finally {
       setLoading(false)
