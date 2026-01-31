@@ -63,9 +63,9 @@ export function ParticipantsPage() {
       setSuccessMessage(editingParticipant ? 'Peserta berhasil diperbarui' : 'Peserta berhasil ditambahkan')
       setTimeout(() => setSuccessMessage(''), 5000)
 
+      await refetch()
       setEditingParticipant(null)
       setShowEditModal(false)
-      refetch()
     } catch (err) {
       setOperationError(err instanceof Error ? err.message : 'Terjadi kesalahan saat menyimpan data peserta')
     }
@@ -90,15 +90,15 @@ export function ParticipantsPage() {
     try {
       setOperationError('')
       const { error } = await deleteParticipant(id, permanent)
-      
+
       if (error) {
         setOperationError(error)
         return
       }
-      
-      refetch()
+
+      await refetch()
       if (!permanent) {
-        refetchDeleted() // Refresh deleted participants list
+        await refetchDeleted()
       }
     } catch (error) {
       setOperationError(error instanceof Error ? error.message : 'Terjadi kesalahan saat menghapus peserta')
@@ -109,14 +109,14 @@ export function ParticipantsPage() {
     try {
       setOperationError('')
       const { error } = await restoreParticipant(id)
-      
+
       if (error) {
         setOperationError(error)
         return
       }
-      
-      refetch()
-      refetchDeleted()
+
+      await refetch()
+      await refetchDeleted()
     } catch (error) {
       setOperationError(error instanceof Error ? error.message : 'Terjadi kesalahan saat memulihkan peserta')
     }
@@ -126,13 +126,13 @@ export function ParticipantsPage() {
     try {
       setOperationError('')
       const { error } = await deleteParticipant(id, true)
-      
+
       if (error) {
         setOperationError(error)
         return
       }
-      
-      refetchDeleted()
+
+      await refetchDeleted()
     } catch (error) {
       setOperationError(error instanceof Error ? error.message : 'Terjadi kesalahan saat menghapus peserta secara permanen')
     }
@@ -152,10 +152,8 @@ export function ParticipantsPage() {
       setSuccessMessage('Group berhasil didaftarkan')
       setTimeout(() => setSuccessMessage(''), 5000)
 
-      refetch()
-      setTimeout(() => {
-        setActiveTab('history')
-      }, 500)
+      await refetch()
+      setActiveTab('history')
     } catch (err) {
       setOperationError(err instanceof Error ? err.message : 'Terjadi kesalahan saat mendaftarkan group')
     }
@@ -163,11 +161,10 @@ export function ParticipantsPage() {
 
   const handleBulkImport = async (participantsData: any[]) => {
     try {
-      // Import participants one by one
       for (const participantData of participantsData) {
         await createParticipant(participantData)
       }
-      refetch()
+      await refetch()
     } catch (error) {
       setImportError('Gagal mengimpor beberapa peserta. Silakan coba lagi.')
       setTimeout(() => setImportError(''), 5000)

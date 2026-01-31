@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import { UserPlus, Navigation, MapPin, FileSpreadsheet } from 'lucide-react'
+import { UserPlus, Navigation, MapPin, FileSpreadsheet, CheckCircle } from 'lucide-react'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { ProofOfTransferUploader } from './ProofOfTransferUploader'
 import { formatCurrency, formatShortDate } from '@/lib/utils'
 
@@ -37,6 +38,7 @@ export function GroupRegistrationForm({
 
   const [groupProofOfTransferUrl, setGroupProofOfTransferUrl] = useState<string | null>(null)
   const [groupSelectedTripMeetingPoint, setGroupSelectedTripMeetingPoint] = useState<string>('')
+  const [formReset, setFormReset] = useState(false)
 
   useEffect(() => {
     if (groupData.trip_id) {
@@ -82,6 +84,9 @@ export function GroupRegistrationForm({
     }
 
     await onSubmit(submitData, null)
+
+    setFormReset(true)
+    setTimeout(() => setFormReset(false), 3000)
 
     setGroupData({
       groupName: '',
@@ -131,6 +136,15 @@ export function GroupRegistrationForm({
         </CardTitle>
       </CardHeader>
       <CardContent>
+        {formReset && (
+          <Alert className="mb-4 border-green-200 bg-green-50">
+            <CheckCircle className="h-4 w-4 text-green-600" />
+            <AlertDescription className="text-green-800">
+              Formulir siap untuk pendaftaran group berikutnya
+            </AlertDescription>
+          </Alert>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
