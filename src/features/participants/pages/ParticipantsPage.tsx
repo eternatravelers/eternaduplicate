@@ -81,6 +81,7 @@ export function ParticipantsPage() {
 
       setEditingParticipant(null)
       setShowEditModal(false)
+      setActiveTab('history')
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Terjadi kesalahan saat menyimpan data peserta'
       console.error('handleSubmit caught error:', errorMsg)
