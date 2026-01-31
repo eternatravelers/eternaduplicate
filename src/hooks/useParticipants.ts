@@ -108,9 +108,12 @@ export function useParticipants(filters?: ParticipantFilters) {
         }
       }) || []
 
+      console.log('Setting participants state with', participantsWithTripsAndSales.length, 'participants')
       setParticipants(participantsWithTripsAndSales)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error')
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+      console.error('Error in fetchParticipants:', errorMessage)
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }
@@ -135,6 +138,8 @@ export function useCreateParticipant() {
       setLoading(true)
       setError(null)
 
+      console.log('Starting participant creation with data:', participantData)
+
       // Step 1: Insert participant and get only the ID
       const { data: insertResult, error: participantError } = await supabase
         .from('participants')
@@ -145,8 +150,11 @@ export function useCreateParticipant() {
       if (participantError) {
         const errorDetails = `Insert Error - Code: ${participantError.code}, Message: ${participantError.message}, Details: ${participantError.details || 'N/A'}`
         console.error('Participant insert error:', errorDetails)
+        console.error('Insert error full object:', participantError)
         throw new Error(errorDetails)
       }
+
+      console.log('Insert successful, participant ID:', insertResult.id)
 
       // Step 2: Fetch the complete participant data separately
       const { data: newParticipant, error: fetchError } = await supabase
@@ -181,12 +189,15 @@ export function useCreateParticipant() {
       if (fetchError) {
         const errorDetails = `Fetch participant error - Code: ${fetchError.code}, Message: ${fetchError.message}, Details: ${fetchError.details || 'N/A'}`
         console.error('Participant fetch error:', errorDetails)
+        console.error('Fetch error full object:', fetchError)
         throw new Error(errorDetails)
       }
 
       if (!newParticipant) {
         throw new Error('Participant created but could not be fetched')
       }
+
+      console.log('Participant fetch successful:', newParticipant)
 
       // Step 2.5: Verify payment_installments record was created by trigger
       if (newParticipant.dp_amount && newParticipant.dp_amount > 0) {
@@ -202,6 +213,8 @@ export function useCreateParticipant() {
             console.warn('Payment installments verification warning:', paymentErrorDetails)
           } else if (!paymentRecords || paymentRecords.length === 0) {
             console.warn('Warning: Payment installments record not created automatically for participant', insertResult.id)
+          } else {
+            console.log('Payment installments created successfully:', paymentRecords.length, 'record(s)')
           }
         } catch (paymentCheckErr) {
           console.warn('Payment installments verification failed:', paymentCheckErr instanceof Error ? paymentCheckErr.message : 'Unknown error')
@@ -219,6 +232,8 @@ export function useCreateParticipant() {
         throw new Error(errorDetails)
       }
 
+      console.log('Trips data fetched:', tripsData?.length || 0, 'trips')
+
       // Step 4: Fetch sales data separately
       const { data: salesData, error: salesError } = await supabase
         .from('sales')
@@ -229,6 +244,8 @@ export function useCreateParticipant() {
         console.error('Sales fetch error:', errorDetails)
         throw new Error(errorDetails)
       }
+
+      console.log('Sales data fetched:', salesData?.length || 0, 'sales')
 
       // Step 5: Manually join participant with trip and sales data
       let tripData = null
@@ -247,6 +264,8 @@ export function useCreateParticipant() {
         trips: tripData || undefined,
         sales: participantSalesData || undefined
       }
+
+      console.log('Participant creation completed successfully:', participantWithTripAndSales.id)
 
       return { data: participantWithTripAndSales, error: null }
     } catch (err) {

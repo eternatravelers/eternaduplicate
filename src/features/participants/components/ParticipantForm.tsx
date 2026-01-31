@@ -73,6 +73,24 @@ export function ParticipantForm({
         status: initialData.status || 'pending'
       })
       setProofOfTransferUrl(initialData.proof_of_transfer_url || null)
+    } else {
+      setFormData({
+        trip_id: '',
+        sales_id: '',
+        full_name: '',
+        email: '',
+        phone: '',
+        address: '',
+        participant_count: '' as number | '',
+        package_price: '' as number | '',
+        dp_amount: '' as number | '',
+        dp_transfer_date: '',
+        additional_requests: '',
+        meeting_point_details: '',
+        status: 'pending'
+      })
+      setProofOfTransferUrl(null)
+      setSelectedTripMeetingPoint('')
     }
   }, [initialData])
 

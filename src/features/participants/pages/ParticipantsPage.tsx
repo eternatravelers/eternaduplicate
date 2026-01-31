@@ -28,9 +28,15 @@ export function ParticipantsPage() {
   const [operationError, setOperationError] = useState<string>('')
   const [successMessage, setSuccessMessage] = useState<string>('')
   
-  const { participants, loading, refetch } = useParticipants()
+  const { participants, loading, refetch: baseRefetch } = useParticipants()
   const { deletedParticipants, loading: deletedLoading, refetch: refetchDeleted } = useDeletedParticipants()
   const { allParticipants } = useAllParticipants()
+
+  const refetch = async () => {
+    console.log('ParticipantsPage.refetch() called')
+    await baseRefetch()
+    console.log('ParticipantsPage.refetch() completed')
+  }
   const { trips } = useTrips()
   const { sales } = useSales()
   const { createParticipant, loading: creating } = useCreateParticipant()
@@ -51,23 +57,34 @@ export function ParticipantsPage() {
     try {
       setOperationError('')
       setSuccessMessage('')
-      const { error } = editingParticipant
+
+      console.log('handleSubmit started for', editingParticipant ? 'update' : 'create', 'with data:', data)
+
+      const result = editingParticipant
         ? await updateParticipant(editingParticipant, data, file)
         : await createParticipant(data, file)
 
-      if (error) {
-        setOperationError(error)
+      console.log('Operation result:', result)
+
+      if (result.error) {
+        console.error('Operation failed with error:', result.error)
+        setOperationError(result.error)
         return
       }
 
       setSuccessMessage(editingParticipant ? 'Peserta berhasil diperbarui' : 'Peserta berhasil ditambahkan')
       setTimeout(() => setSuccessMessage(''), 5000)
 
+      console.log('Calling refetch...')
       await refetch()
+      console.log('Refetch completed')
+
       setEditingParticipant(null)
       setShowEditModal(false)
     } catch (err) {
-      setOperationError(err instanceof Error ? err.message : 'Terjadi kesalahan saat menyimpan data peserta')
+      const errorMsg = err instanceof Error ? err.message : 'Terjadi kesalahan saat menyimpan data peserta'
+      console.error('handleSubmit caught error:', errorMsg)
+      setOperationError(errorMsg)
     }
   }
 
