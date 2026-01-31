@@ -53,15 +53,18 @@ export function GroupRegistrationForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
+    if (!groupData.groupName || !groupData.groupLeader || !groupData.groupEmail || !groupData.groupPhone || !groupData.trip_id || !groupData.sales_id) {
+      return
+    }
+
     const participantCount = groupData.participantCount === '' ? 1 : Number(groupData.participantCount)
     const pricePerPerson = groupData.package_price === '' ? 0 : Number(groupData.package_price)
     const dpPerPerson = groupData.dp_amount === '' ? 0 : Number(groupData.dp_amount)
-    
-    // Calculate total prices for the entire group
+
     const totalPackagePrice = pricePerPerson * participantCount
     const totalDpAmount = dpPerPerson * participantCount
-    
+
     const submitData = {
       trip_id: groupData.trip_id,
       sales_id: groupData.sales_id,
@@ -70,8 +73,8 @@ export function GroupRegistrationForm({
       phone: groupData.groupPhone,
       address: 'Group Registration',
       participant_count: participantCount,
-      package_price: totalPackagePrice, // Total price for entire group
-      dp_amount: totalDpAmount, // Total DP for entire group
+      package_price: totalPackagePrice,
+      dp_amount: totalDpAmount,
       dp_transfer_date: new Date().toISOString().split('T')[0],
       additional_requests: `Group registration for ${participantCount} participants. Price per person: ${pricePerPerson.toLocaleString('id-ID')}, DP per person: ${dpPerPerson.toLocaleString('id-ID')}`,
       meeting_point_details: groupData.meeting_point_details,
@@ -79,8 +82,7 @@ export function GroupRegistrationForm({
     }
 
     await onSubmit(submitData, null)
-    
-    // Reset form after successful submission
+
     setGroupData({
       groupName: '',
       groupLeader: '',
@@ -315,11 +317,14 @@ export function GroupRegistrationForm({
           </div>
 
           <div className="flex space-x-2">
-            <Button type="submit" disabled={creating}>
+            <Button
+              type="submit"
+              disabled={creating || !groupData.groupName || !groupData.groupLeader || !groupData.groupEmail || !groupData.groupPhone || !groupData.trip_id || !groupData.sales_id}
+            >
               {creating ? 'Menyimpan...' : 'Daftar Group'}
             </Button>
-            <Button 
-              type="button" 
+            <Button
+              type="button"
               variant="outline"
               onClick={downloadTemplate}
             >

@@ -12,7 +12,7 @@ import { useSales } from '@/hooks/useSales'
 import { CSVImportModal } from '../components/CSVImportModal'
 import { ParticipantStatsCards } from '../components/ParticipantStatsCards'
 import { ParticipantDeletionSummary } from '../components/ParticipantDeletionSummary'
-import { FileSpreadsheet, AlertCircle } from 'lucide-react'
+import { FileSpreadsheet, AlertCircle, CheckCircle } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useAuth } from '@/hooks/useAuth'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -26,6 +26,7 @@ export function ParticipantsPage() {
   const [showCSVImport, setShowCSVImport] = useState(false)
   const [activeTab, setActiveTab] = useState('individual')
   const [operationError, setOperationError] = useState<string>('')
+  const [successMessage, setSuccessMessage] = useState<string>('')
   
   const { participants, loading, refetch } = useParticipants()
   const { deletedParticipants, loading: deletedLoading, refetch: refetchDeleted } = useDeletedParticipants()
@@ -49,6 +50,7 @@ export function ParticipantsPage() {
   const handleSubmit = async (data: any, file?: File | null) => {
     try {
       setOperationError('')
+      setSuccessMessage('')
       const { error } = editingParticipant
         ? await updateParticipant(editingParticipant, data, file)
         : await createParticipant(data, file)
@@ -57,6 +59,9 @@ export function ParticipantsPage() {
         setOperationError(error)
         return
       }
+
+      setSuccessMessage(editingParticipant ? 'Peserta berhasil diperbarui' : 'Peserta berhasil ditambahkan')
+      setTimeout(() => setSuccessMessage(''), 5000)
 
       setEditingParticipant(null)
       setShowEditModal(false)
@@ -136,14 +141,21 @@ export function ParticipantsPage() {
   const handleGroupSubmit = async (data: any, file?: File | null) => {
     try {
       setOperationError('')
+      setSuccessMessage('')
       const { error } = await createParticipant(data, file)
-      
+
       if (error) {
         setOperationError(error)
         return
       }
-      
+
+      setSuccessMessage('Group berhasil didaftarkan')
+      setTimeout(() => setSuccessMessage(''), 5000)
+
       refetch()
+      setTimeout(() => {
+        setActiveTab('history')
+      }, 500)
     } catch (err) {
       setOperationError(err instanceof Error ? err.message : 'Terjadi kesalahan saat mendaftarkan group')
     }
@@ -188,6 +200,13 @@ export function ParticipantsPage() {
           </Button>
         </div>
       </div>
+
+      {successMessage && (
+        <Alert className="border-green-200 bg-green-50">
+          <CheckCircle className="h-4 w-4 text-green-600" />
+          <AlertDescription className="text-green-800">{successMessage}</AlertDescription>
+        </Alert>
+      )}
 
       {importError && (
         <Alert>
