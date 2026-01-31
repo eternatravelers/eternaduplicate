@@ -30,12 +30,9 @@ export function PaymentManagementModal({
   const [showAddPayment, setShowAddPayment] = useState(false)
   const [error, setError] = useState('')
 
-  if (!isOpen || !participant?.id) {
-    return null
-  }
-
-  const { installments, loading: loadingInstallments, refetch: refetchInstallments } = usePaymentInstallments(participant.id)
-  const { summary, loading: loadingSummary, refetch: refetchSummary } = usePaymentSummary(participant.id)
+  const participantId = participant?.id || null
+  const { installments, loading: loadingInstallments, refetch: refetchInstallments } = usePaymentInstallments(participantId)
+  const { summary, loading: loadingSummary, refetch: refetchSummary } = usePaymentSummary(participantId)
   const { createInstallment, loading: creating } = useCreatePaymentInstallment()
   const { deleteInstallment, loading: deleting } = useDeletePaymentInstallment()
 
@@ -70,6 +67,10 @@ export function PaymentManagementModal({
     refetchInstallments()
     refetchSummary()
     if (onRefresh) onRefresh()
+  }
+
+  if (!isOpen || !participant?.id) {
+    return null
   }
 
   return (
