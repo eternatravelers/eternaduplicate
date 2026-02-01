@@ -15,6 +15,7 @@ interface Participant {
   full_name: string;
   email: string;
   phone: string;
+  id_card_number?: string;
   address: string;
   participant_count: number;
   package_price: number;
@@ -124,6 +125,7 @@ export function ParticipantHistoryTable({
     const matchesSearch = participant.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          participant.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          participant.phone.includes(searchTerm) ||
+                         (participant.id_card_number && participant.id_card_number.includes(searchTerm)) ||
                          participant.trips?.name.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesStatus = filterStatus === 'all' || participant.status === filterStatus;
@@ -151,7 +153,7 @@ export function ParticipantHistoryTable({
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
-              placeholder="Cari nama, email, telepon, atau trip..."
+              placeholder="Cari nama, email, telepon, KTP, atau trip..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -218,6 +220,7 @@ export function ParticipantHistoryTable({
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
+              <TableHead>ID Card</TableHead>
               <TableHead>Trip</TableHead>
               <TableHead>Contact</TableHead>
               <TableHead>Participants</TableHead>
@@ -231,7 +234,7 @@ export function ParticipantHistoryTable({
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={9} className="text-center py-8">
+                <TableCell colSpan={10} className="text-center py-8">
                   <div className="flex items-center justify-center gap-2">
                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
                     <span className="text-gray-500">Memuat data...</span>
@@ -240,7 +243,7 @@ export function ParticipantHistoryTable({
               </TableRow>
             ) : filteredParticipants.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={9} className="text-center py-8 text-gray-500">
+                <TableCell colSpan={10} className="text-center py-8 text-gray-500">
                   No participants found
                 </TableCell>
               </TableRow>
@@ -265,6 +268,15 @@ export function ParticipantHistoryTable({
                       <div className="text-sm text-gray-500 truncate max-w-48">
                         {participant.address}
                       </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm">
+                      {participant.id_card_number ? (
+                        <span className="font-mono">{participant.id_card_number}</span>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
                     </div>
                   </TableCell>
                   <TableCell>

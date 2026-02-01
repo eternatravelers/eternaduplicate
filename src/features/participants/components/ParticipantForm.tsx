@@ -38,6 +38,7 @@ export function ParticipantForm({
     full_name: '',
     email: '',
     phone: '',
+    id_card_number: '',
     address: '',
     participant_count: '' as number | '',
     package_price: '' as number | '',
@@ -63,6 +64,7 @@ export function ParticipantForm({
         full_name: initialData.full_name || '',
         email: initialData.email || '',
         phone: initialData.phone || '',
+        id_card_number: initialData.id_card_number || '',
         address: initialData.address || '',
         participant_count: initialData.participant_count || '',
         package_price: initialData.package_price || '',
@@ -80,6 +82,7 @@ export function ParticipantForm({
         full_name: '',
         email: '',
         phone: '',
+        id_card_number: '',
         address: '',
         participant_count: '' as number | '',
         package_price: '' as number | '',
@@ -285,6 +288,16 @@ export function ParticipantForm({
                 value={formData.phone}
                 onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
                 required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="id_card_number">No. KTP/Identitas</Label>
+              <Input
+                id="id_card_number"
+                value={formData.id_card_number}
+                onChange={(e) => setFormData(prev => ({ ...prev, id_card_number: e.target.value }))}
+                placeholder="Masukkan nomor identitas"
               />
             </div>
 

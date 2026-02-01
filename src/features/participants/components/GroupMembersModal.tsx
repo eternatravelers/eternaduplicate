@@ -34,6 +34,7 @@ export function GroupMembersModal({
     full_name: '',
     email: '',
     phone: '',
+    id_card_number: '',
     address: '',
     additional_requests: ''
   })
@@ -60,6 +61,7 @@ export function GroupMembersModal({
       full_name: '',
       email: '',
       phone: '',
+      id_card_number: '',
       address: '',
       additional_requests: ''
     })
@@ -93,6 +95,7 @@ export function GroupMembersModal({
       full_name: member.full_name,
       email: member.email,
       phone: member.phone,
+      id_card_number: member.id_card_number || '',
       address: member.address,
       additional_requests: member.additional_requests || ''
     })
@@ -122,6 +125,7 @@ export function GroupMembersModal({
       full_name: memberFormData.full_name,
       email: memberFormData.email,
       phone: memberFormData.phone,
+      id_card_number: memberFormData.id_card_number,
       address: memberFormData.address,
       participant_count: 1, // Always 1 for individual group members
       package_price: 0, // No additional payment - covered by group leader
@@ -294,6 +298,19 @@ export function GroupMembersModal({
                     </div>
 
                     <div className="space-y-2">
+                      <Label htmlFor="member_id_card" className="text-sm font-medium">
+                        No. KTP/Identitas
+                      </Label>
+                      <Input
+                        id="member_id_card"
+                        value={memberFormData.id_card_number}
+                        onChange={(e) => setMemberFormData(prev => ({ ...prev, id_card_number: e.target.value }))}
+                        placeholder="Masukkan nomor identitas"
+                        className="focus:ring-green-500 focus:border-green-500"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
                       <Label htmlFor="member_address" className="text-sm font-medium">
                         Alamat <span className="text-red-500">*</span>
                       </Label>
@@ -386,7 +403,7 @@ export function GroupMembersModal({
                   <Users className="h-4 w-4" />
                   <span>Ketua Grup (Pembayar)</span>
                 </h4>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3 text-sm">
                   <div>
                     <span className="text-gray-600">Nama:</span>
                     <div className="font-medium">{groupParticipant.full_name}</div>
@@ -398,6 +415,12 @@ export function GroupMembersModal({
                   <div>
                     <span className="text-gray-600">Telepon:</span>
                     <div className="font-medium">{groupParticipant.phone}</div>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">KTP:</span>
+                    <div className="font-medium font-mono">
+                      {groupParticipant.id_card_number || '-'}
+                    </div>
                   </div>
                   <div>
                     <span className="text-gray-600">Status:</span>
@@ -441,6 +464,7 @@ export function GroupMembersModal({
                   <TableHeader>
                     <TableRow>
                       <TableHead>Nama Lengkap</TableHead>
+                      <TableHead>ID Card</TableHead>
                       <TableHead>Kontak</TableHead>
                       <TableHead>Alamat</TableHead>
                       <TableHead>Permintaan Khusus</TableHead>
@@ -453,6 +477,15 @@ export function GroupMembersModal({
                       <TableRow key={member.id}>
                         <TableCell>
                           <div className="font-medium text-gray-900">{member.full_name}</div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm">
+                            {member.id_card_number ? (
+                              <span className="font-mono">{member.id_card_number}</span>
+                            ) : (
+                              <span className="text-gray-400">-</span>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell>
                           <div className="text-sm">

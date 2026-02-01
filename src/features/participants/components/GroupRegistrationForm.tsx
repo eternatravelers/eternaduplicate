@@ -26,6 +26,7 @@ export function GroupRegistrationForm({
   const [groupData, setGroupData] = useState({
     groupName: '',
     groupLeader: '',
+    groupLeaderIdCard: '',
     groupEmail: '',
     groupPhone: '',
     participantCount: '' as number | '',
@@ -73,6 +74,7 @@ export function GroupRegistrationForm({
       full_name: `${groupData.groupName} (Group Leader: ${groupData.groupLeader})`,
       email: groupData.groupEmail,
       phone: groupData.groupPhone,
+      id_card_number: groupData.groupLeaderIdCard,
       address: 'Group Registration',
       participant_count: participantCount,
       package_price: totalPackagePrice,
@@ -91,6 +93,7 @@ export function GroupRegistrationForm({
     setGroupData({
       groupName: '',
       groupLeader: '',
+      groupLeaderIdCard: '',
       groupEmail: '',
       groupPhone: '',
       participantCount: '',
@@ -187,6 +190,16 @@ export function GroupRegistrationForm({
                 value={groupData.groupPhone}
                 onChange={(e) => setGroupData(prev => ({ ...prev, groupPhone: e.target.value }))}
                 required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="groupLeaderIdCard">No. KTP Ketua Group</Label>
+              <Input
+                id="groupLeaderIdCard"
+                value={groupData.groupLeaderIdCard}
+                onChange={(e) => setGroupData(prev => ({ ...prev, groupLeaderIdCard: e.target.value }))}
+                placeholder="Masukkan nomor identitas ketua group"
               />
             </div>
 
