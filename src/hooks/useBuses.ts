@@ -60,9 +60,13 @@ export function useBuses() {
             }
           }
         })
+        // Sort trips by departure_date descending (newest first)
+        const sortedTrips = Array.from(tripMap.values()).sort((a, b) =>
+          new Date(b.departure_date).getTime() - new Date(a.departure_date).getTime()
+        )
         return {
           ...bus,
-          assignedTrips: Array.from(tripMap.values())
+          assignedTrips: sortedTrips
         }
       }) || []
 

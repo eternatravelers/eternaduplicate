@@ -47,9 +47,13 @@ export function useDrivers() {
             uniqueTrips.set(rs.trips.id, rs.trips)
           }
         })
+        // Sort trips by departure_date descending (newest first)
+        const sortedTrips = Array.from(uniqueTrips.values()).sort((a, b) =>
+          new Date(b.departure_date).getTime() - new Date(a.departure_date).getTime()
+        )
         return {
           ...driver,
-          assignedTrips: Array.from(uniqueTrips.values())
+          assignedTrips: sortedTrips
         }
       }) || []
 

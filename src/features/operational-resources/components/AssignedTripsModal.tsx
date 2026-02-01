@@ -89,13 +89,23 @@ export function AssignedTripsModal({
                   <div>
                     <span className="text-gray-600">Trip Aktif:</span>
                     <div className="font-bold text-green-600">
-                      {assignedTrips.filter(trip => trip.status === 'active').length}
+                      {assignedTrips.filter(trip => {
+                        const departureDate = new Date(trip.departure_date)
+                        const today = new Date()
+                        today.setHours(0, 0, 0, 0)
+                        return departureDate >= today && !['completed', 'cancelled'].includes(trip.status)
+                      }).length}
                     </div>
                   </div>
                   <div>
                     <span className="text-gray-600">Trip Selesai:</span>
                     <div className="font-bold text-blue-600">
-                      {assignedTrips.filter(trip => trip.status === 'completed').length}
+                      {assignedTrips.filter(trip => {
+                        const departureDate = new Date(trip.departure_date)
+                        const today = new Date()
+                        today.setHours(0, 0, 0, 0)
+                        return trip.status === 'completed' || departureDate < today
+                      }).length}
                     </div>
                   </div>
                   <div>
@@ -104,7 +114,8 @@ export function AssignedTripsModal({
                       {assignedTrips.filter(trip => {
                         const departureDate = new Date(trip.departure_date)
                         const today = new Date()
-                        return trip.status === 'active' && departureDate > today
+                        today.setHours(0, 0, 0, 0)
+                        return departureDate > today && !['completed', 'cancelled'].includes(trip.status)
                       }).length}
                     </div>
                   </div>
@@ -125,7 +136,9 @@ export function AssignedTripsModal({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {assignedTrips.map((trip) => {
+                  {[...assignedTrips].sort((a, b) =>
+                    new Date(b.departure_date).getTime() - new Date(a.departure_date).getTime()
+                  ).map((trip) => {
                     const departureDate = new Date(trip.departure_date)
                     const today = new Date()
                     const daysUntilDeparture = Math.ceil((departureDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
