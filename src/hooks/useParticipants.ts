@@ -17,6 +17,7 @@ interface ParticipantFilters {
 }
 
 export function useParticipants(filters?: ParticipantFilters) {
+  const { userRole } = useAuth()
   const [participants, setParticipants] = useState<Participant[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -24,6 +25,8 @@ export function useParticipants(filters?: ParticipantFilters) {
   const fetchParticipants = async () => {
     try {
       setLoading(true)
+
+      console.log('[useParticipants] Fetching with user role:', userRole)
 
       // Fetch participants without trips join
       // Filter: only show individual participants and group leaders (not group members)
@@ -73,7 +76,7 @@ export function useParticipants(filters?: ParticipantFilters) {
         .order('created_at', { ascending: false })
 
       if (participantsError) {
-        const errorDetails = `Participants fetch error - Code: ${participantsError.code}, Message: ${participantsError.message}, Details: ${participantsError.details || 'N/A'}`
+        const errorDetails = `Participants fetch error - Code: ${participantsError.code}, Message: ${participantsError.message}, Status: ${(participantsError as any).status}, Details: ${participantsError.details || 'N/A'}, User Role: ${userRole}`
         console.error('Participants error:', errorDetails)
         throw new Error(errorDetails)
       }
@@ -121,7 +124,7 @@ export function useParticipants(filters?: ParticipantFilters) {
 
   useEffect(() => {
     fetchParticipants()
-  }, [filters?.startDate, filters?.endDate, filters?.tripId])
+  }, [filters?.startDate, filters?.endDate, filters?.tripId, userRole])
 
   return { participants, loading, error, refetch: fetchParticipants }
 }

@@ -855,3 +855,28 @@ export const uploadDocument = async (file: File, documentId: string): Promise<st
 export const deleteDocument = async (url: string): Promise<boolean> => {
   return deleteFile(url, 'documents')
 }
+
+// Helper function to check if error is RLS policy violation
+export const isRLSPolicyError = (error: any): boolean => {
+  if (!error) return false
+  return (
+    error.code === 'PGRST301' ||
+    error.status === 403 ||
+    (error.message && error.message.includes('permission'))
+  )
+}
+
+// Helper function to get user-friendly error message
+export const getErrorMessage = (error: any, userRole?: string): string => {
+  if (!error) return 'Terjadi kesalahan yang tidak diketahui'
+
+  if (isRLSPolicyError(error)) {
+    return `Anda tidak memiliki akses ke data ini. Role: ${userRole || 'unknown'}. Silakan hubungi administrator.`
+  }
+
+  if (error.message) {
+    return error.message
+  }
+
+  return 'Terjadi kesalahan saat mengambil data'
+}
