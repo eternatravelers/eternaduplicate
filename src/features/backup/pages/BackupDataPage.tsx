@@ -1,7 +1,9 @@
-import React, { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import {
   Download,
   Database,
@@ -12,7 +14,10 @@ import {
   AlertCircle,
   Shield,
   Info,
-  Loader2
+  Loader2,
+  Calendar,
+  X,
+  Filter
 } from 'lucide-react'
 import { useBackup } from '@/hooks/useBackup'
 import { formatNumber } from '@/lib/utils'
@@ -24,22 +29,49 @@ export function BackupDataPage() {
     error,
     stats,
     tables,
+    dateFilter,
     fetchStats,
     exportTableToCSV,
     exportTableToJSON,
     exportAllToCSV,
-    exportAllToJSON
+    exportAllToJSON,
+    updateDateFilter,
+    clearDateFilter
   } = useBackup()
+
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
 
   useEffect(() => {
     fetchStats()
   }, [fetchStats])
+
+  const handleApplyFilter = () => {
+    updateDateFilter({
+      startDate: startDate || null,
+      endDate: endDate || null
+    })
+  }
+
+  const handleClearFilter = () => {
+    setStartDate('')
+    setEndDate('')
+    clearDateFilter()
+  }
+
+  useEffect(() => {
+    if (dateFilter.startDate !== null || dateFilter.endDate !== null) {
+      fetchStats()
+    }
+  }, [dateFilter, fetchStats])
 
   const getTableCount = (tableName: string): number => {
     if (!stats) return 0
     const table = stats.tables.find(t => t.name === tableName)
     return table?.count || 0
   }
+
+  const hasActiveFilter = dateFilter.startDate || dateFilter.endDate
 
   return (
     <div className="space-y-6">
@@ -71,6 +103,85 @@ export function BackupDataPage() {
         </Alert>
       )}
 
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Filter className="h-5 w-5" />
+            Filter Tanggal
+          </CardTitle>
+          <CardDescription>
+            Filter data berdasarkan rentang tanggal sebelum backup
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap items-end gap-4">
+            <div className="flex-1 min-w-[200px]">
+              <Label htmlFor="startDate" className="text-sm font-medium text-gray-700">
+                Tanggal Mulai
+              </Label>
+              <div className="relative mt-1">
+                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  id="startDate"
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+            <div className="flex-1 min-w-[200px]">
+              <Label htmlFor="endDate" className="text-sm font-medium text-gray-700">
+                Tanggal Akhir
+              </Label>
+              <div className="relative mt-1">
+                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  id="endDate"
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                onClick={handleApplyFilter}
+                disabled={loading || (!startDate && !endDate)}
+              >
+                <Filter className="h-4 w-4 mr-2" />
+                Terapkan Filter
+              </Button>
+              {hasActiveFilter && (
+                <Button
+                  variant="outline"
+                  onClick={handleClearFilter}
+                  disabled={loading}
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Hapus Filter
+                </Button>
+              )}
+            </div>
+          </div>
+          {hasActiveFilter && (
+            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-800">
+                <strong>Filter aktif:</strong>{' '}
+                {dateFilter.startDate && dateFilter.endDate ? (
+                  <>Dari {dateFilter.startDate} sampai {dateFilter.endDate}</>
+                ) : dateFilter.startDate ? (
+                  <>Dari {dateFilter.startDate}</>
+                ) : (
+                  <>Sampai {dateFilter.endDate}</>
+                )}
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       <div className="grid gap-6 md:grid-cols-3">
         <Card className="hover:shadow-lg transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -98,7 +209,9 @@ export function BackupDataPage() {
             <div className="text-2xl font-bold text-green-600">
               {loading ? '-' : formatNumber(stats?.totalRecords || 0)}
             </div>
-            <p className="text-xs text-gray-500">Data yang akan di-backup</p>
+            <p className="text-xs text-gray-500">
+              {hasActiveFilter ? 'Data sesuai filter' : 'Data yang akan di-backup'}
+            </p>
           </CardContent>
         </Card>
 
@@ -130,6 +243,7 @@ export function BackupDataPage() {
           </CardTitle>
           <CardDescription>
             Download semua data dalam satu file atau multiple file
+            {hasActiveFilter && ' (sesuai filter tanggal)'}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -170,6 +284,7 @@ export function BackupDataPage() {
           </CardTitle>
           <CardDescription>
             Pilih kategori data yang ingin di-download
+            {hasActiveFilter && ' (sesuai filter tanggal)'}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -248,6 +363,7 @@ export function BackupDataPage() {
                 <li>
                   <strong>JSON</strong> - Format data terstruktur yang cocok untuk import ke sistem lain
                 </li>
+                <li>Gunakan filter tanggal untuk backup data pada periode tertentu</li>
                 <li>Data yang di-download tidak menyertakan password atau informasi sensitif</li>
                 <li>Simpan backup di tempat yang aman dan terenkripsi</li>
                 <li>Disarankan melakukan backup secara berkala (minimal seminggu sekali)</li>
