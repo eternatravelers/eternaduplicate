@@ -31,14 +31,18 @@ export function ParticipantsPage() {
 
   const { participants, loading, refetch: baseRefetch } = useParticipants()
   const { deletedParticipants, loading: deletedLoading, refetch: refetchDeleted } = useDeletedParticipants()
-  const { allParticipants } = useAllParticipants()
+  const { allParticipants, refetch: refetchAll } = useAllParticipants()
 
   const refetch = async () => {
     console.log('ParticipantsPage.refetch() called')
     setIsRefreshing(true)
-    await baseRefetch()
-    console.log('ParticipantsPage.refetch() completed')
+    const [freshData] = await Promise.all([
+      baseRefetch(),
+      refetchAll()
+    ])
+    console.log('ParticipantsPage.refetch() completed with', freshData.length, 'participants')
     setIsRefreshing(false)
+    return freshData
   }
   const { trips } = useTrips()
   const { sales } = useSales()
@@ -78,21 +82,15 @@ export function ParticipantsPage() {
       setSuccessMessage(editingParticipant ? 'Peserta berhasil diperbarui' : 'Peserta berhasil ditambahkan')
       setTimeout(() => setSuccessMessage(''), 5000)
 
-      console.log('Calling refetch...')
-      await refetch()
-      console.log('Refetch completed, participants count:', participants.length)
-
-      // Reset all filters to show the newly added/updated participant
       setSearchTerm('')
       setFilterStatus('all')
-
       setEditingParticipant(null)
       setShowEditModal(false)
 
-      // Small delay to ensure React state has fully updated
-      await new Promise(resolve => setTimeout(resolve, 100))
+      console.log('Calling refetch...')
+      const freshData = await refetch()
+      console.log('Refetch completed with fresh data:', freshData.length, 'participants')
 
-      console.log('Switching to history tab')
       setActiveTab('history')
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Terjadi kesalahan saat menyimpan data peserta'
@@ -188,18 +186,13 @@ export function ParticipantsPage() {
       setSuccessMessage('Group berhasil didaftarkan')
       setTimeout(() => setSuccessMessage(''), 5000)
 
-      console.log('Calling refetch after group registration...')
-      await refetch()
-      console.log('Refetch completed, participants count:', participants.length)
-
-      // Reset all filters to show the newly added participant
       setSearchTerm('')
       setFilterStatus('all')
 
-      // Small delay to ensure React state has fully updated
-      await new Promise(resolve => setTimeout(resolve, 100))
+      console.log('Calling refetch after group registration...')
+      const freshData = await refetch()
+      console.log('Refetch completed with fresh data:', freshData.length, 'participants')
 
-      console.log('Switching to history tab')
       setActiveTab('history')
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Terjadi kesalahan saat mendaftarkan group'
@@ -320,6 +313,7 @@ export function ParticipantsPage() {
 
         <TabsContent value="history" className="space-y-6">
           <ParticipantHistoryTable
+            key={`history-${participants.length}-${participants[0]?.id || 'empty'}`}
             participants={participants}
             searchTerm={searchTerm}
             setSearchTerm={setSearchTerm}
