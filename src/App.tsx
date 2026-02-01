@@ -129,8 +129,8 @@ function AppContent() {
                     setActiveTab('trips')
                   }}
                   onNavigateToMeetingPoints={() => setActiveTab('destinations')}
-                  onNavigateToCostPlans={() => setActiveTab('cost-plans')}
-                  onNavigateToResourceScheduling={() => setActiveTab('resource-scheduling')}
+                  onNavigateToCostPlans={() => setActiveTab('templates')}
+                  onNavigateToResourceScheduling={() => setActiveTab('operational-resources')}
                 />
               ) : (
                 <Dashboard />

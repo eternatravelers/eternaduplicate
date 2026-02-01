@@ -53,7 +53,7 @@ export function useDashboard() {
               )
             )
           `)
-          .eq('status', 'active')
+          .in('status', ['active', 'open', 'confirmed'])
           .gte('departure_date', today)
           .order('departure_date', { ascending: true })
           .limit(5)
@@ -77,7 +77,8 @@ export function useDashboard() {
       const { count: activeTripCount } = await supabase
         .from('trips')
         .select('*', { count: 'exact', head: true })
-        .eq('status', 'active')
+        .in('status', ['active', 'open', 'confirmed'])
+        .gte('departure_date', today)
 
       // Calculate stats
       const totalTrips = totalTripCount || 0

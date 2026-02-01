@@ -52,13 +52,22 @@ export function TripListTableCompact({
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false)
   const [tripToDelete, setTripToDelete] = React.useState<string | null>(null)
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: string, departureDate?: string) => {
+    if (departureDate) {
+      const departure = new Date(departureDate)
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      departure.setHours(0, 0, 0, 0)
+      if (departure < today && !['completed', 'cancelled'].includes(status)) {
+        return { color: 'bg-gray-100 text-gray-800', label: 'Selesai' }
+      }
+    }
     const statusConfig = {
       active: { color: 'bg-green-100 text-green-800', label: 'Active' },
       open: { color: 'bg-green-100 text-green-800', label: 'Open' },
       confirmed: { color: 'bg-blue-100 text-blue-800', label: 'Confirmed' },
       ongoing: { color: 'bg-orange-100 text-orange-800', label: 'Ongoing' },
-      completed: { color: 'bg-purple-100 text-purple-800', label: 'Completed' },
+      completed: { color: 'bg-gray-100 text-gray-800', label: 'Selesai' },
       cancelled: { color: 'bg-red-100 text-red-800', label: 'Cancelled' },
       draft: { color: 'bg-gray-100 text-gray-800', label: 'Draft' }
     }
@@ -124,7 +133,7 @@ export function TripListTableCompact({
             </TableHeader>
             <TableBody>
               {trips.map((trip) => {
-                const statusConfig = getStatusBadge(trip.status)
+                const statusConfig = getStatusBadge(trip.status, trip.departure_date)
                 const quotaPercentage = trip.quota
                   ? Math.round((trip.confirmed_participant_count || 0) / trip.quota * 100)
                   : 0

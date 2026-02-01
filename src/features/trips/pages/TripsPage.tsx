@@ -301,7 +301,13 @@ export function TripsPage({ onViewTripParticipants, onViewTripReadiness, onNavig
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Open Trips</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {trips.filter(trip => ['open', 'confirmed'].includes(trip.status)).length}
+                  {trips.filter(trip => {
+                    const today = new Date()
+                    today.setHours(0, 0, 0, 0)
+                    const departure = new Date(trip.departure_date)
+                    departure.setHours(0, 0, 0, 0)
+                    return departure >= today && !['completed', 'cancelled'].includes(trip.status)
+                  }).length}
                 </p>
               </div>
             </div>
@@ -315,7 +321,13 @@ export function TripsPage({ onViewTripParticipants, onViewTripReadiness, onNavig
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Completed</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {trips.filter(trip => trip.status === 'completed').length}
+                  {trips.filter(trip => {
+                    const today = new Date()
+                    today.setHours(0, 0, 0, 0)
+                    const departure = new Date(trip.departure_date)
+                    departure.setHours(0, 0, 0, 0)
+                    return trip.status === 'completed' || (departure < today && !['cancelled'].includes(trip.status))
+                  }).length}
                 </p>
               </div>
             </div>
