@@ -37,7 +37,8 @@ export function TripMonitoringCard({ trip, onViewDetails }: TripMonitoringCardPr
   const progressPercentage = isOngoing ? Math.min((daysPassed / totalDays) * 100, 100) : 0
   
   // Calculate participant fill rate
-  const fillRate = trip.quota > 0 ? (trip.participant_count / trip.quota) * 100 : 0
+  const totalParticipants = (trip.confirmed_participant_count || 0) + (trip.pending_participant_count || 0)
+  const fillRate = trip.quota > 0 ? (totalParticipants / trip.quota) * 100 : 0
 
   const getStatusBadge = () => {
     if (isCompleted) {
@@ -194,7 +195,7 @@ export function TripMonitoringCard({ trip, onViewDetails }: TripMonitoringCardPr
             <span className="text-sm font-medium">Peserta</span>
           </div>
           <div className="text-right">
-            <div className="font-bold">{trip.participant_count}/{trip.quota}</div>
+            <div className="font-bold">{totalParticipants}/{trip.quota}</div>
             <div className="text-xs text-gray-500">{fillRate.toFixed(0)}% terisi</div>
           </div>
         </div>

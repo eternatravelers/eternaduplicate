@@ -162,7 +162,7 @@ export function OperationsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {activeTrips.reduce((sum, trip) => sum + (trip.participant_count || 0), 0)}
+              {activeTrips.reduce((sum, trip) => sum + (trip.confirmed_participant_count || 0) + (trip.pending_participant_count || 0), 0)}
             </div>
             <p className="text-xs text-gray-500">
               Peserta aktif
