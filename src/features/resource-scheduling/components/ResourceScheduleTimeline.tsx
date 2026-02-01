@@ -72,7 +72,7 @@ export function ResourceScheduleTimeline({
         acc[date].push(schedule)
         return acc
       }, {} as Record<string, any[]>)
-      return Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b))
+      return Object.entries(grouped).sort(([a], [b]) => b.localeCompare(a))
     } else if (groupBy === 'resource') {
       const grouped = schedules.reduce((acc, schedule) => {
         const key = `${schedule.resource_type}-${schedule.resource_id}`
@@ -123,7 +123,11 @@ export function ResourceScheduleTimeline({
               {groupSchedules.map((schedule) => (
                 <div
                   key={schedule.id}
-                  className="border rounded-lg p-4 hover:shadow-md transition-shadow"
+                  className={`border rounded-lg p-4 hover:shadow-md transition-all ${
+                    schedule.status === 'completed'
+                      ? 'bg-gray-50 border-gray-200 opacity-75'
+                      : 'hover:bg-blue-50'
+                  }`}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1 space-y-2">

@@ -31,8 +31,8 @@ export function ResourceSchedulingPage() {
     resourceId: '',
     tripId: '',
     status: '',
-    startDate: format(startOfWeek(new Date()), 'yyyy-MM-dd'),
-    endDate: format(endOfWeek(addDays(new Date(), 30)), 'yyyy-MM-dd')
+    startDate: format(addDays(new Date(), -365), 'yyyy-MM-dd'),
+    endDate: format(addDays(new Date(), 365), 'yyyy-MM-dd')
   })
   const [viewMode, setViewMode] = useState<'date' | 'resource' | 'trip'>('date')
   const [error, setError] = useState<string | null>(null)

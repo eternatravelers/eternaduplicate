@@ -56,7 +56,7 @@ export function useResourceSchedules(filters?: {
       let query = supabase
         .from('resource_schedules')
         .select('*')
-        .order('pickup_datetime', { ascending: true })
+        .order('pickup_datetime', { ascending: false })
 
       if (filters?.resourceType) {
         query = query.eq('resource_type', filters.resourceType)
