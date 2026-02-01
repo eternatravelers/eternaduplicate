@@ -21,6 +21,7 @@ const FinancePage = lazy(() => import('@/features/finance/pages/FinancePage').th
 const TripParticipantsPage = lazy(() => import('@/features/trips/pages/TripParticipantsPage').then(m => ({ default: m.TripParticipantsPage })))
 const TripReadinessPage = lazy(() => import('@/features/trips/pages/TripReadinessPage').then(m => ({ default: m.TripReadinessPage })))
 const UserManagementPage = lazy(() => import('@/features/user-management/pages/UserManagementPage').then(m => ({ default: m.UserManagementPage })))
+const BackupDataPage = lazy(() => import('@/features/backup/pages/BackupDataPage').then(m => ({ default: m.BackupDataPage })))
 
 function LoadingFallback() {
   return (
@@ -102,6 +103,12 @@ function AppContent() {
               return (
                 <SuperAdminRoute>
                   <TrashTransactionsPage />
+                </SuperAdminRoute>
+              )
+            case 'backup':
+              return (
+                <SuperAdminRoute>
+                  <BackupDataPage />
                 </SuperAdminRoute>
               )
             case 'user-management':

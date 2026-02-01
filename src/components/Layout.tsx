@@ -23,6 +23,7 @@ import {
   Trash2,
   Calendar,
   ListChecks,
+  HardDrive,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -83,6 +84,7 @@ const menuItems: MenuItem[] = [
       { id: 'finance', label: 'Keuangan', icon: Wallet, type: 'item' },
       { id: 'reports', label: 'Laporan', icon: FileText, type: 'item' },
       { id: 'analytics', label: 'Analisis', icon: BarChart, type: 'item' },
+      { id: 'backup', label: 'Backup Data', icon: HardDrive, type: 'item' },
       { id: 'trash', label: 'Sampah', icon: Trash2, type: 'item' }
     ]
   },
