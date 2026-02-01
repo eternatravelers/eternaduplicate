@@ -5,10 +5,12 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, CreditCard as Edit, Search, Users, UserPlus, Wallet, X } from 'lucide-react';
+import { Trash2, CreditCard as Edit, Search, Users, UserPlus, Wallet, X, AlertTriangle } from 'lucide-react';
 import { formatCurrency, formatShortDate } from '@/lib/utils';
 import { GroupMembersModal } from './GroupMembersModal';
 import { PaymentManagementModal } from './PaymentManagementModal';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface Participant {
   id: string;
@@ -69,6 +71,9 @@ export function ParticipantHistoryTable({
   const [selectedPaymentParticipant, setSelectedPaymentParticipant] = useState<any>(null);
   const [filterTrip, setFilterTrip] = useState<string>('all');
   const [filterPaymentStatus, setFilterPaymentStatus] = useState<string>('all');
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [selectedDeleteParticipant, setSelectedDeleteParticipant] = useState<any>(null);
+  const [deleteError, setDeleteError] = useState<string>('');
 
   const handleViewGroupMembers = (participant: any) => {
     setSelectedGroupParticipant(participant);
@@ -142,6 +147,30 @@ export function ParticipantHistoryTable({
     setFilterStatus('all');
     setFilterTrip('all');
     setFilterPaymentStatus('all');
+  };
+
+  const handleDeleteClick = (participant: any) => {
+    setSelectedDeleteParticipant(participant);
+    setShowDeleteDialog(true);
+    setDeleteError('');
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!selectedDeleteParticipant) return;
+
+    try {
+      setDeleteError('');
+      await onDelete(selectedDeleteParticipant.id);
+
+      setTimeout(() => {
+        setShowDeleteDialog(false);
+        setSelectedDeleteParticipant(null);
+      }, 500);
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Gagal menghapus peserta. Silakan coba lagi.';
+      setDeleteError(errorMsg);
+      console.error('Delete participant error:', errorMsg);
+    }
   };
 
   return (
@@ -357,7 +386,7 @@ export function ParticipantHistoryTable({
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => onDelete(participant.id)}
+                        onClick={() => handleDeleteClick(participant)}
                         disabled={deleting}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -397,6 +426,49 @@ export function ParticipantHistoryTable({
         participant={selectedPaymentParticipant}
         onRefresh={onRefresh}
       />
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <div className="flex items-center gap-2 text-red-600">
+              <AlertTriangle className="h-5 w-5" />
+              <AlertDialogTitle>Hapus Peserta</AlertDialogTitle>
+            </div>
+            <AlertDialogDescription className="space-y-4 pt-4">
+              <div>
+                <p className="font-medium text-gray-900 mb-2">Anda yakin ingin menghapus peserta ini?</p>
+                {selectedDeleteParticipant && (
+                  <div className="bg-gray-50 p-3 rounded-lg space-y-1 text-sm">
+                    <p><span className="font-medium">Nama:</span> {selectedDeleteParticipant.full_name}</p>
+                    <p><span className="font-medium">Email:</span> {selectedDeleteParticipant.email}</p>
+                    <p><span className="font-medium">No. Telepon:</span> {selectedDeleteParticipant.phone}</p>
+                    {selectedDeleteParticipant.trips && (
+                      <p><span className="font-medium">Perjalanan:</span> {selectedDeleteParticipant.trips.name}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+              <p className="text-xs text-gray-600">Peserta akan dipindahkan ke sampah dan dapat dipulihkan nanti.</p>
+              {deleteError && (
+                <Alert variant="destructive" className="mt-3">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription>{deleteError}</AlertDescription>
+                </Alert>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="flex gap-3 justify-end pt-4">
+            <AlertDialogCancel disabled={deleting}>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              disabled={deleting}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {deleting ? 'Menghapus...' : 'Hapus Peserta'}
+            </AlertDialogAction>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

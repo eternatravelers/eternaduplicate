@@ -121,15 +121,19 @@ export function ParticipantsPage() {
 
       if (error) {
         setOperationError(error)
-        return
+        throw new Error(error)
       }
 
       await refetch()
       if (!permanent) {
         await refetchDeleted()
       }
+      setSuccessMessage('Peserta berhasil dihapus')
+      setTimeout(() => setSuccessMessage(''), 5000)
     } catch (error) {
-      setOperationError(error instanceof Error ? error.message : 'Terjadi kesalahan saat menghapus peserta')
+      const errorMsg = error instanceof Error ? error.message : 'Terjadi kesalahan saat menghapus peserta'
+      setOperationError(errorMsg)
+      throw error
     }
   }
 
