@@ -28,8 +28,19 @@ interface UserProfile {
   created_at: string
 }
 
+interface Invitation {
+  id: string
+  email: string
+  role: string
+  invited_by: string
+  expires_at: string
+  used_at: string | null
+  created_at: string
+}
+
 export function UserManagementPage() {
   const [users, setUsers] = useState<UserProfile[]>([])
+  const [invitations, setInvitations] = useState<Invitation[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
@@ -47,6 +58,8 @@ export function UserManagementPage() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [deactivatingUserId, setDeactivatingUserId] = useState<string | null>(null)
   const [showDeactivateDialog, setShowDeactivateDialog] = useState(false)
+  const [deletingInvitationId, setDeletingInvitationId] = useState<string | null>(null)
+  const [showDeleteInvitationDialog, setShowDeleteInvitationDialog] = useState(false)
   const [actionLoading, setActionLoading] = useState(false)
 
   const { isSuperAdmin, user: currentUser } = useAuth()
@@ -86,6 +99,36 @@ export function UserManagementPage() {
       setError(err instanceof Error ? err.message : 'Terjadi kesalahan')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchInvitations = async () => {
+    try {
+      if (!isSuperAdmin) return
+
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        throw new Error('No active session')
+      }
+
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/list-invitations`
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to fetch invitations')
+      }
+
+      const data = await response.json()
+      setInvitations(data.invitations || [])
+    } catch (err) {
+      console.error('Error fetching invitations:', err)
     }
   }
 
@@ -130,11 +173,49 @@ export function UserManagementPage() {
         })
         setShowInviteForm(false)
         fetchUsers()
+        fetchInvitations()
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Gagal mengundang pengguna')
     } finally {
       setInviting(false)
+    }
+  }
+
+  const handleDeleteInvitation = async () => {
+    if (!deletingInvitationId) return
+
+    try {
+      setActionLoading(true)
+      setError(null)
+
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        throw new Error('No active session')
+      }
+
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-invitation/${deletingInvitationId}`
+      const response = await fetch(apiUrl, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to delete invitation')
+      }
+
+      alert('Undangan berhasil dihapus!')
+      setShowDeleteInvitationDialog(false)
+      setDeletingInvitationId(null)
+      fetchInvitations()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Gagal menghapus undangan')
+    } finally {
+      setActionLoading(false)
     }
   }
 
@@ -323,6 +404,7 @@ export function UserManagementPage() {
 
   useEffect(() => {
     fetchUsers()
+    fetchInvitations()
   }, [isSuperAdmin])
 
   if (!isSuperAdmin) {
@@ -635,6 +717,76 @@ export function UserManagementPage() {
         </CardContent>
       </Card>
 
+      {/* Pending Invitations Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-xl">Undangan Tertunda</CardTitle>
+          <p className="text-sm text-gray-600 mt-1">
+            Daftar undangan yang belum digunakan untuk registrasi
+          </p>
+        </CardHeader>
+        <CardContent>
+          {invitations.filter(inv => !inv.used_at).length === 0 ? (
+            <div className="text-center py-12">
+              <div className="text-gray-400 mb-4">
+                <UserPlus className="h-12 w-12 mx-auto" />
+              </div>
+              <p className="text-gray-600">
+                Tidak ada undangan tertunda
+              </p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Peran</TableHead>
+                  <TableHead>Kadaluarsa</TableHead>
+                  <TableHead>Dibuat</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Aksi</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {invitations.filter(inv => !inv.used_at).map((invitation) => {
+                  const isExpired = new Date(invitation.expires_at) < new Date()
+                  return (
+                    <TableRow key={invitation.id}>
+                      <TableCell className="font-medium">{invitation.email}</TableCell>
+                      <TableCell>{getRoleBadge(invitation.role)}</TableCell>
+                      <TableCell>{formatShortDate(invitation.expires_at)}</TableCell>
+                      <TableCell>{formatShortDate(invitation.created_at)}</TableCell>
+                      <TableCell>
+                        {isExpired ? (
+                          <Badge className="bg-red-100 text-red-800">Kadaluarsa</Badge>
+                        ) : (
+                          <Badge className="bg-yellow-100 text-yellow-800">Menunggu</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                          onClick={() => {
+                            setDeletingInvitationId(invitation.id)
+                            setShowDeleteInvitationDialog(true)
+                          }}
+                          title="Hapus undangan"
+                          disabled={actionLoading}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Edit User Dialog */}
       <Dialog open={showEditForm} onOpenChange={setShowEditForm}>
         <DialogContent>
@@ -766,6 +918,35 @@ export function UserManagementPage() {
               disabled={actionLoading}
             >
               {actionLoading ? 'Menghapus...' : 'Hapus Permanen'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Invitation Alert Dialog */}
+      <AlertDialog open={showDeleteInvitationDialog} onOpenChange={setShowDeleteInvitationDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus Undangan</AlertDialogTitle>
+            <AlertDialogDescription>
+              Apakah Anda yakin ingin menghapus undangan ini?
+              <br /><br />
+              Email yang terkait dengan undangan ini tidak akan bisa mendaftar lagi kecuali Anda mengirim undangan baru.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setShowDeleteInvitationDialog(false)
+              setDeletingInvitationId(null)
+            }} disabled={actionLoading}>
+              Batal
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteInvitation}
+              className="bg-red-600 hover:bg-red-700"
+              disabled={actionLoading}
+            >
+              {actionLoading ? 'Menghapus...' : 'Hapus Undangan'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
