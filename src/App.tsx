@@ -1,7 +1,8 @@
-import React, { useState, lazy, Suspense } from 'react'
+import React, { useState, lazy, Suspense, useEffect } from 'react'
 import { AuthProvider } from '@/components/Auth/AuthProvider'
 import { ProtectedRoute } from '@/components/Auth/ProtectedRoute'
 import { SuperAdminRoute } from '@/components/Auth/SuperAdminRoute'
+import { ResetPasswordPage } from '@/components/Auth/ResetPasswordPage'
 import { Layout } from '@/components/Layout'
 import { Dashboard } from '@/components/Dashboard'
 import { useAuth } from '@/hooks/useAuth'
@@ -165,6 +166,39 @@ function AppContent() {
 }
 
 function App() {
+  const [showResetPassword, setShowResetPassword] = useState(false)
+
+  useEffect(() => {
+    const hashParams = new URLSearchParams(window.location.hash.substring(1))
+    const type = hashParams.get('type')
+
+    if (type === 'recovery') {
+      setShowResetPassword(true)
+    }
+
+    const handleHashChange = () => {
+      const hashParams = new URLSearchParams(window.location.hash.substring(1))
+      const type = hashParams.get('type')
+      setShowResetPassword(type === 'recovery')
+    }
+
+    window.addEventListener('hashchange', handleHashChange)
+    return () => window.removeEventListener('hashchange', handleHashChange)
+  }, [])
+
+  const handleBackToLogin = () => {
+    window.location.hash = ''
+    setShowResetPassword(false)
+  }
+
+  if (showResetPassword) {
+    return (
+      <AuthProvider>
+        <ResetPasswordPage onBackToLogin={handleBackToLogin} />
+      </AuthProvider>
+    )
+  }
+
   return (
     <AuthProvider>
       <ProtectedRoute>
