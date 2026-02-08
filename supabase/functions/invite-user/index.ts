@@ -9,9 +9,6 @@ const corsHeaders = {
 
 interface InviteUserRequest {
   email: string;
-  fullName: string;
-  companyName?: string;
-  phone?: string;
   role: string;
 }
 
@@ -58,9 +55,9 @@ Deno.serve(async (req: Request) => {
 
     const requestData: InviteUserRequest = await req.json();
 
-    if (!requestData.email || !requestData.fullName || !requestData.role) {
+    if (!requestData.email || !requestData.role) {
       return new Response(
-        JSON.stringify({ error: "Missing required fields: email, fullName, role" }),
+        JSON.stringify({ error: "Missing required fields: email, role" }),
         {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -68,32 +65,58 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const temporaryPassword = "TempPass" + Math.random().toString(36).slice(-8) + "!";
+    const { data: existingInvite } = await supabaseClient
+      .from("invitations")
+      .select("id, used_at")
+      .eq("email", requestData.email.toLowerCase().trim())
+      .maybeSingle();
 
-    const { data: newUser, error: createError } = await supabaseClient.auth.admin.createUser({
-      email: requestData.email,
-      password: temporaryPassword,
-      email_confirm: true,
-      user_metadata: {
-        full_name: requestData.fullName,
-        company_name: requestData.companyName || null,
-        phone: requestData.phone || null,
+    if (existingInvite) {
+      if (existingInvite.used_at) {
+        return new Response(
+          JSON.stringify({ error: "User with this email already registered" }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
+      return new Response(
+        JSON.stringify({ error: "Invitation already exists for this email" }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7);
+
+    const { data: invitation, error: insertError } = await supabaseClient
+      .from("invitations")
+      .insert({
+        email: requestData.email.toLowerCase().trim(),
         role: requestData.role,
-      },
-    });
+        invited_by: user.id,
+        expires_at: expiresAt.toISOString(),
+      })
+      .select()
+      .single();
 
-    if (createError) {
-      throw createError;
+    if (insertError) {
+      throw insertError;
     }
 
     return new Response(
       JSON.stringify({
         success: true,
-        user: {
-          id: newUser.user.id,
-          email: newUser.user.email,
+        invitation: {
+          id: invitation.id,
+          email: invitation.email,
+          role: invitation.role,
+          expires_at: invitation.expires_at,
         },
-        temporaryPassword,
       }),
       {
         status: 200,

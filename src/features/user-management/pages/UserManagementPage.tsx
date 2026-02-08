@@ -38,9 +38,6 @@ export function UserManagementPage() {
   const [showInviteForm, setShowInviteForm] = useState(false)
   const [inviteData, setInviteData] = useState({
     email: '',
-    fullName: '',
-    companyName: '',
-    phone: '',
     role: 'admin'
   })
   const [inviting, setInviting] = useState(false)
@@ -113,9 +110,6 @@ export function UserManagementPage() {
         },
         body: JSON.stringify({
           email: inviteData.email,
-          fullName: inviteData.fullName,
-          companyName: inviteData.companyName,
-          phone: inviteData.phone,
           role: inviteData.role
         }),
       })
@@ -128,13 +122,10 @@ export function UserManagementPage() {
       const data = await response.json()
 
       if (data.success) {
-        alert(`Pengguna berhasil diundang!\n\nEmail: ${inviteData.email}\nPassword Sementara: ${data.temporaryPassword}\n\nSilakan bagikan informasi ini kepada pengguna.`)
+        alert(`Undangan berhasil dikirim!\n\nEmail: ${inviteData.email}\n\nPengguna dapat mendaftar melalui halaman registrasi dengan menggunakan email tersebut.`)
 
         setInviteData({
           email: '',
-          fullName: '',
-          companyName: '',
-          phone: '',
           role: 'admin'
         })
         setShowInviteForm(false)
@@ -379,43 +370,27 @@ export function UserManagementPage() {
               </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleInviteUser} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                <p className="text-sm text-blue-800">
+                  Pengguna yang diundang akan menerima akses untuk mendaftar dengan email mereka. Mereka akan mengisi data lengkap saat registrasi.
+                </p>
+              </div>
+
+              <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
                   <Input
                     id="email"
                     type="email"
+                    placeholder="nama@perusahaan.com"
                     value={inviteData.email}
                     onChange={(e) => setInviteData(prev => ({ ...prev, email: e.target.value }))}
                     required
                   />
+                  <p className="text-xs text-gray-500">Email yang akan digunakan untuk registrasi</p>
                 </div>
+
                 <div className="space-y-2">
-                  <Label htmlFor="fullName">Nama Lengkap</Label>
-                  <Input
-                    id="fullName"
-                    value={inviteData.fullName}
-                    onChange={(e) => setInviteData(prev => ({ ...prev, fullName: e.target.value }))}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="companyName">Nama Perusahaan</Label>
-                  <Input
-                    id="companyName"
-                    value={inviteData.companyName}
-                    onChange={(e) => setInviteData(prev => ({ ...prev, companyName: e.target.value }))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Nomor Telepon</Label>
-                  <Input
-                    id="phone"
-                    value={inviteData.phone}
-                    onChange={(e) => setInviteData(prev => ({ ...prev, phone: e.target.value }))}
-                  />
-                </div>
-                <div className="space-y-2 md:col-span-2">
                   <Label htmlFor="role">Peran</Label>
                   <Select value={inviteData.role} onValueChange={(value) => setInviteData(prev => ({ ...prev, role: value }))}>
                     <SelectTrigger>
@@ -426,11 +401,13 @@ export function UserManagementPage() {
                       <SelectItem value="admin">Admin</SelectItem>
                     </SelectContent>
                   </Select>
+                  <p className="text-xs text-gray-500">Peran yang akan diberikan setelah registrasi</p>
                 </div>
               </div>
+
               <div className="flex space-x-2">
-                <Button type="submit" disabled={inviting}>
-                  {inviting ? 'Mengundang...' : 'Undang Pengguna'}
+                <Button type="submit" disabled={inviting} className="bg-blue-600 hover:bg-blue-700">
+                  {inviting ? 'Mengirim Undangan...' : 'Kirim Undangan'}
                 </Button>
                 <Button type="button" variant="outline" onClick={() => setShowInviteForm(false)}>
                   Batal

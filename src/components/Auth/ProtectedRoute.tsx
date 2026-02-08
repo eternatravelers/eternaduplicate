@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
+import { Navigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
-import { LoginForm } from './LoginForm'
 import { Loader2, AlertCircle, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -64,7 +64,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   }
 
   if (!user) {
-    return <LoginForm />
+    return <Navigate to="/login" replace />
   }
 
   return <>{children}</>
