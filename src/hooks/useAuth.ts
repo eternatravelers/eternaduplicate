@@ -109,7 +109,7 @@ export function useAuthProvider(): AuthContextType {
       setError(null)
 
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: window.location.origin
+        redirectTo: 'https://eternatravelers-eter-hx4y.bolt.host/'
       })
 
       if (error) throw error
