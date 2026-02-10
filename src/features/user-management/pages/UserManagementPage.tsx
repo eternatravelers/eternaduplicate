@@ -341,11 +341,20 @@ export function UserManagementPage() {
         throw new Error('No active session')
       }
 
-      const { error: deleteError } = await supabase.auth.admin.deleteUser(
-        deletingUserId
-      )
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-user`
+      const response = await fetch(apiUrl, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId: deletingUserId }),
+      })
 
-      if (deleteError) throw deleteError
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to delete user')
+      }
 
       alert('Pengguna berhasil dihapus secara permanen!')
       setShowDeleteDialog(false)
