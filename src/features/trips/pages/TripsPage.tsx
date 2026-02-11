@@ -36,7 +36,7 @@ export function TripsPage({ onViewTripParticipants, onViewTripReadiness, onNavig
   const { deleteTrip, loading: deleting } = useDeleteTrip()
   const { createTripType, loading: creatingTripType } = useCreateTripType()
   const { deleteTripType, loading: deletingTripType } = useDeleteTripType()
-  
+
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false)
@@ -44,7 +44,7 @@ export function TripsPage({ onViewTripParticipants, onViewTripReadiness, onNavig
   const [isResourcesModalOpen, setIsResourcesModalOpen] = useState(false)
   const [selectedTrip, setSelectedTrip] = useState<any>(null)
   const [submitError, setSubmitError] = useState<string | null>(null)
-  const { isSuperAdmin } = useAuth()
+  const { isAdmin } = useAuth()
 
   const [filters, setFilters] = useState<TripFilterState>({
     search: '',
@@ -362,7 +362,7 @@ export function TripsPage({ onViewTripParticipants, onViewTripReadiness, onNavig
         onViewResources={handleViewResources}
         onViewReadiness={handleViewReadiness}
         onNavigateToResourceScheduling={onNavigateToResourceScheduling}
-        isSuperAdmin={isSuperAdmin}
+        isAdmin={isAdmin}
         deleting={deleting}
       />
 
