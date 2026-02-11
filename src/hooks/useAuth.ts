@@ -34,17 +34,17 @@ export function useAuthProvider(): AuthContextType {
   const [isCheckingStatus, setIsCheckingStatus] = useState(false)
 
   const getUserRole = (user: User): string => {
-    const userMetaRole = user.user_metadata?.role
     const appMetaRole = user.app_metadata?.role
+    const userMetaRole = user.user_metadata?.role
 
     console.log('[useAuth] Getting user role:', {
-      userMetaRole,
       appMetaRole,
+      userMetaRole,
       userId: user.id,
       email: user.email
     })
 
-    const role = userMetaRole || appMetaRole
+    const role = appMetaRole || userMetaRole
 
     if (!role) {
       console.warn('[useAuth] No role found in user metadata, defaulting to admin')
@@ -59,9 +59,6 @@ export function useAuthProvider(): AuthContextType {
     console.warn('[useAuth] Unknown role detected:', role, '- defaulting to admin')
     return 'admin'
   }
-
-  const isAdmin = userRole === 'admin' || userRole === 'super_admin'
-  const isSuperAdmin = userRole === 'super_admin'
 
   const signIn = async (email: string, password: string) => {
     try {
@@ -242,6 +239,9 @@ export function useAuthProvider(): AuthContextType {
       subscription.unsubscribe()
     }
   }, [])
+
+  const isAdmin = userRole === 'admin' || userRole === 'super_admin'
+  const isSuperAdmin = userRole === 'super_admin'
 
   return {
     user,
