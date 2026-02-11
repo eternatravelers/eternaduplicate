@@ -33,7 +33,7 @@ interface TripListTableCompactProps {
   onViewResources?: (trip: any) => void
   onViewReadiness?: (trip: any) => void
   onNavigateToResourceScheduling?: (tripId: string) => void
-  isSuperAdmin: boolean
+  isAdmin: boolean
   deleting: boolean
 }
 
@@ -46,7 +46,7 @@ export function TripListTableCompact({
   onViewResources,
   onViewReadiness,
   onNavigateToResourceScheduling,
-  isSuperAdmin,
+  isAdmin,
   deleting
 }: TripListTableCompactProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false)
@@ -266,7 +266,7 @@ export function TripListTableCompact({
                                 View Resources
                               </DropdownMenuItem>
                             )}
-                            {isSuperAdmin && (
+                            {isAdmin && (
                               <>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem

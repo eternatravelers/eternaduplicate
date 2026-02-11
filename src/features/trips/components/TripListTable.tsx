@@ -17,7 +17,7 @@ interface TripListTableProps {
   onViewResources?: (trip: any) => void
   onViewReadiness?: (trip: any) => void
   onNavigateToResourceScheduling?: (tripId: string) => void
-  isSuperAdmin: boolean
+  isAdmin: boolean
   deleting: boolean
 }
 
@@ -30,7 +30,7 @@ export function TripListTable({
   onViewResources,
   onViewReadiness,
   onNavigateToResourceScheduling,
-  isSuperAdmin,
+  isAdmin,
   deleting
 }: TripListTableProps) {
   const getStatusBadge = (status: string) => {
@@ -228,7 +228,7 @@ export function TripListTable({
                     >
                       <Copy className="w-4 h-4" />
                     </Button>
-                    {isSuperAdmin && (
+                    {isAdmin && (
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button variant="outline" size="sm" title="Delete Trip">
