@@ -73,21 +73,34 @@ Deno.serve(async (req: Request) => {
 
     if (existingInvite) {
       if (existingInvite.used_at) {
+        const { data: existingUsers } = await supabaseClient.auth.admin.listUsers();
+        const userStillExists = existingUsers?.users?.some(
+          u => u.email?.toLowerCase().trim() === requestData.email.toLowerCase().trim()
+        );
+
+        if (userStillExists) {
+          return new Response(
+            JSON.stringify({ error: "User with this email already registered" }),
+            {
+              status: 400,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            }
+          );
+        }
+
+        await supabaseClient
+          .from("invitations")
+          .delete()
+          .eq("id", existingInvite.id);
+      } else {
         return new Response(
-          JSON.stringify({ error: "User with this email already registered" }),
+          JSON.stringify({ error: "Invitation already exists for this email" }),
           {
             status: 400,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           }
         );
       }
-      return new Response(
-        JSON.stringify({ error: "Invitation already exists for this email" }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
     }
 
     const expiresAt = new Date();

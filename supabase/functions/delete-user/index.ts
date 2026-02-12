@@ -89,6 +89,15 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    const { data: userToDelete } = await supabaseClient.auth.admin.getUserById(userId);
+
+    if (userToDelete?.user?.email) {
+      await supabaseClient
+        .from("invitations")
+        .delete()
+        .eq("email", userToDelete.user.email.toLowerCase().trim());
+    }
+
     const { error: deleteError } = await supabaseClient.auth.admin.deleteUser(userId);
 
     if (deleteError) {
