@@ -124,9 +124,15 @@ export function TripsPage({ onViewTripParticipants, onViewTripReadiness, onNavig
 
   const handleDelete = async (id: string) => {
     try {
-      await deleteTrip(id)
+      const { error } = await deleteTrip(id)
+      if (error) {
+        setSubmitError(error)
+        return
+      }
       refetch()
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Error deleting trip'
+      setSubmitError(errorMessage)
       console.error('Error deleting trip:', error)
     }
   }
