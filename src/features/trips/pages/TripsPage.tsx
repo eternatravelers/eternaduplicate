@@ -114,21 +114,33 @@ export function TripsPage({ onViewTripParticipants, onViewTripReadiness, onNavig
     const originalReturn = new Date(trip.return_date)
     const newDeparture = new Date(originalDeparture)
     const newReturn = new Date(originalReturn)
-    
+
     newDeparture.setMonth(newDeparture.getMonth() + 1)
     newReturn.setMonth(newReturn.getMonth() + 1)
-    
+
+    // Only copy user-editable fields, exclude system fields (id, created_at, updated_at)
+    // and computed fields (participant_count, readiness_score, etc.)
     const duplicateData = {
-      ...trip,
       name: `${trip.name} (Copy)`,
+      trip_type: trip.trip_type,
       departure_date: newDeparture.toISOString().split('T')[0],
       return_date: newReturn.toISOString().split('T')[0],
+      meeting_point: trip.meeting_point,
+      quota: trip.quota,
+      price: trip.price,
+      additional_facilities: trip.additional_facilities,
+      pricing_type: trip.pricing_type,
+      cost_plan_id: trip.cost_plan_id,
+      status: 'draft',
+      // Map related data arrays to IDs
+      destination_ids: trip.destinations?.map((dest: any) => dest.id) || [],
       tour_leader_ids: trip.tour_leaders?.map((tl: any) => tl.id) || [],
       bus_ids: trip.buses?.map((bus: any) => bus.id) || [],
       driver_ids: trip.drivers?.map((driver: any) => driver.id) || [],
-      status: 'active'
+      meeting_point_ids: trip.meeting_point_ids || [],
+      primary_meeting_point_id: trip.primary_meeting_point_id
     }
-    
+
     setSelectedTrip(duplicateData)
     setIsDuplicateModalOpen(true)
   }
