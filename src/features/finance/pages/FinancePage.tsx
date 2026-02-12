@@ -21,11 +21,14 @@ export function FinancePage() {
   const [error, setError] = useState<string | null>(null)
 
   const { transactions, loading, refetch } = useTransactions()
-  const { trips } = useTrips()
-  const { destinations } = useDestinations()
+  const { trips, loading: tripsLoading } = useTrips()
+  const { destinations, loading: destinationsLoading } = useDestinations()
   const { createTransaction, loading: creating } = useCreateTransaction()
   const { updateTransaction, loading: updating } = useUpdateTransaction()
   const { deleteTransaction, loading: deleting, error: deleteError } = useDeleteTransaction()
+
+  // Check if any supporting data is still loading
+  const dataLoading = tripsLoading || destinationsLoading
 
   // Filter transactions based on search, date, and trip filters
   const filteredTransactions = transactions.filter(transaction => {
@@ -185,9 +188,13 @@ export function FinancePage() {
             <h1 className="text-3xl font-bold">Manajemen Keuangan</h1>
             <p className="text-gray-600 mt-2">Kelola pemasukan dan pengeluaran bisnis travel Anda</p>
           </div>
-          <Button onClick={handleAddNew} className="bg-green-600 hover:bg-green-700">
+          <Button
+            onClick={handleAddNew}
+            disabled={dataLoading}
+            className="bg-green-600 hover:bg-green-700"
+          >
             <Plus className="h-4 w-4 mr-2" />
-            Tambah Transaksi
+            {dataLoading ? 'Memuat data...' : 'Tambah Transaksi'}
           </Button>
         </div>
         <div className="text-center py-12 text-gray-500">
@@ -206,9 +213,13 @@ export function FinancePage() {
           <h1 className="text-3xl font-bold">Manajemen Keuangan</h1>
           <p className="text-gray-600 mt-2">Kelola pemasukan dan pengeluaran bisnis travel Anda</p>
         </div>
-        <Button onClick={handleAddNew} className="bg-green-600 hover:bg-green-700">
+        <Button
+          onClick={handleAddNew}
+          disabled={dataLoading}
+          className="bg-green-600 hover:bg-green-700"
+        >
           <Plus className="h-4 w-4 mr-2" />
-          Tambah Transaksi
+          {dataLoading ? 'Memuat data...' : 'Tambah Transaksi'}
         </Button>
       </div>
 
@@ -231,8 +242,8 @@ export function FinancePage() {
           initialData={editingTransaction ? transactions.find(t => t.id === editingTransaction) : undefined}
           onSubmit={handleFormSubmit}
           onCancel={handleCancel}
-          trips={trips}
-          destinations={destinations}
+          trips={trips || []}
+          destinations={destinations || []}
           creating={creating}
           updating={updating}
           editingTransaction={editingTransaction}
@@ -250,7 +261,7 @@ export function FinancePage() {
         setFilterType={setFilterType}
         selectedTrip={selectedTrip}
         setSelectedTrip={setSelectedTrip}
-        trips={trips}
+        trips={trips || []}
         onReset={resetFilters}
         showReportType={false}
         showSearch={true}

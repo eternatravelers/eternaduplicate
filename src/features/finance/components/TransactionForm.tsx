@@ -22,8 +22,8 @@ export function TransactionForm({
   initialData,
   onSubmit,
   onCancel,
-  trips,
-  destinations,
+  trips = [],
+  destinations = [],
   creating,
   updating,
   editingTransaction
@@ -214,7 +214,7 @@ export function TransactionForm({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="no-trip">Tidak ada trip</SelectItem>
-                  {trips.map(trip => (
+                  {trips?.map(trip => (
                     <SelectItem key={trip.id} value={trip.id}>
                       {trip.name}
                     </SelectItem>
@@ -236,7 +236,7 @@ export function TransactionForm({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="no-destination">Tidak ada destinasi</SelectItem>
-                  {destinations.map(destination => (
+                  {destinations?.map(destination => (
                     <SelectItem key={destination.id} value={destination.id}>
                       {destination.name}
                     </SelectItem>
