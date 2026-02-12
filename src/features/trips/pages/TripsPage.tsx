@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Plus, Calendar, Users, MapPin, DollarSign } from 'lucide-react'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Plus, Calendar, Users, MapPin, DollarSign, AlertCircle, X } from 'lucide-react'
 import { TripFormModal } from '../components/TripFormModal'
 import { TripListTableCompact } from '../components/TripListTableCompact'
 import { TripFilters, TripFilterState } from '../components/TripFilters'
@@ -60,6 +61,16 @@ export function TripsPage({ onViewTripParticipants, onViewTripReadiness, onNavig
   useEffect(() => {
     refetch()
   }, [])
+
+  // Auto-dismiss error after 5 seconds
+  useEffect(() => {
+    if (submitError) {
+      const timer = setTimeout(() => {
+        setSubmitError(null)
+      }, 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [submitError])
 
   const handleSubmit = async (formData: any) => {
     try {
@@ -358,6 +369,21 @@ export function TripsPage({ onViewTripParticipants, onViewTripReadiness, onNavig
         onFiltersChange={setFilters}
         activeFiltersCount={activeFiltersCount}
       />
+
+      {submitError && (
+        <Alert variant="destructive" className="relative">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription className="ml-2">
+            {submitError}
+          </AlertDescription>
+          <button
+            onClick={() => setSubmitError(null)}
+            className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </Alert>
+      )}
 
       <TripListTableCompact
         trips={filteredAndSortedTrips}

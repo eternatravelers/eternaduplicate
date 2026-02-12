@@ -477,8 +477,27 @@ export function useDeleteTrip() {
       if (error) throw error
 
       return { error: null }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+    } catch (err: any) {
+      let errorMessage = 'Gagal menghapus trip'
+
+      // Handle PostgreSQL errors from triggers (RAISE EXCEPTION)
+      if (err?.code === 'P0001' || err?.code?.startsWith('P')) {
+        // P0001 = raise_exception from PostgreSQL (status transition validation)
+        errorMessage = err?.message || err?.details || err?.hint || errorMessage
+      } else if (err?.code === '23503') {
+        // Foreign key constraint
+        errorMessage = 'Trip tidak dapat dihapus karena masih memiliki data terkait'
+      } else if (err?.code === 'PGRST116') {
+        errorMessage = 'Trip tidak ditemukan atau Anda tidak memiliki akses'
+      } else if (err?.message) {
+        errorMessage = err.message
+      } else if (err instanceof Error) {
+        errorMessage = err.message
+      } else if (typeof err === 'string') {
+        errorMessage = err
+      }
+
+      console.error('Error deleting trip:', { error: err, message: errorMessage })
       setError(errorMessage)
       return { error: errorMessage }
     } finally {
