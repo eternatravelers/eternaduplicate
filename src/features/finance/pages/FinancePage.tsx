@@ -190,11 +190,10 @@ export function FinancePage() {
           </div>
           <Button
             onClick={handleAddNew}
-            disabled={dataLoading}
             className="bg-green-600 hover:bg-green-700"
           >
             <Plus className="h-4 w-4 mr-2" />
-            {dataLoading ? 'Memuat data...' : 'Tambah Transaksi'}
+            Tambah Transaksi
           </Button>
         </div>
         <div className="text-center py-12 text-gray-500">
@@ -215,11 +214,10 @@ export function FinancePage() {
         </div>
         <Button
           onClick={handleAddNew}
-          disabled={dataLoading}
           className="bg-green-600 hover:bg-green-700"
         >
           <Plus className="h-4 w-4 mr-2" />
-          {dataLoading ? 'Memuat data...' : 'Tambah Transaksi'}
+          Tambah Transaksi
         </Button>
       </div>
 
