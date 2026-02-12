@@ -67,35 +67,17 @@ export function FinancePage() {
   
   const netBalance = totalIncome - totalExpense
 
-  const handleSubmit = async (formData: any, file?: File | null) => {
-    try {
-      setError(null)
-      
-      // For now, we'll store the file reference in the description if provided
-      // In a real implementation, you'd upload to Supabase Storage
-      let finalData = { ...formData }
-      if (file) {
-        finalData.description = `${formData.description || ''} [Bukti: ${file.name}]`.trim()
-      }
-
-      const { data, error } = await createTransaction(finalData)
-
-      if (error) {
-        setError(error)
-        return
-      }
-
-      if (data) {
-        setShowAddForm(false)
-        setEditingTransaction(null)
-        refetch()
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Terjadi kesalahan')
-    }
-  }
-
   const handleEdit = (transaction: any) => {
+    if (!transaction || !transaction.id) {
+      setError('Transaksi tidak ditemukan')
+      return
+    }
+    const exists = transactions.find(t => t.id === transaction.id)
+    if (!exists) {
+      setError('Transaksi tidak ditemukan atau sudah dihapus')
+      return
+    }
+    setError(null)
     setEditingTransaction(transaction.id)
     setShowAddForm(true)
   }
@@ -180,7 +162,9 @@ export function FinancePage() {
     )
   }
 
-  if (!transactions || transactions.length === 0) {
+  const hasNoTransactions = !transactions || transactions.length === 0
+
+  if (hasNoTransactions && !showAddForm) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -196,11 +180,50 @@ export function FinancePage() {
             Tambah Transaksi
           </Button>
         </div>
+
+        {(error || deleteError) && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error || deleteError}</AlertDescription>
+          </Alert>
+        )}
+
         <div className="text-center py-12 text-gray-500">
-          <div className="text-6xl mb-4">💰</div>
+          <div className="text-6xl mb-4">$</div>
           <h3 className="text-lg font-medium mb-2">Belum ada transaksi</h3>
           <p className="text-sm mb-4">Mulai dengan menambahkan transaksi pertama Anda</p>
         </div>
+      </div>
+    )
+  }
+
+  if (hasNoTransactions && showAddForm) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Manajemen Keuangan</h1>
+            <p className="text-gray-600 mt-2">Kelola pemasukan dan pengeluaran bisnis travel Anda</p>
+          </div>
+        </div>
+
+        {(error || deleteError) && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error || deleteError}</AlertDescription>
+          </Alert>
+        )}
+
+        <TransactionForm
+          initialData={undefined}
+          onSubmit={handleFormSubmit}
+          onCancel={handleCancel}
+          trips={trips || []}
+          destinations={destinations || []}
+          creating={creating}
+          updating={updating}
+          editingTransaction={editingTransaction}
+        />
       </div>
     )
   }
@@ -237,14 +260,14 @@ export function FinancePage() {
 
       {showAddForm && (
         <TransactionForm
-          initialData={editingTransaction ? transactions.find(t => t.id === editingTransaction) : undefined}
+          initialData={editingTransaction ? transactions.find(t => t.id === editingTransaction) || undefined : undefined}
           onSubmit={handleFormSubmit}
           onCancel={handleCancel}
           trips={trips || []}
           destinations={destinations || []}
           creating={creating}
           updating={updating}
-          editingTransaction={editingTransaction}
+          editingTransaction={editingTransaction && transactions.find(t => t.id === editingTransaction) ? editingTransaction : null}
         />
       )}
 

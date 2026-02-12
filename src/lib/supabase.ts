@@ -421,6 +421,9 @@ export type Database = {
           destination_id: string | null
           trip_type: string | null
           status: string
+          proof_url: string | null
+          created_by_user_id: string | null
+          created_by_user_name: string | null
           created_at: string
           updated_at: string
         }
@@ -435,6 +438,9 @@ export type Database = {
           destination_id?: string | null
           trip_type?: string | null
           status?: string
+          proof_url?: string | null
+          created_by_user_id?: string | null
+          created_by_user_name?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -449,6 +455,9 @@ export type Database = {
           destination_id?: string | null
           trip_type?: string | null
           status?: string
+          proof_url?: string | null
+          created_by_user_id?: string | null
+          created_by_user_name?: string | null
           created_at?: string
           updated_at?: string
         }
