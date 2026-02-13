@@ -58,8 +58,14 @@ export function useTourLeaders() {
       }) || []
 
       setTourLeaders(tourLeadersWithAssignments)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error')
+    } catch (err: any) {
+      let errorMsg = 'Gagal memuat data tour leader'
+      if (err?.message) errorMsg = err.message
+      else if (err?.error_description) errorMsg = err.error_description
+      else if (err?.details) errorMsg = err.details
+      else if (err?.hint) errorMsg = err.hint
+      setError(errorMsg)
+      console.error('Error fetching tour leaders:', err)
     } finally {
       setLoading(false)
     }
@@ -90,9 +96,14 @@ export function useCreateTourLeader() {
       if (error) throw error
 
       return { data, error: null }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+    } catch (err: any) {
+      let errorMessage = 'Gagal menambah tour leader'
+      if (err?.message) errorMessage = err.message
+      else if (err?.error_description) errorMessage = err.error_description
+      else if (err?.details) errorMessage = err.details
+      else if (err?.hint) errorMessage = err.hint
       setError(errorMessage)
+      console.error('Error creating tour leader:', err)
       return { data: null, error: errorMessage }
     } finally {
       setLoading(false)
@@ -121,9 +132,14 @@ export function useUpdateTourLeader() {
       if (error) throw error
 
       return { data, error: null }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+    } catch (err: any) {
+      let errorMessage = 'Gagal update tour leader'
+      if (err?.message) errorMessage = err.message
+      else if (err?.error_description) errorMessage = err.error_description
+      else if (err?.details) errorMessage = err.details
+      else if (err?.hint) errorMessage = err.hint
       setError(errorMessage)
+      console.error('Error updating tour leader:', err)
       return { data: null, error: errorMessage }
     } finally {
       setLoading(false)
@@ -150,9 +166,14 @@ export function useDeleteTourLeader() {
       if (error) throw error
 
       return { error: null }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+    } catch (err: any) {
+      let errorMessage = 'Gagal hapus tour leader'
+      if (err?.message) errorMessage = err.message
+      else if (err?.error_description) errorMessage = err.error_description
+      else if (err?.details) errorMessage = err.details
+      else if (err?.hint) errorMessage = err.hint
       setError(errorMessage)
+      console.error('Error deleting tour leader:', err)
       return { error: errorMessage }
     } finally {
       setLoading(false)

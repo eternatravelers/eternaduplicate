@@ -90,9 +90,14 @@ export function useCreateDriver() {
       if (error) throw error
 
       return { data, error: null }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+    } catch (err: any) {
+      let errorMessage = 'Gagal menambah driver'
+      if (err?.message) errorMessage = err.message
+      else if (err?.error_description) errorMessage = err.error_description
+      else if (err?.details) errorMessage = err.details
+      else if (err?.hint) errorMessage = err.hint
       setError(errorMessage)
+      console.error('Error creating driver:', err)
       return { data: null, error: errorMessage }
     } finally {
       setLoading(false)
@@ -121,9 +126,14 @@ export function useUpdateDriver() {
       if (error) throw error
 
       return { data, error: null }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+    } catch (err: any) {
+      let errorMessage = 'Gagal update driver'
+      if (err?.message) errorMessage = err.message
+      else if (err?.error_description) errorMessage = err.error_description
+      else if (err?.details) errorMessage = err.details
+      else if (err?.hint) errorMessage = err.hint
       setError(errorMessage)
+      console.error('Error updating driver:', err)
       return { data: null, error: errorMessage }
     } finally {
       setLoading(false)
@@ -150,9 +160,14 @@ export function useDeleteDriver() {
       if (error) throw error
 
       return { error: null }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+    } catch (err: any) {
+      let errorMessage = 'Gagal hapus driver'
+      if (err?.message) errorMessage = err.message
+      else if (err?.error_description) errorMessage = err.error_description
+      else if (err?.details) errorMessage = err.details
+      else if (err?.hint) errorMessage = err.hint
       setError(errorMessage)
+      console.error('Error deleting driver:', err)
       return { error: errorMessage }
     } finally {
       setLoading(false)
