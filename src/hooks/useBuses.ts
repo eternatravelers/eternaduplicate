@@ -71,8 +71,14 @@ export function useBuses() {
       }) || []
 
       setBuses(busesWithAssignments)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error')
+    } catch (err: any) {
+      let errorMsg = 'Gagal memuat data bus'
+      if (err?.message) errorMsg = err.message
+      else if (err?.error_description) errorMsg = err.error_description
+      else if (err?.details) errorMsg = err.details
+      else if (err?.hint) errorMsg = err.hint
+      setError(errorMsg)
+      console.error('Error fetching buses:', err)
     } finally {
       setLoading(false)
     }
@@ -103,9 +109,14 @@ export function useCreateBus() {
       if (error) throw error
 
       return { data, error: null }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+    } catch (err: any) {
+      let errorMessage = 'Gagal menambah bus'
+      if (err?.message) errorMessage = err.message
+      else if (err?.error_description) errorMessage = err.error_description
+      else if (err?.details) errorMessage = err.details
+      else if (err?.hint) errorMessage = err.hint
       setError(errorMessage)
+      console.error('Error creating bus:', err)
       return { data: null, error: errorMessage }
     } finally {
       setLoading(false)
@@ -134,9 +145,14 @@ export function useUpdateBus() {
       if (error) throw error
 
       return { data, error: null }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+    } catch (err: any) {
+      let errorMessage = 'Gagal update bus'
+      if (err?.message) errorMessage = err.message
+      else if (err?.error_description) errorMessage = err.error_description
+      else if (err?.details) errorMessage = err.details
+      else if (err?.hint) errorMessage = err.hint
       setError(errorMessage)
+      console.error('Error updating bus:', err)
       return { data: null, error: errorMessage }
     } finally {
       setLoading(false)
@@ -163,9 +179,14 @@ export function useDeleteBus() {
       if (error) throw error
 
       return { error: null }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+    } catch (err: any) {
+      let errorMessage = 'Gagal hapus bus'
+      if (err?.message) errorMessage = err.message
+      else if (err?.error_description) errorMessage = err.error_description
+      else if (err?.details) errorMessage = err.details
+      else if (err?.hint) errorMessage = err.hint
       setError(errorMessage)
+      console.error('Error deleting bus:', err)
       return { error: errorMessage }
     } finally {
       setLoading(false)
