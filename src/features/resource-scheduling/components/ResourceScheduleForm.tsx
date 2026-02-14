@@ -59,25 +59,16 @@ export function ResourceScheduleForm({
 
   useEffect(() => {
     if (initialData) {
-      let pickupStr = initialData.pickup_datetime || ''
-      let returnStr = initialData.return_datetime || ''
+      const formatDatetime = (dt: string) => {
+        if (!dt) return ''
+        dt = dt.replace(/Z$/, '').replace(/\.\d{3}$/, '')
 
-      if (pickupStr && typeof pickupStr === 'string') {
-        pickupStr = pickupStr.replace(/\.\d{3}Z?$/, '').replace('Z', '')
-        if (!pickupStr.includes('T')) {
-          pickupStr = `${pickupStr}T06:00:00`
-        } else if (pickupStr.split('T')[1].length === 5) {
-          pickupStr = `${pickupStr}:00`
+        if (dt.includes('T')) {
+          const [date, time] = dt.split('T')
+          const timeStr = time.substring(0, 5)
+          return `${date}T${timeStr}:00`
         }
-      }
-
-      if (returnStr && typeof returnStr === 'string') {
-        returnStr = returnStr.replace(/\.\d{3}Z?$/, '').replace('Z', '')
-        if (!returnStr.includes('T')) {
-          returnStr = `${returnStr}T18:00:00`
-        } else if (returnStr.split('T')[1].length === 5) {
-          returnStr = `${returnStr}:00`
-        }
+        return `${dt}T06:00:00`
       }
 
       setFormData({
@@ -85,8 +76,8 @@ export function ResourceScheduleForm({
         resource_id: initialData.resource_id || '',
         trip_id: initialData.trip_id || '',
         meeting_point_id: initialData.meeting_point_id || '',
-        pickup_datetime: pickupStr,
-        return_datetime: returnStr,
+        pickup_datetime: formatDatetime(initialData.pickup_datetime),
+        return_datetime: formatDatetime(initialData.return_datetime),
         status: initialData.status || 'scheduled',
         participant_count: initialData.participant_count || 0,
         notes: initialData.notes || ''
@@ -318,18 +309,18 @@ export function ResourceScheduleForm({
               <Label>Waktu Penjemputan *</Label>
               <Input
                 type="date"
-                value={formData.pickup_datetime?.split('T')[0] || ''}
+                value={formData.pickup_datetime?.substring(0, 10) || ''}
                 onChange={(e) => {
                   const date = e.target.value
-                  const time = formData.pickup_datetime?.split('T')[1] || '06:00'
-                  setFormData({ ...formData, pickup_datetime: `${date}T${time}` })
+                  const currentTime = formData.pickup_datetime?.substring(11, 16) || '06:00'
+                  setFormData({ ...formData, pickup_datetime: `${date}T${currentTime}:00` })
                 }}
                 required
               />
               <TimePicker
-                value={formData.pickup_datetime?.split('T')[1]?.substring(0, 5) || '06:00'}
+                value={formData.pickup_datetime?.substring(11, 16) || '06:00'}
                 onChange={(time) => {
-                  const date = formData.pickup_datetime?.split('T')[0] || new Date().toISOString().split('T')[0]
+                  const date = formData.pickup_datetime?.substring(0, 10) || new Date().toISOString().substring(0, 10)
                   setFormData({ ...formData, pickup_datetime: `${date}T${time}:00` })
                 }}
               />
@@ -339,18 +330,18 @@ export function ResourceScheduleForm({
               <Label>Waktu Kepulangan *</Label>
               <Input
                 type="date"
-                value={formData.return_datetime?.split('T')[0] || ''}
+                value={formData.return_datetime?.substring(0, 10) || ''}
                 onChange={(e) => {
                   const date = e.target.value
-                  const time = formData.return_datetime?.split('T')[1] || '18:00'
-                  setFormData({ ...formData, return_datetime: `${date}T${time}` })
+                  const currentTime = formData.return_datetime?.substring(11, 16) || '18:00'
+                  setFormData({ ...formData, return_datetime: `${date}T${currentTime}:00` })
                 }}
                 required
               />
               <TimePicker
-                value={formData.return_datetime?.split('T')[1]?.substring(0, 5) || '18:00'}
+                value={formData.return_datetime?.substring(11, 16) || '18:00'}
                 onChange={(time) => {
-                  const date = formData.return_datetime?.split('T')[0] || new Date().toISOString().split('T')[0]
+                  const date = formData.return_datetime?.substring(0, 10) || new Date().toISOString().substring(0, 10)
                   setFormData({ ...formData, return_datetime: `${date}T${time}:00` })
                 }}
               />
