@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertCircle, CheckCircle2, Clock, AlertTriangle } from 'lucide-react'
 import { useCheckResourceConflict } from '@/hooks/useResourceSchedules'
 import { Badge } from '@/components/ui/badge'
+import { TimePicker } from '@/components/ui/time-picker'
 
 interface ResourceScheduleFormProps {
   isOpen: boolean
@@ -58,13 +59,34 @@ export function ResourceScheduleForm({
 
   useEffect(() => {
     if (initialData) {
+      let pickupStr = initialData.pickup_datetime || ''
+      let returnStr = initialData.return_datetime || ''
+
+      if (pickupStr && typeof pickupStr === 'string') {
+        pickupStr = pickupStr.replace(/\.\d{3}Z?$/, '').replace('Z', '')
+        if (!pickupStr.includes('T')) {
+          pickupStr = `${pickupStr}T06:00:00`
+        } else if (pickupStr.split('T')[1].length === 5) {
+          pickupStr = `${pickupStr}:00`
+        }
+      }
+
+      if (returnStr && typeof returnStr === 'string') {
+        returnStr = returnStr.replace(/\.\d{3}Z?$/, '').replace('Z', '')
+        if (!returnStr.includes('T')) {
+          returnStr = `${returnStr}T18:00:00`
+        } else if (returnStr.split('T')[1].length === 5) {
+          returnStr = `${returnStr}:00`
+        }
+      }
+
       setFormData({
         resource_type: initialData.resource_type || '',
         resource_id: initialData.resource_id || '',
         trip_id: initialData.trip_id || '',
         meeting_point_id: initialData.meeting_point_id || '',
-        pickup_datetime: initialData.pickup_datetime || '',
-        return_datetime: initialData.return_datetime || '',
+        pickup_datetime: pickupStr,
+        return_datetime: returnStr,
         status: initialData.status || 'scheduled',
         participant_count: initialData.participant_count || 0,
         notes: initialData.notes || ''
@@ -292,25 +314,45 @@ export function ResourceScheduleForm({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="pickup_datetime">Waktu Penjemputan *</Label>
+            <div className="space-y-3">
+              <Label>Waktu Penjemputan *</Label>
               <Input
-                id="pickup_datetime"
-                type="datetime-local"
-                value={formData.pickup_datetime}
-                onChange={(e) => setFormData({ ...formData, pickup_datetime: e.target.value })}
+                type="date"
+                value={formData.pickup_datetime?.split('T')[0] || ''}
+                onChange={(e) => {
+                  const date = e.target.value
+                  const time = formData.pickup_datetime?.split('T')[1] || '06:00'
+                  setFormData({ ...formData, pickup_datetime: `${date}T${time}` })
+                }}
                 required
+              />
+              <TimePicker
+                value={formData.pickup_datetime?.split('T')[1]?.substring(0, 5) || '06:00'}
+                onChange={(time) => {
+                  const date = formData.pickup_datetime?.split('T')[0] || new Date().toISOString().split('T')[0]
+                  setFormData({ ...formData, pickup_datetime: `${date}T${time}:00` })
+                }}
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="return_datetime">Waktu Kepulangan *</Label>
+            <div className="space-y-3">
+              <Label>Waktu Kepulangan *</Label>
               <Input
-                id="return_datetime"
-                type="datetime-local"
-                value={formData.return_datetime}
-                onChange={(e) => setFormData({ ...formData, return_datetime: e.target.value })}
+                type="date"
+                value={formData.return_datetime?.split('T')[0] || ''}
+                onChange={(e) => {
+                  const date = e.target.value
+                  const time = formData.return_datetime?.split('T')[1] || '18:00'
+                  setFormData({ ...formData, return_datetime: `${date}T${time}` })
+                }}
                 required
+              />
+              <TimePicker
+                value={formData.return_datetime?.split('T')[1]?.substring(0, 5) || '18:00'}
+                onChange={(time) => {
+                  const date = formData.return_datetime?.split('T')[0] || new Date().toISOString().split('T')[0]
+                  setFormData({ ...formData, return_datetime: `${date}T${time}:00` })
+                }}
               />
             </div>
           </div>
