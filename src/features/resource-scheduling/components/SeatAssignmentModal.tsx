@@ -6,10 +6,12 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
-import { Users, UserPlus, Trash2, AlertCircle, CheckCircle2, Search, Bus, RefreshCw } from 'lucide-react'
+import { Users, UserPlus, Trash2, AlertCircle, CheckCircle2, Search, Bus, RefreshCw, MapPin } from 'lucide-react'
 import { useBusPassengerAssignments, useBulkSavePassengerAssignments } from '@/hooks/useBusPassengerAssignments'
 import { useBusRouteStops } from '@/hooks/useBusRouteStops'
 import { useParticipants } from '@/hooks/useParticipants'
+
+type FilterMode = 'name' | 'meeting_point'
 
 interface AssignmentDraft {
   tempId: string
@@ -54,12 +56,16 @@ export function SeatAssignmentModal({
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
   const [search, setSearch] = useState('')
+  const [filterMode, setFilterMode] = useState<FilterMode>('name')
+  const [selectedMeetingPoint, setSelectedMeetingPoint] = useState<string>('all')
 
   useEffect(() => {
     if (isOpen) {
       setSaved(false)
       setError(null)
       setSearch('')
+      setFilterMode('name')
+      setSelectedMeetingPoint('all')
       if (assignments.length > 0) {
         setDrafts(assignments.map(a => ({
           tempId: a.id,
@@ -82,13 +88,30 @@ export function SeatAssignmentModal({
     [drafts]
   )
 
-  const unassignedParticipants = useMemo(() =>
-    activeParticipants.filter(p =>
-      !assignedParticipantIds.has(p.id) &&
-      (search === '' || p.full_name.toLowerCase().includes(search.toLowerCase()))
-    ),
-    [activeParticipants, assignedParticipantIds, search]
-  )
+  const uniqueMeetingPoints = useMemo(() => {
+    const seen = new Set<string>()
+    const points: string[] = []
+    for (const p of activeParticipants) {
+      if (p.meeting_point_details && !seen.has(p.meeting_point_details)) {
+        seen.add(p.meeting_point_details)
+        points.push(p.meeting_point_details)
+      }
+    }
+    return points.sort()
+  }, [activeParticipants])
+
+  const unassignedParticipants = useMemo(() => {
+    return activeParticipants.filter(p => {
+      if (assignedParticipantIds.has(p.id)) return false
+      if (filterMode === 'name') {
+        return search === '' || p.full_name.toLowerCase().includes(search.toLowerCase())
+      } else {
+        const matchesMp = selectedMeetingPoint === 'all' || p.meeting_point_details === selectedMeetingPoint
+        const matchesSearch = search === '' || p.full_name.toLowerCase().includes(search.toLowerCase())
+        return matchesMp && matchesSearch
+      }
+    })
+  }, [activeParticipants, assignedParticipantIds, filterMode, search, selectedMeetingPoint])
 
   const addParticipant = (participantId: string) => {
     const p = activeParticipants.find(ap => ap.id === participantId)
@@ -219,35 +242,109 @@ export function SeatAssignmentModal({
                 </Button>
               )}
             </div>
-            <div className="flex gap-2 mb-2">
-              <div className="relative flex-1">
+
+            {/* Filter mode toggle */}
+            <div className="flex gap-1 mb-2 p-0.5 bg-gray-200 rounded-md w-fit">
+              <button
+                type="button"
+                onClick={() => { setFilterMode('name'); setSearch('') }}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium transition-all ${
+                  filterMode === 'name'
+                    ? 'bg-white text-gray-800 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                <Search className="h-3 w-3" />
+                Cari Nama
+              </button>
+              <button
+                type="button"
+                onClick={() => { setFilterMode('meeting_point'); setSearch('') }}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium transition-all ${
+                  filterMode === 'meeting_point'
+                    ? 'bg-white text-gray-800 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                <MapPin className="h-3 w-3" />
+                Meeting Point
+              </button>
+            </div>
+
+            {/* Search / filter inputs */}
+            {filterMode === 'name' ? (
+              <div className="relative mb-2">
                 <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-gray-400" />
                 <Input
-                  placeholder="Cari peserta..."
+                  placeholder="Cari nama peserta..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="h-8 pl-8 text-sm"
                 />
               </div>
-            </div>
-            <div className="max-h-32 overflow-y-auto space-y-1">
+            ) : (
+              <div className="space-y-2 mb-2">
+                <Select value={selectedMeetingPoint} onValueChange={setSelectedMeetingPoint}>
+                  <SelectTrigger className="h-8 text-sm bg-white">
+                    <div className="flex items-center gap-1.5">
+                      <MapPin className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
+                      <SelectValue placeholder="Pilih meeting point..." />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">
+                      <span className="text-gray-600">Semua Meeting Point</span>
+                    </SelectItem>
+                    {uniqueMeetingPoints.map(mp => {
+                      const count = activeParticipants.filter(
+                        p => p.meeting_point_details === mp && !assignedParticipantIds.has(p.id)
+                      ).length
+                      return (
+                        <SelectItem key={mp} value={mp}>
+                          <div className="flex items-center justify-between gap-3 w-full">
+                            <span>{mp}</span>
+                            {count > 0 && (
+                              <span className="text-xs text-gray-400 ml-2">{count} belum assign</span>
+                            )}
+                          </div>
+                        </SelectItem>
+                      )
+                    })}
+                  </SelectContent>
+                </Select>
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-gray-400" />
+                  <Input
+                    placeholder="Saring nama dalam meeting point..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="h-8 pl-8 text-sm"
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="max-h-36 overflow-y-auto space-y-1">
               {unassignedParticipants.length === 0 ? (
                 <div className="text-xs text-gray-400 text-center py-2">
-                  {search ? 'Tidak ada peserta yang cocok' : 'Semua peserta sudah di-assign'}
+                  {search || selectedMeetingPoint !== 'all' ? 'Tidak ada peserta yang cocok' : 'Semua peserta sudah di-assign'}
                 </div>
               ) : (
                 unassignedParticipants.map(p => (
                   <div
                     key={p.id}
-                    className="flex items-center justify-between py-1 px-2 bg-white rounded border text-sm hover:bg-blue-50 cursor-pointer"
+                    className="flex items-center justify-between py-1.5 px-2 bg-white rounded border text-sm hover:bg-blue-50 cursor-pointer transition-colors"
                     onClick={() => addParticipant(p.id)}
                   >
-                    <span className="font-medium">{p.full_name}</span>
+                    <span className="font-medium text-gray-800">{p.full_name}</span>
                     <div className="flex items-center gap-2">
                       {p.meeting_point_details && (
-                        <span className="text-xs text-gray-400">{p.meeting_point_details}</span>
+                        <span className="flex items-center gap-1 text-xs text-gray-400">
+                          <MapPin className="h-3 w-3" />
+                          {p.meeting_point_details}
+                        </span>
                       )}
-                      <UserPlus className="h-3.5 w-3.5 text-blue-500" />
+                      <UserPlus className="h-3.5 w-3.5 text-blue-500 flex-shrink-0" />
                     </div>
                   </div>
                 ))
