@@ -7,7 +7,7 @@ export interface BusRouteStop {
   meeting_point_id: string | null
   meeting_point_name: string
   stop_order: number
-  arrival_time: string
+  arrival_time: string | null
   departure_time: string | null
   notes: string | null
   created_at: string
@@ -163,9 +163,19 @@ export function useBulkSaveBusRouteStops() {
       if (deleteError) throw deleteError
 
       if (stops.length > 0) {
+        const rows = stops.map((s, i) => ({
+          resource_schedule_id: resourceScheduleId,
+          meeting_point_id: s.meeting_point_id || null,
+          meeting_point_name: s.meeting_point_name,
+          stop_order: i + 1,
+          arrival_time: s.arrival_time || null,
+          departure_time: s.departure_time || null,
+          notes: s.notes || null
+        }))
+
         const { error: insertError } = await supabase
           .from('bus_route_stops')
-          .insert(stops.map((s, i) => ({ ...s, stop_order: i + 1, resource_schedule_id: resourceScheduleId })))
+          .insert(rows)
 
         if (insertError) throw insertError
       }
