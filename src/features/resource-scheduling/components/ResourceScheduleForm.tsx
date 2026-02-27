@@ -305,7 +305,7 @@ export function ResourceScheduleForm({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-3">
+            <div className="space-y-2">
               <Label>Waktu Penjemputan *</Label>
               <Input
                 type="date"
@@ -318,6 +318,7 @@ export function ResourceScheduleForm({
                 required
               />
               <TimePicker
+                label="Jam Penjemputan"
                 value={formData.pickup_datetime?.substring(11, 16) || '06:00'}
                 onChange={(time) => {
                   const date = formData.pickup_datetime?.substring(0, 10) || new Date().toISOString().substring(0, 10)
@@ -326,7 +327,7 @@ export function ResourceScheduleForm({
               />
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2">
               <Label>Waktu Kepulangan *</Label>
               <Input
                 type="date"
@@ -339,6 +340,7 @@ export function ResourceScheduleForm({
                 required
               />
               <TimePicker
+                label="Jam Kepulangan"
                 value={formData.return_datetime?.substring(11, 16) || '18:00'}
                 onChange={(time) => {
                   const date = formData.return_datetime?.substring(0, 10) || new Date().toISOString().substring(0, 10)
