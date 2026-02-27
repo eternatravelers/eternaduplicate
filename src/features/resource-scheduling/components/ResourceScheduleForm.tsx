@@ -61,14 +61,18 @@ export function ResourceScheduleForm({
     if (initialData) {
       const formatDatetime = (dt: string) => {
         if (!dt) return ''
-        dt = dt.replace(/Z$/, '').replace(/\.\d{3}$/, '')
 
-        if (dt.includes('T')) {
-          const [date, time] = dt.split('T')
-          const timeStr = time.substring(0, 5)
-          return `${date}T${timeStr}:00`
-        }
-        return `${dt}T06:00:00`
+        // Parse the datetime string and convert to local timezone
+        const date = new Date(dt)
+
+        // Format as YYYY-MM-DDTHH:mm:ss in local timezone
+        const year = date.getFullYear()
+        const month = String(date.getMonth() + 1).padStart(2, '0')
+        const day = String(date.getDate()).padStart(2, '0')
+        const hours = String(date.getHours()).padStart(2, '0')
+        const minutes = String(date.getMinutes()).padStart(2, '0')
+
+        return `${year}-${month}-${day}T${hours}:${minutes}:00`
       }
 
       setFormData({
@@ -136,7 +140,23 @@ export function ResourceScheduleForm({
 
     try {
       setSubmitting(true)
-      await onSubmit(formData)
+
+      // Convert local datetime to UTC by creating a proper ISO string with timezone
+      const convertToUTC = (localDateTimeString: string) => {
+        // Parse as local time
+        const localDate = new Date(localDateTimeString)
+        // Return ISO string which will be in UTC
+        return localDate.toISOString()
+      }
+
+      // Prepare data with UTC timestamps
+      const dataToSubmit = {
+        ...formData,
+        pickup_datetime: convertToUTC(formData.pickup_datetime),
+        return_datetime: convertToUTC(formData.return_datetime)
+      }
+
+      await onSubmit(dataToSubmit)
       // Only close and reset if successful
       onClose()
       setFormData({
@@ -313,7 +333,10 @@ export function ResourceScheduleForm({
                 onChange={(e) => {
                   const date = e.target.value
                   const currentTime = formData.pickup_datetime?.substring(11, 16) || '06:00'
-                  setFormData({ ...formData, pickup_datetime: `${date}T${currentTime}:00` })
+
+                  // Create date in local timezone and format as ISO string WITHOUT timezone conversion
+                  const localDateTime = `${date}T${currentTime}:00`
+                  setFormData({ ...formData, pickup_datetime: localDateTime })
                 }}
                 required
               />
@@ -321,8 +344,15 @@ export function ResourceScheduleForm({
                 label="Jam Penjemputan"
                 value={formData.pickup_datetime?.substring(11, 16) || '06:00'}
                 onChange={(time) => {
-                  const date = formData.pickup_datetime?.substring(0, 10) || new Date().toISOString().substring(0, 10)
-                  setFormData({ ...formData, pickup_datetime: `${date}T${time}:00` })
+                  const today = new Date()
+                  const year = today.getFullYear()
+                  const month = String(today.getMonth() + 1).padStart(2, '0')
+                  const day = String(today.getDate()).padStart(2, '0')
+                  const date = formData.pickup_datetime?.substring(0, 10) || `${year}-${month}-${day}`
+
+                  // Create date in local timezone
+                  const localDateTime = `${date}T${time}:00`
+                  setFormData({ ...formData, pickup_datetime: localDateTime })
                 }}
               />
             </div>
@@ -335,7 +365,10 @@ export function ResourceScheduleForm({
                 onChange={(e) => {
                   const date = e.target.value
                   const currentTime = formData.return_datetime?.substring(11, 16) || '18:00'
-                  setFormData({ ...formData, return_datetime: `${date}T${currentTime}:00` })
+
+                  // Create date in local timezone
+                  const localDateTime = `${date}T${currentTime}:00`
+                  setFormData({ ...formData, return_datetime: localDateTime })
                 }}
                 required
               />
@@ -343,8 +376,15 @@ export function ResourceScheduleForm({
                 label="Jam Kepulangan"
                 value={formData.return_datetime?.substring(11, 16) || '18:00'}
                 onChange={(time) => {
-                  const date = formData.return_datetime?.substring(0, 10) || new Date().toISOString().substring(0, 10)
-                  setFormData({ ...formData, return_datetime: `${date}T${time}:00` })
+                  const today = new Date()
+                  const year = today.getFullYear()
+                  const month = String(today.getMonth() + 1).padStart(2, '0')
+                  const day = String(today.getDate()).padStart(2, '0')
+                  const date = formData.return_datetime?.substring(0, 10) || `${year}-${month}-${day}`
+
+                  // Create date in local timezone
+                  const localDateTime = `${date}T${time}:00`
+                  setFormData({ ...formData, return_datetime: localDateTime })
                 }}
               />
             </div>
