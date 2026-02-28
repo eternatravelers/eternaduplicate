@@ -17,6 +17,8 @@ interface AssignmentDraft {
   tempId: string
   participant_id: string
   participant_name: string
+  participant_slot: number
+  participant_total_slots: number
   seat_number: string
   boarding_stop_id: string
   notes: string
@@ -74,14 +76,24 @@ export function SeatAssignmentModal({
 
   useEffect(() => {
     if (isOpen && assignments.length > 0) {
-      setDrafts(assignments.map(a => ({
-        tempId: a.id,
-        participant_id: a.participant_id,
-        participant_name: a.participants?.full_name || '',
-        seat_number: a.seat_number || '',
-        boarding_stop_id: a.boarding_stop_id || '',
-        notes: a.notes || ''
-      })))
+      const slotCountByParticipant: Record<string, number> = {}
+      assignments.forEach(a => {
+        slotCountByParticipant[a.participant_id] = (slotCountByParticipant[a.participant_id] || 0) + 1
+      })
+      const slotIndexByParticipant: Record<string, number> = {}
+      setDrafts(assignments.map(a => {
+        slotIndexByParticipant[a.participant_id] = (slotIndexByParticipant[a.participant_id] || 0) + 1
+        return {
+          tempId: a.id,
+          participant_id: a.participant_id,
+          participant_name: a.participants?.full_name || '',
+          participant_slot: slotIndexByParticipant[a.participant_id],
+          participant_total_slots: slotCountByParticipant[a.participant_id],
+          seat_number: a.seat_number || '',
+          boarding_stop_id: a.boarding_stop_id || '',
+          notes: a.notes || ''
+        }
+      }))
     }
   }, [assignments])
 
@@ -120,20 +132,24 @@ export function SeatAssignmentModal({
   const addParticipant = (participantId: string) => {
     const p = activeParticipants.find(ap => ap.id === participantId)
     if (!p) return
+    const count = p.participant_count || 1
     const existingSeatNumbers = drafts.map(d => parseInt(d.seat_number)).filter(n => !isNaN(n))
-    const nextSeat = existingSeatNumbers.length > 0 ? Math.max(...existingSeatNumbers) + 1 : 1
-    setDrafts(prev => [...prev, {
+    let nextSeat = existingSeatNumbers.length > 0 ? Math.max(...existingSeatNumbers) + 1 : 1
+    const newSlots = Array.from({ length: count }, (_, i) => ({
       tempId: generateTempId(),
       participant_id: participantId,
       participant_name: p.full_name,
-      seat_number: String(nextSeat),
+      participant_slot: i + 1,
+      participant_total_slots: count,
+      seat_number: String(nextSeat + i),
       boarding_stop_id: '',
       notes: ''
-    }])
+    }))
+    setDrafts(prev => [...prev, ...newSlots])
   }
 
-  const removeAssignment = (tempId: string) => {
-    setDrafts(prev => prev.filter(d => d.tempId !== tempId))
+  const removeParticipant = (participantId: string) => {
+    setDrafts(prev => prev.filter(d => d.participant_id !== participantId))
   }
 
   const updateDraft = (tempId: string, field: keyof AssignmentDraft, value: string) => {
@@ -142,15 +158,25 @@ export function SeatAssignmentModal({
 
   const autoAssign = () => {
     const unassigned = activeParticipants.filter(p => !assignedParticipantIds.has(p.id))
-    const startSeat = drafts.length + 1
-    const newDrafts = unassigned.map((p, i) => ({
-      tempId: generateTempId(),
-      participant_id: p.id,
-      participant_name: p.full_name,
-      seat_number: String(startSeat + i),
-      boarding_stop_id: '',
-      notes: ''
-    }))
+    const existingSeatNumbers = drafts.map(d => parseInt(d.seat_number)).filter(n => !isNaN(n))
+    let nextSeat = existingSeatNumbers.length > 0 ? Math.max(...existingSeatNumbers) + 1 : 1
+    const newDrafts: AssignmentDraft[] = []
+    for (const p of unassigned) {
+      const count = p.participant_count || 1
+      for (let i = 0; i < count; i++) {
+        newDrafts.push({
+          tempId: generateTempId(),
+          participant_id: p.id,
+          participant_name: p.full_name,
+          participant_slot: i + 1,
+          participant_total_slots: count,
+          seat_number: String(nextSeat),
+          boarding_stop_id: '',
+          notes: ''
+        })
+        nextSeat++
+      }
+    }
     setDrafts(prev => [...prev, ...newDrafts])
   }
 
@@ -182,6 +208,11 @@ export function SeatAssignmentModal({
   }
 
   const assignedCount = drafts.length
+  const assignedRegistrants = useMemo(() => {
+    const seen = new Set<string>()
+    drafts.forEach(d => seen.add(d.participant_id))
+    return seen.size
+  }, [drafts])
   const capacityPercent = busCapacity ? Math.round((assignedCount / busCapacity) * 100) : 0
   const isOverCapacity = busCapacity ? assignedCount > busCapacity : false
 
@@ -202,6 +233,11 @@ export function SeatAssignmentModal({
                 className={`text-xs ${isOverCapacity ? 'border-red-300 text-red-700 bg-red-50' : 'border-green-300 text-green-700 bg-green-50'}`}
               >
                 {assignedCount}/{busCapacity} kursi {isOverCapacity ? '(melebihi kapasitas!)' : ''}
+              </Badge>
+            )}
+            {assignedRegistrants > 0 && (
+              <Badge variant="outline" className="text-xs border-gray-300 text-gray-500">
+                {assignedRegistrants} pendaftar
               </Badge>
             )}
           </div>
@@ -340,15 +376,22 @@ export function SeatAssignmentModal({
                     className="flex items-center justify-between py-1.5 px-2 bg-white rounded border text-sm hover:bg-blue-50 cursor-pointer transition-colors"
                     onClick={() => addParticipant(p.id)}
                   >
-                    <span className="font-medium text-gray-800">{p.full_name}</span>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="font-medium text-gray-800 truncate">{p.full_name}</span>
+                      {(p.participant_count || 1) > 1 && (
+                        <Badge variant="secondary" className="text-xs px-1.5 py-0 flex-shrink-0 bg-amber-100 text-amber-700 border-amber-200">
+                          {p.participant_count} orang
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
                       {p.meeting_point_details && (
                         <span className="flex items-center gap-1 text-xs text-gray-400">
                           <MapPin className="h-3 w-3" />
                           {p.meeting_point_details}
                         </span>
                       )}
-                      <UserPlus className="h-3.5 w-3.5 text-blue-500 flex-shrink-0" />
+                      <UserPlus className="h-3.5 w-3.5 text-blue-500" />
                     </div>
                   </div>
                 ))
@@ -360,7 +403,7 @@ export function SeatAssignmentModal({
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label className="text-sm font-semibold text-gray-700">
-                Penumpang Assigned ({assignedCount})
+                Penumpang Assigned ({assignedCount} kursi{assignedRegistrants !== assignedCount ? `, ${assignedRegistrants} pendaftar` : ''})
               </Label>
               {busCapacity && (
                 <div className="flex items-center gap-2">
@@ -385,55 +428,72 @@ export function SeatAssignmentModal({
               </div>
             ) : (
               <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
-                {drafts.map((draft, index) => (
-                  <div key={draft.tempId} className="border rounded-lg p-3 bg-white flex items-start gap-3">
-                    <div className="flex items-center justify-center w-7 h-7 bg-blue-50 rounded-full text-blue-700 font-bold text-xs flex-shrink-0 mt-0.5">
-                      {index + 1}
-                    </div>
-                    <div className="flex-1 space-y-2">
-                      <div className="font-medium text-sm text-gray-800">{draft.participant_name}</div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="space-y-1">
-                          <Label className="text-xs text-gray-500">No. Kursi</Label>
-                          <Input
-                            value={draft.seat_number}
-                            onChange={(e) => updateDraft(draft.tempId, 'seat_number', e.target.value)}
-                            placeholder="mis. 1, 2A, dll"
-                            className="h-7 text-xs"
-                          />
+                {drafts.map((draft, index) => {
+                  const isFirstSlot = draft.participant_slot === 1
+                  return (
+                    <div
+                      key={draft.tempId}
+                      className={`border rounded-lg p-3 bg-white flex items-start gap-3 ${!isFirstSlot ? 'border-l-4 border-l-amber-300 ml-4' : ''}`}
+                    >
+                      <div className="flex items-center justify-center w-7 h-7 bg-blue-50 rounded-full text-blue-700 font-bold text-xs flex-shrink-0 mt-0.5">
+                        {index + 1}
+                      </div>
+                      <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-sm text-gray-800">{draft.participant_name}</span>
+                          {draft.participant_total_slots > 1 && (
+                            <Badge variant="outline" className="text-xs px-1.5 py-0 border-amber-300 text-amber-700 bg-amber-50">
+                              peserta {draft.participant_slot}/{draft.participant_total_slots}
+                            </Badge>
+                          )}
                         </div>
-                        <div className="space-y-1">
-                          <Label className="text-xs text-gray-500">Naik di Stop</Label>
-                          <Select
-                            value={draft.boarding_stop_id || 'none'}
-                            onValueChange={(val) => updateDraft(draft.tempId, 'boarding_stop_id', val === 'none' ? '' : val)}
-                          >
-                            <SelectTrigger className="h-7 text-xs">
-                              <SelectValue placeholder="Pilih stop" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="none">-</SelectItem>
-                              {stops.map(s => (
-                                <SelectItem key={s.id} value={s.id}>
-                                  Stop {s.stop_order}: {s.meeting_point_name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="space-y-1">
+                            <Label className="text-xs text-gray-500">No. Kursi</Label>
+                            <Input
+                              value={draft.seat_number}
+                              onChange={(e) => updateDraft(draft.tempId, 'seat_number', e.target.value)}
+                              placeholder="mis. 1, 2A, dll"
+                              className="h-7 text-xs"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs text-gray-500">Naik di Stop</Label>
+                            <Select
+                              value={draft.boarding_stop_id || 'none'}
+                              onValueChange={(val) => updateDraft(draft.tempId, 'boarding_stop_id', val === 'none' ? '' : val)}
+                            >
+                              <SelectTrigger className="h-7 text-xs">
+                                <SelectValue placeholder="Pilih stop" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">-</SelectItem>
+                                {stops.map(s => (
+                                  <SelectItem key={s.id} value={s.id}>
+                                    Stop {s.stop_order}: {s.meeting_point_name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
                         </div>
                       </div>
+                      {isFirstSlot && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeParticipant(draft.participant_id)}
+                          className="h-7 w-7 p-0 text-red-400 hover:text-red-600 hover:bg-red-50 flex-shrink-0"
+                          title={`Hapus semua ${draft.participant_total_slots} slot untuk ${draft.participant_name}`}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
+                      {!isFirstSlot && <div className="w-7 flex-shrink-0" />}
                     </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeAssignment(draft.tempId)}
-                      className="h-7 w-7 p-0 text-red-400 hover:text-red-600 hover:bg-red-50 flex-shrink-0"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
           </div>

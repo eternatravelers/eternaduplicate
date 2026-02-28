@@ -109,8 +109,14 @@ export function BusManifestView({
                 <div>
                   <div className="text-xs text-gray-500">Kapasitas Terisi</div>
                   <div className="font-semibold text-gray-800">
-                    {assignments.length}{busCapacity ? `/${busCapacity}` : ''} penumpang
+                    {assignments.length}{busCapacity ? `/${busCapacity}` : ''} kursi
                   </div>
+                  {(() => {
+                    const uniqueRegistrants = new Set(assignments.map(a => a.participant_id)).size
+                    return uniqueRegistrants !== assignments.length ? (
+                      <div className="text-xs text-gray-500">{uniqueRegistrants} pendaftar</div>
+                    ) : null
+                  })()}
                 </div>
               </div>
             </div>
@@ -206,34 +212,55 @@ export function BusManifestView({
 }
 
 function ManifestTable({ passengers }: { passengers: any[] }) {
+  const slotIndexMap: Record<string, number> = {}
+  const slotCountMap: Record<string, number> = {}
+  passengers.forEach(p => {
+    slotCountMap[p.participant_id] = (slotCountMap[p.participant_id] || 0) + 1
+  })
+
   return (
     <div className="border rounded-lg overflow-hidden">
       <table className="w-full text-sm">
         <thead className="bg-gray-50 border-b">
           <tr>
             <th className="text-left px-3 py-2 text-xs font-semibold text-gray-600 w-8">No</th>
-            <th className="text-left px-3 py-2 text-xs font-semibold text-gray-600">Nama Peserta</th>
+            <th className="text-left px-3 py-2 text-xs font-semibold text-gray-600">Nama Pendaftar</th>
             <th className="text-left px-3 py-2 text-xs font-semibold text-gray-600 w-16">Kursi</th>
             <th className="text-left px-3 py-2 text-xs font-semibold text-gray-600">No. HP</th>
             <th className="text-left px-3 py-2 text-xs font-semibold text-gray-600">Catatan</th>
           </tr>
         </thead>
         <tbody>
-          {passengers.map((p, index) => (
-            <tr key={p.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
-              <td className="px-3 py-2 text-gray-500 text-xs">{index + 1}</td>
-              <td className="px-3 py-2 font-medium text-gray-800">{p.participants?.full_name || '-'}</td>
-              <td className="px-3 py-2">
-                {p.seat_number ? (
-                  <Badge variant="outline" className="text-xs font-mono">{p.seat_number}</Badge>
-                ) : (
-                  <span className="text-gray-300 text-xs">-</span>
-                )}
-              </td>
-              <td className="px-3 py-2 text-gray-600 text-xs">{p.participants?.phone || '-'}</td>
-              <td className="px-3 py-2 text-gray-500 text-xs">{p.notes || '-'}</td>
-            </tr>
-          ))}
+          {passengers.map((p, index) => {
+            slotIndexMap[p.participant_id] = (slotIndexMap[p.participant_id] || 0) + 1
+            const slotIndex = slotIndexMap[p.participant_id]
+            const totalSlots = slotCountMap[p.participant_id]
+            const isMulti = totalSlots > 1
+            return (
+              <tr key={p.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
+                <td className="px-3 py-2 text-gray-500 text-xs">{index + 1}</td>
+                <td className="px-3 py-2">
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-medium text-gray-800">{p.participants?.full_name || '-'}</span>
+                    {isMulti && (
+                      <Badge variant="outline" className="text-xs px-1 py-0 border-amber-300 text-amber-700 bg-amber-50">
+                        {slotIndex}/{totalSlots}
+                      </Badge>
+                    )}
+                  </div>
+                </td>
+                <td className="px-3 py-2">
+                  {p.seat_number ? (
+                    <Badge variant="outline" className="text-xs font-mono">{p.seat_number}</Badge>
+                  ) : (
+                    <span className="text-gray-300 text-xs">-</span>
+                  )}
+                </td>
+                <td className="px-3 py-2 text-gray-600 text-xs">{p.participants?.phone || '-'}</td>
+                <td className="px-3 py-2 text-gray-500 text-xs">{p.notes || '-'}</td>
+              </tr>
+            )
+          })}
         </tbody>
       </table>
     </div>
