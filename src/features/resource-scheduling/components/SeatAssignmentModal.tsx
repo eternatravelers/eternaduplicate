@@ -48,7 +48,7 @@ export function SeatAssignmentModal({
   onSaved
 }: SeatAssignmentModalProps) {
   const { assignments, loading: assignmentsLoading, refetch } = useBusPassengerAssignments(resourceScheduleId)
-  const { stops } = useBusRouteStops(resourceScheduleId)
+  const { stops, refetch: refetchStops } = useBusRouteStops(resourceScheduleId)
   const { participants: allParticipants } = useParticipants({ tripId })
   const { bulkSave, loading: saving } = useBulkSavePassengerAssignments()
 
@@ -61,25 +61,29 @@ export function SeatAssignmentModal({
 
   useEffect(() => {
     if (isOpen) {
+      refetch()
+      refetchStops()
       setSaved(false)
       setError(null)
       setSearch('')
       setFilterMode('name')
       setSelectedMeetingPoint('all')
-      if (assignments.length > 0) {
-        setDrafts(assignments.map(a => ({
-          tempId: a.id,
-          participant_id: a.participant_id,
-          participant_name: a.participants?.full_name || '',
-          seat_number: a.seat_number || '',
-          boarding_stop_id: a.boarding_stop_id || '',
-          notes: a.notes || ''
-        })))
-      } else {
-        setDrafts([])
-      }
+      setDrafts([])
     }
-  }, [isOpen, assignments])
+  }, [isOpen])
+
+  useEffect(() => {
+    if (isOpen && assignments.length > 0) {
+      setDrafts(assignments.map(a => ({
+        tempId: a.id,
+        participant_id: a.participant_id,
+        participant_name: a.participants?.full_name || '',
+        seat_number: a.seat_number || '',
+        boarding_stop_id: a.boarding_stop_id || '',
+        notes: a.notes || ''
+      })))
+    }
+  }, [assignments])
 
   const activeParticipants = useMemo(() => allParticipants, [allParticipants])
 

@@ -27,8 +27,15 @@ export function BusManifestView({
   tripName,
   pickupDatetime
 }: BusManifestViewProps) {
-  const { assignments, loading: assignmentsLoading } = useBusPassengerAssignments(resourceScheduleId)
-  const { stops, loading: stopsLoading } = useBusRouteStops(resourceScheduleId)
+  const { assignments, loading: assignmentsLoading, refetch: refetchAssignments } = useBusPassengerAssignments(resourceScheduleId)
+  const { stops, loading: stopsLoading, refetch: refetchStops } = useBusRouteStops(resourceScheduleId)
+
+  React.useEffect(() => {
+    if (isOpen && resourceScheduleId) {
+      refetchAssignments()
+      refetchStops()
+    }
+  }, [isOpen, resourceScheduleId])
 
   const handlePrint = () => {
     window.print()
