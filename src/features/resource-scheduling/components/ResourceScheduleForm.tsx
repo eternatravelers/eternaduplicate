@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertCircle, CheckCircle2, Clock, AlertTriangle } from 'lucide-react'
-import { useCheckResourceConflict } from '@/hooks/useResourceSchedules'
+import { useCheckResourceConflict, useResourceSchedules } from '@/hooks/useResourceSchedules'
 import { Badge } from '@/components/ui/badge'
 import { TimePicker } from '@/components/ui/time-picker'
 
@@ -43,7 +43,8 @@ export function ResourceScheduleForm({
     return_datetime: initialData?.return_datetime || '',
     status: initialData?.status || 'scheduled',
     participant_count: initialData?.participant_count || 0,
-    notes: initialData?.notes || ''
+    notes: initialData?.notes || '',
+    linked_bus_schedule_id: initialData?.linked_bus_schedule_id || ''
   })
 
   const [validationError, setValidationError] = useState<string | null>(null)
@@ -51,6 +52,13 @@ export function ResourceScheduleForm({
   const [submitting, setSubmitting] = useState(false)
 
   const { checkConflict, checking } = useCheckResourceConflict()
+
+  const isCrewType = formData.resource_type === 'driver' || formData.resource_type === 'tour_leader'
+  const { schedules: tripBusSchedules } = useResourceSchedules(
+    isCrewType && formData.trip_id
+      ? { tripId: formData.trip_id, resourceType: 'bus' }
+      : undefined
+  )
 
   const selectedTrip = trips.find(t => t.id === formData.trip_id)
   const availableResources = formData.resource_type === 'bus' ? resources.buses :
@@ -84,7 +92,8 @@ export function ResourceScheduleForm({
         return_datetime: formatDatetime(initialData.return_datetime),
         status: initialData.status || 'scheduled',
         participant_count: initialData.participant_count || 0,
-        notes: initialData.notes || ''
+        notes: initialData.notes || '',
+        linked_bus_schedule_id: initialData.linked_bus_schedule_id || ''
       })
     }
   }, [initialData])
@@ -153,7 +162,8 @@ export function ResourceScheduleForm({
       const dataToSubmit = {
         ...formData,
         pickup_datetime: convertToUTC(formData.pickup_datetime),
-        return_datetime: convertToUTC(formData.return_datetime)
+        return_datetime: convertToUTC(formData.return_datetime),
+        linked_bus_schedule_id: formData.linked_bus_schedule_id || null
       }
 
       await onSubmit(dataToSubmit)
@@ -168,7 +178,8 @@ export function ResourceScheduleForm({
         return_datetime: '',
         status: 'scheduled',
         participant_count: 0,
-        notes: ''
+        notes: '',
+        linked_bus_schedule_id: ''
       })
       setConflictInfo(null)
       setValidationError(null)
@@ -187,6 +198,7 @@ export function ResourceScheduleForm({
       setFormData(prev => ({
         ...prev,
         trip_id: tripId,
+        linked_bus_schedule_id: '',
         pickup_datetime: prev.pickup_datetime || `${trip.departure_date}T06:00:00`,
         return_datetime: prev.return_datetime || `${trip.return_date}T18:00:00`
       }))
@@ -302,6 +314,40 @@ export function ResourceScheduleForm({
                 </div>
               </AlertDescription>
             </Alert>
+          )}
+
+          {isCrewType && formData.trip_id && tripBusSchedules.length > 0 && (
+            <div className="space-y-2">
+              <Label htmlFor="linked_bus_schedule_id">
+                Assign ke Bus
+                {tripBusSchedules.length > 1 && (
+                  <span className="ml-2 text-xs font-normal text-blue-600">
+                    {tripBusSchedules.length} bus tersedia dalam trip ini
+                  </span>
+                )}
+              </Label>
+              <Select
+                value={formData.linked_bus_schedule_id || 'none'}
+                onValueChange={(value) => setFormData({ ...formData, linked_bus_schedule_id: value === 'none' ? '' : value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih bus (opsional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Tidak spesifik (crew trip umum)</SelectItem>
+                  {tripBusSchedules.map((bs) => (
+                    <SelectItem key={bs.id} value={bs.id}>
+                      {bs.buses?.plate_number || 'Bus'}
+                      {bs.buses?.model ? ` - ${bs.buses.model}` : ''}
+                      {bs.buses?.capacity ? ` (${bs.buses.capacity} kursi)` : ''}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-gray-500">
+                Jika tidak dipilih, crew akan ditampilkan sebagai crew trip umum dan muncul di semua bus.
+              </p>
+            </div>
           )}
 
           <div className="space-y-2">
