@@ -227,17 +227,27 @@ function BusManifestCard({ schedule, drivers, tourLeaders, hasMultipleBuses, isE
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <div className="hidden sm:flex items-center gap-1.5">
-            {busDrivers.length > 0 && (
-              <div className="flex items-center gap-1 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5 text-xs text-amber-700">
-                <UserCircle className="h-3 w-3" />
-                {busDrivers.length}
+          <div className="hidden sm:flex flex-col gap-1">
+            {busDrivers.slice(0, 2).map(d => (
+              <div key={d.id} className="flex items-center gap-1 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5 text-xs text-amber-700 max-w-[120px]">
+                <UserCircle className="h-3 w-3 flex-shrink-0" />
+                <span className="truncate">{d.drivers?.name || '-'}</span>
+              </div>
+            ))}
+            {busDrivers.length > 2 && (
+              <div className="flex items-center gap-1 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5 text-xs text-amber-600">
+                +{busDrivers.length - 2} driver
               </div>
             )}
-            {busLeaders.length > 0 && (
-              <div className="flex items-center gap-1 bg-teal-50 border border-teal-200 rounded-full px-2 py-0.5 text-xs text-teal-700">
-                <Briefcase className="h-3 w-3" />
-                {busLeaders.length}
+            {busLeaders.slice(0, 2).map(l => (
+              <div key={l.id} className="flex items-center gap-1 bg-teal-50 border border-teal-200 rounded-full px-2 py-0.5 text-xs text-teal-700 max-w-[120px]">
+                <Briefcase className="h-3 w-3 flex-shrink-0" />
+                <span className="truncate">{l.tour_leaders?.name || '-'}</span>
+              </div>
+            ))}
+            {busLeaders.length > 2 && (
+              <div className="flex items-center gap-1 bg-teal-50 border border-teal-200 rounded-full px-2 py-0.5 text-xs text-teal-600">
+                +{busLeaders.length - 2} guide
               </div>
             )}
           </div>
