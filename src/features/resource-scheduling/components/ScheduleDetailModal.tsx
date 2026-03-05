@@ -320,6 +320,7 @@ export function ScheduleDetailModal({
             isOpen={showManifest}
             onClose={() => setShowManifest(false)}
             resourceScheduleId={schedule.id}
+            tripId={schedule.trip_id}
             busPlateNumber={schedule.buses?.plate_number}
             busModel={schedule.buses?.model}
             busCapacity={schedule.buses?.capacity}

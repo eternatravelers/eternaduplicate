@@ -170,8 +170,10 @@ function BusManifestCard({ schedule, drivers, tourLeaders, hasMultipleBuses, isE
   const linkedLeaders = tourLeaders.filter(l => l.linked_bus_schedule_id === schedule.id)
   const unlinkedDrivers = drivers.filter(d => !d.linked_bus_schedule_id)
   const unlinkedLeaders = tourLeaders.filter(l => !l.linked_bus_schedule_id)
-  const busDrivers = linkedDrivers.length > 0 ? linkedDrivers : (!hasMultipleBuses ? unlinkedDrivers : [])
-  const busLeaders = linkedLeaders.length > 0 ? linkedLeaders : (!hasMultipleBuses ? unlinkedLeaders : [])
+  const busDrivers = linkedDrivers.length > 0 ? linkedDrivers : unlinkedDrivers
+  const busLeaders = linkedLeaders.length > 0 ? linkedLeaders : unlinkedLeaders
+  const isUsingUnlinkedDrivers = linkedDrivers.length === 0 && unlinkedDrivers.length > 0
+  const isUsingUnlinkedLeaders = linkedLeaders.length === 0 && unlinkedLeaders.length > 0
   const hasNoCrew = busDrivers.length === 0 && busLeaders.length === 0
   const { assignments, loading: assignmentsLoading } = useBusPassengerAssignments(isExpanded ? schedule.id : null)
   const { stops, loading: stopsLoading } = useBusRouteStops(isExpanded ? schedule.id : null)
@@ -225,28 +227,20 @@ function BusManifestCard({ schedule, drivers, tourLeaders, hasMultipleBuses, isE
           </div>
         </div>
         <div className="flex items-center gap-3">
-          {hasMultipleBuses && (
-            <div className="hidden sm:flex items-center gap-1.5">
-              {busDrivers.length > 0 && (
-                <div className="flex items-center gap-1 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5 text-xs text-amber-700">
-                  <UserCircle className="h-3 w-3" />
-                  {busDrivers.length}
-                </div>
-              )}
-              {busLeaders.length > 0 && (
-                <div className="flex items-center gap-1 bg-teal-50 border border-teal-200 rounded-full px-2 py-0.5 text-xs text-teal-700">
-                  <Briefcase className="h-3 w-3" />
-                  {busLeaders.length}
-                </div>
-              )}
-              {hasNoCrew && (
-                <div className="flex items-center gap-1 bg-gray-100 border border-gray-200 rounded-full px-2 py-0.5 text-xs text-gray-400">
-                  <UserCircle className="h-3 w-3" />
-                  No crew
-                </div>
-              )}
-            </div>
-          )}
+          <div className="hidden sm:flex items-center gap-1.5">
+            {busDrivers.length > 0 && (
+              <div className="flex items-center gap-1 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5 text-xs text-amber-700">
+                <UserCircle className="h-3 w-3" />
+                {busDrivers.length}
+              </div>
+            )}
+            {busLeaders.length > 0 && (
+              <div className="flex items-center gap-1 bg-teal-50 border border-teal-200 rounded-full px-2 py-0.5 text-xs text-teal-700">
+                <Briefcase className="h-3 w-3" />
+                {busLeaders.length}
+              </div>
+            )}
+          </div>
           <div className="text-right">
             <div className="text-sm font-semibold text-gray-700">
               {isExpanded ? assignments.length : schedule.participant_count || 0}
@@ -270,7 +264,7 @@ function BusManifestCard({ schedule, drivers, tourLeaders, hasMultipleBuses, isE
           ) : (
             <div className="p-4 space-y-4">
               {/* Crew for this bus */}
-              {!hasNoCrew ? (
+              {!hasNoCrew && (
                 <div className="flex flex-wrap gap-2 items-center">
                   <span className="text-xs text-gray-500">Crew:</span>
                   {busDrivers.map(d => (
@@ -278,6 +272,9 @@ function BusManifestCard({ schedule, drivers, tourLeaders, hasMultipleBuses, isE
                       <UserCircle className="h-3 w-3 text-amber-600" />
                       <span className="text-xs font-medium text-amber-800">{d.drivers?.name || '-'}</span>
                       <Badge className="bg-amber-100 text-amber-600 border-0 text-xs px-1 py-0 h-4">Driver</Badge>
+                      {isUsingUnlinkedDrivers && hasMultipleBuses && (
+                        <Badge className="bg-gray-100 text-gray-500 border-0 text-xs px-1 py-0 h-4">Crew Trip</Badge>
+                      )}
                     </div>
                   ))}
                   {busLeaders.map(l => (
@@ -285,15 +282,13 @@ function BusManifestCard({ schedule, drivers, tourLeaders, hasMultipleBuses, isE
                       <Briefcase className="h-3 w-3 text-teal-600" />
                       <span className="text-xs font-medium text-teal-800">{l.tour_leaders?.name || '-'}</span>
                       <Badge className="bg-teal-100 text-teal-600 border-0 text-xs px-1 py-0 h-4">Guide</Badge>
+                      {isUsingUnlinkedLeaders && hasMultipleBuses && (
+                        <Badge className="bg-gray-100 text-gray-500 border-0 text-xs px-1 py-0 h-4">Crew Trip</Badge>
+                      )}
                     </div>
                   ))}
                 </div>
-              ) : hasMultipleBuses ? (
-                <div className="flex items-center gap-2 text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-                  <UserCircle className="h-3.5 w-3.5 flex-shrink-0" />
-                  Crew belum di-assign ke bus ini. Assign driver/tour leader di halaman Resource Scheduling.
-                </div>
-              ) : null}
+              )}
 
               {assignments.length === 0 ? (
                 <div className="py-6 text-center text-gray-400 text-sm">

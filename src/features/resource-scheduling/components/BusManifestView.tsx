@@ -2,14 +2,16 @@ import React from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Bus, MapPin, Clock, Users, Printer, Route } from 'lucide-react'
+import { Bus, MapPin, Clock, Users, Printer, Route, CircleUser as UserCircle, Briefcase, CreditCard } from 'lucide-react'
 import { useBusPassengerAssignments } from '@/hooks/useBusPassengerAssignments'
 import { useBusRouteStops } from '@/hooks/useBusRouteStops'
+import { useResourceSchedules } from '@/hooks/useResourceSchedules'
 
 interface BusManifestViewProps {
   isOpen: boolean
   onClose: () => void
   resourceScheduleId: string
+  tripId?: string
   busPlateNumber?: string
   busModel?: string
   busCapacity?: number
@@ -21,6 +23,7 @@ export function BusManifestView({
   isOpen,
   onClose,
   resourceScheduleId,
+  tripId,
   busPlateNumber,
   busModel,
   busCapacity,
@@ -29,6 +32,17 @@ export function BusManifestView({
 }: BusManifestViewProps) {
   const { assignments, loading: assignmentsLoading, refetch: refetchAssignments } = useBusPassengerAssignments(resourceScheduleId)
   const { stops, loading: stopsLoading, refetch: refetchStops } = useBusRouteStops(resourceScheduleId)
+  const { schedules: driverSchedules } = useResourceSchedules(tripId ? { tripId, resourceType: 'driver' } : undefined)
+  const { schedules: leaderSchedules } = useResourceSchedules(tripId ? { tripId, resourceType: 'tour_leader' } : undefined)
+
+  const linkedDrivers = driverSchedules.filter(d => d.linked_bus_schedule_id === resourceScheduleId)
+  const linkedLeaders = leaderSchedules.filter(l => l.linked_bus_schedule_id === resourceScheduleId)
+  const unlinkedDrivers = driverSchedules.filter(d => !d.linked_bus_schedule_id)
+  const unlinkedLeaders = leaderSchedules.filter(l => !l.linked_bus_schedule_id)
+  const busDrivers = linkedDrivers.length > 0 ? linkedDrivers : unlinkedDrivers
+  const busLeaders = linkedLeaders.length > 0 ? linkedLeaders : unlinkedLeaders
+  const isUsingUnlinkedDrivers = linkedDrivers.length === 0 && unlinkedDrivers.length > 0
+  const isUsingUnlinkedLeaders = linkedLeaders.length === 0 && unlinkedLeaders.length > 0
 
   React.useEffect(() => {
     if (isOpen && resourceScheduleId) {
@@ -121,6 +135,56 @@ export function BusManifestView({
               </div>
             </div>
           </div>
+
+          {/* Crew Section */}
+          {(busDrivers.length > 0 || busLeaders.length > 0) && (
+            <div className="border rounded-lg p-3">
+              <div className="flex items-center gap-2 mb-3">
+                <UserCircle className="h-4 w-4 text-amber-600" />
+                <span className="font-semibold text-sm text-gray-700">Crew Bus</span>
+                {(isUsingUnlinkedDrivers || isUsingUnlinkedLeaders) && (
+                  <Badge variant="outline" className="text-xs text-gray-500 border-gray-300">Crew Umum Trip</Badge>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {busDrivers.map(d => (
+                  <div key={d.id} className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                    <div className="w-7 h-7 bg-amber-100 rounded-md flex items-center justify-center flex-shrink-0">
+                      <UserCircle className="h-4 w-4 text-amber-700" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-gray-800">{d.drivers?.name || '-'}</div>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <Badge className="bg-amber-100 text-amber-700 border-amber-200 text-xs px-1.5 py-0">Driver</Badge>
+                        {d.drivers?.license_number && (
+                          <div className="flex items-center gap-1 text-xs text-gray-500">
+                            <CreditCard className="h-3 w-3" />
+                            {d.drivers.license_number}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {busLeaders.map(l => (
+                  <div key={l.id} className="flex items-center gap-2 bg-teal-50 border border-teal-200 rounded-lg px-3 py-2">
+                    <div className="w-7 h-7 bg-teal-100 rounded-md flex items-center justify-center flex-shrink-0">
+                      <Briefcase className="h-4 w-4 text-teal-700" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-gray-800">{l.tour_leaders?.name || '-'}</div>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <Badge className="bg-teal-100 text-teal-700 border-teal-200 text-xs px-1.5 py-0">Tour Leader</Badge>
+                        {l.tour_leaders?.experience_years != null && (
+                          <span className="text-xs text-gray-500">{l.tour_leaders.experience_years} thn</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Route Summary */}
           {stops.length > 0 && (
