@@ -5,7 +5,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Badge } from '@/components/ui/badge'
 import { Plus, Trash2, GripVertical } from 'lucide-react'
 import { useCreateChecklistTemplate, useUpdateChecklistTemplate } from '@/hooks/useChecklistTemplates'
 
@@ -124,15 +123,6 @@ export function ChecklistTemplateFormModal({
     }
   }
 
-  const getPriorityBadge = (priority: string) => {
-    const colors = {
-      high: 'bg-red-100 text-red-800',
-      medium: 'bg-yellow-100 text-yellow-800',
-      low: 'bg-green-100 text-green-800'
-    }
-    return <Badge className={colors[priority as keyof typeof colors]}>{priority}</Badge>
-  }
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -190,98 +180,111 @@ export function ChecklistTemplateFormModal({
             </div>
 
             <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
-              {items.map((item, index) => (
-                <div key={item.id} className="border rounded-lg p-4 space-y-3 bg-gray-50">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-2">
-                      <GripVertical className="h-4 w-4 text-gray-400" />
-                      <span className="text-sm font-medium text-gray-600">Item #{index + 1}</span>
+              {items.map((item, index) => {
+                const priorityStyles = {
+                  high: 'border-l-red-400 bg-red-50/40',
+                  medium: 'border-l-yellow-400 bg-yellow-50/40',
+                  low: 'border-l-green-400 bg-green-50/40',
+                }
+                return (
+                  <div key={item.id} className={`border border-l-4 rounded-lg p-4 space-y-3 ${priorityStyles[item.priority]}`}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <GripVertical className="h-4 w-4 text-gray-400" />
+                        <span className="text-sm font-semibold text-gray-700">Item #{index + 1}</span>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 p-0 hover:bg-red-50 hover:text-red-600"
+                        onClick={() => handleRemoveItem(item.id)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
                     </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleRemoveItem(item.id)}
-                    >
-                      <Trash2 className="h-4 w-4 text-red-600" />
-                    </Button>
-                  </div>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-2">
-                      <Label>Judul *</Label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-medium text-gray-600">Judul *</Label>
+                        <Input
+                          value={item.title}
+                          onChange={(e) => handleItemChange(item.id, 'title', e.target.value)}
+                          placeholder="e.g., Konfirmasi Peserta"
+                          className="h-8 text-sm bg-white"
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-medium text-gray-600">Kategori</Label>
+                        <Select
+                          value={item.category}
+                          onValueChange={(value) => handleItemChange(item.id, 'category', value)}
+                        >
+                          <SelectTrigger className="h-8 text-sm bg-white">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="pre-departure">Pre-Departure</SelectItem>
+                            <SelectItem value="during-trip">During Trip</SelectItem>
+                            <SelectItem value="post-trip">Post-Trip</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-medium text-gray-600">Deskripsi</Label>
                       <Input
-                        value={item.title}
-                        onChange={(e) => handleItemChange(item.id, 'title', e.target.value)}
-                        placeholder="e.g., Konfirmasi Peserta"
-                        required
+                        value={item.description}
+                        onChange={(e) => handleItemChange(item.id, 'description', e.target.value)}
+                        placeholder="Deskripsi singkat..."
+                        className="h-8 text-sm bg-white"
                       />
                     </div>
 
-                    <div className="space-y-2">
-                      <Label>Kategori</Label>
-                      <Select
-                        value={item.category}
-                        onValueChange={(value) => handleItemChange(item.id, 'category', value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pre-departure">Pre-Departure</SelectItem>
-                          <SelectItem value="during-trip">During Trip</SelectItem>
-                          <SelectItem value="post-trip">Post-Trip</SelectItem>
-                        </SelectContent>
-                      </Select>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-medium text-gray-600">Prioritas</Label>
+                        <Select
+                          value={item.priority}
+                          onValueChange={(value) => handleItemChange(item.id, 'priority', value)}
+                        >
+                          <SelectTrigger className="h-8 text-sm bg-white">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="high">High</SelectItem>
+                            <SelectItem value="medium">Medium</SelectItem>
+                            <SelectItem value="low">Low</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-medium text-gray-600">Hari Sebelum Keberangkatan</Label>
+                        <Input
+                          type="number"
+                          value={item.days_before_departure || ''}
+                          onChange={(e) => handleItemChange(item.id, 'days_before_departure',
+                            e.target.value ? parseInt(e.target.value) : null
+                          )}
+                          placeholder="e.g., 7"
+                          className="h-8 text-sm bg-white"
+                          min="0"
+                        />
+                      </div>
                     </div>
                   </div>
-
-                  <div className="space-y-2">
-                    <Label>Deskripsi</Label>
-                    <Input
-                      value={item.description}
-                      onChange={(e) => handleItemChange(item.id, 'description', e.target.value)}
-                      placeholder="Deskripsi singkat..."
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-2">
-                      <Label>Prioritas</Label>
-                      <Select
-                        value={item.priority}
-                        onValueChange={(value) => handleItemChange(item.id, 'priority', value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="high">High</SelectItem>
-                          <SelectItem value="medium">Medium</SelectItem>
-                          <SelectItem value="low">Low</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>Hari Sebelum Keberangkatan</Label>
-                      <Input
-                        type="number"
-                        value={item.days_before_departure || ''}
-                        onChange={(e) => handleItemChange(item.id, 'days_before_departure',
-                          e.target.value ? parseInt(e.target.value) : null
-                        )}
-                        placeholder="e.g., 7"
-                        min="0"
-                      />
-                    </div>
-                  </div>
-                </div>
-              ))}
+                )
+              })}
 
               {items.length === 0 && (
-                <div className="text-center py-8 text-gray-500 border-2 border-dashed rounded-lg">
-                  <p className="text-sm">Belum ada item. Klik "Tambah Item" untuk memulai.</p>
+                <div className="text-center py-10 text-gray-400 border-2 border-dashed border-gray-200 rounded-lg bg-gray-50/50">
+                  <Plus className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+                  <p className="text-sm font-medium">Belum ada item</p>
+                  <p className="text-xs mt-1">Klik "Tambah Item" untuk memulai</p>
                 </div>
               )}
             </div>
