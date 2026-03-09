@@ -27,7 +27,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Plus, Search, CheckSquare, FileText, Copy, Edit2, Trash2, MoreVertical, ListChecks } from 'lucide-react'
+import { Plus, Search, CheckSquare, FileText, Copy, CreditCard as Edit2, Trash2, MoreVertical, ListChecks } from 'lucide-react'
 import {
   useChecklistTemplates,
   useDeleteChecklistTemplate,
