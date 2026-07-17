@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { MapPin, Activity, Calendar, Users, Monitor, FileText, Phone, Search, Filter, Clock, AlertTriangle, Bus } from 'lucide-react'
+import { MapPin, Activity, Calendar, Users, Monitor, FileText, Phone, Search, Filter, Clock, AlertTriangle } from 'lucide-react'
 import { useTrips } from '@/hooks/useTrips'
 import { TripMonitoringCard } from '../components/TripMonitoringCard'
 import { EnhancedChecklistManager } from '../components/EnhancedChecklistManager'
@@ -13,15 +13,12 @@ import { DocumentManager } from '../components/DocumentManager'
 import { EmergencyContactsManager } from '../components/EmergencyContactsManager'
 import { AttentionRequiredSection } from '../components/AttentionRequiredSection'
 import { TimelineView } from '../components/TimelineView'
-import { TripParticipantsTable } from '../components/TripParticipantsTable'
-import { TripBusManifestPanel } from '../components/TripBusManifestPanel'
 import { formatShortDate } from '@/lib/utils'
 
 export function OperationsPage() {
   const [activeTab, setActiveTab] = useState('monitoring')
   const [selectedTrip, setSelectedTrip] = useState<any>(null)
   const [showTripDetails, setShowTripDetails] = useState(false)
-  const [detailTab, setDetailTab] = useState('checklist')
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [readinessFilter, setReadinessFilter] = useState('all')
@@ -284,8 +281,8 @@ export function OperationsPage() {
       </Tabs>
 
       {/* Trip Details Modal */}
-      <Dialog open={showTripDetails} onOpenChange={(open) => { setShowTripDetails(open); if (!open) setDetailTab('checklist') }}>
-        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+      <Dialog open={showTripDetails} onOpenChange={setShowTripDetails}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center space-x-2">
               <Monitor className="h-5 w-5" />
@@ -293,45 +290,12 @@ export function OperationsPage() {
             </DialogTitle>
           </DialogHeader>
           {selectedTrip && (
-            <div className="mt-2">
-              <Tabs value={detailTab} onValueChange={setDetailTab} className="space-y-4">
-                <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="checklist">
-                    <FileText className="h-4 w-4 mr-2" />
-                    Checklist
-                  </TabsTrigger>
-                  <TabsTrigger value="peserta">
-                    <Users className="h-4 w-4 mr-2" />
-                    Peserta
-                  </TabsTrigger>
-                  <TabsTrigger value="manifest">
-                    <Bus className="h-4 w-4 mr-2" />
-                    Manifest Bus
-                  </TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="checklist">
-                  <EnhancedChecklistManager
-                    tripId={selectedTrip.id}
-                    tripName={selectedTrip.name}
-                    tripDepartureDate={selectedTrip.departure_date}
-                  />
-                </TabsContent>
-
-                <TabsContent value="peserta">
-                  <TripParticipantsTable
-                    tripId={selectedTrip.id}
-                    tripName={selectedTrip.name}
-                  />
-                </TabsContent>
-
-                <TabsContent value="manifest">
-                  <TripBusManifestPanel
-                    tripId={selectedTrip.id}
-                    tripName={selectedTrip.name}
-                  />
-                </TabsContent>
-              </Tabs>
+            <div className="mt-4">
+              <EnhancedChecklistManager
+                tripId={selectedTrip.id}
+                tripName={selectedTrip.name}
+                tripDepartureDate={selectedTrip.departure_date}
+              />
             </div>
           )}
         </DialogContent>

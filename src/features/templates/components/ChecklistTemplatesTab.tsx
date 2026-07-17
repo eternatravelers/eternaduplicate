@@ -27,7 +27,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Plus, Search, CheckSquare, FileText, Copy, CreditCard as Edit2, Trash2, MoreVertical, ListChecks } from 'lucide-react'
+import { Plus, Search, CheckSquare, FileText, Copy, Edit2, Trash2, MoreVertical, ListChecks } from 'lucide-react'
 import {
   useChecklistTemplates,
   useDeleteChecklistTemplate,
@@ -97,7 +97,7 @@ export function ChecklistTemplatesTab() {
   const getCategoryBadge = (category: string | null) => {
     const categoryMap: Record<string, { label: string; color: string }> = {
       general: { label: 'Umum', color: 'bg-blue-100 text-blue-800' },
-      international: { label: 'International', color: 'bg-sky-100 text-sky-800' },
+      international: { label: 'International', color: 'bg-purple-100 text-purple-800' },
       domestic: { label: 'Domestik', color: 'bg-green-100 text-green-800' },
       adventure: { label: 'Adventure', color: 'bg-orange-100 text-orange-800' }
     }
@@ -170,7 +170,7 @@ export function ChecklistTemplatesTab() {
             <CardTitle className="text-sm font-medium text-gray-600">
               Paling Sering Digunakan
             </CardTitle>
-            <Copy className="h-4 w-4 text-teal-600" />
+            <Copy className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{mostUsedTemplate?.usage_count || 0}x</div>

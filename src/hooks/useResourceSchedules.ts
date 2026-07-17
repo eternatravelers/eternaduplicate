@@ -16,7 +16,6 @@ interface ResourceSchedule {
   created_by?: string
   created_at: string
   updated_at: string
-  linked_bus_schedule_id?: string | null
   trips?: {
     name: string
     departure_date: string
