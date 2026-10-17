@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertCircle, CheckCircle2, Clock, AlertTriangle } from 'lucide-react'
-import { useCheckResourceConflict } from '@/hooks/useResourceSchedules'
+import { useCheckResourceConflict, useResourceSchedules } from '@/hooks/useResourceSchedules'
 import { Badge } from '@/components/ui/badge'
 import { TimePicker } from '@/components/ui/time-picker'
 
@@ -43,7 +43,8 @@ export function ResourceScheduleForm({
     return_datetime: initialData?.return_datetime || '',
     status: initialData?.status || 'scheduled',
     participant_count: initialData?.participant_count || 0,
-    notes: initialData?.notes || ''
+    notes: initialData?.notes || '',
+    linked_bus_schedule_id: initialData?.linked_bus_schedule_id || ''
   })
 
   const [validationError, setValidationError] = useState<string | null>(null)
@@ -51,6 +52,13 @@ export function ResourceScheduleForm({
   const [submitting, setSubmitting] = useState(false)
 
   const { checkConflict, checking } = useCheckResourceConflict()
+
+  const isCrewType = formData.resource_type === 'driver' || formData.resource_type === 'tour_leader'
+  const { schedules: tripBusSchedules } = useResourceSchedules(
+    isCrewType && formData.trip_id
+      ? { tripId: formData.trip_id, resourceType: 'bus' }
+      : undefined
+  )
 
   const selectedTrip = trips.find(t => t.id === formData.trip_id)
   const availableResources = formData.resource_type === 'bus' ? resources.buses :
@@ -61,14 +69,18 @@ export function ResourceScheduleForm({
     if (initialData) {
       const formatDatetime = (dt: string) => {
         if (!dt) return ''
-        dt = dt.replace(/Z$/, '').replace(/\.\d{3}$/, '')
 
-        if (dt.includes('T')) {
-          const [date, time] = dt.split('T')
-          const timeStr = time.substring(0, 5)
-          return `${date}T${timeStr}:00`
-        }
-        return `${dt}T06:00:00`
+        // Parse the datetime string and convert to local timezone
+        const date = new Date(dt)
+
+        // Format as YYYY-MM-DDTHH:mm:ss in local timezone
+        const year = date.getFullYear()
+        const month = String(date.getMonth() + 1).padStart(2, '0')
+        const day = String(date.getDate()).padStart(2, '0')
+        const hours = String(date.getHours()).padStart(2, '0')
+        const minutes = String(date.getMinutes()).padStart(2, '0')
+
+        return `${year}-${month}-${day}T${hours}:${minutes}:00`
       }
 
       setFormData({
@@ -80,7 +92,8 @@ export function ResourceScheduleForm({
         return_datetime: formatDatetime(initialData.return_datetime),
         status: initialData.status || 'scheduled',
         participant_count: initialData.participant_count || 0,
-        notes: initialData.notes || ''
+        notes: initialData.notes || '',
+        linked_bus_schedule_id: initialData.linked_bus_schedule_id || ''
       })
     }
   }, [initialData])
@@ -136,7 +149,24 @@ export function ResourceScheduleForm({
 
     try {
       setSubmitting(true)
-      await onSubmit(formData)
+
+      // Convert local datetime to UTC by creating a proper ISO string with timezone
+      const convertToUTC = (localDateTimeString: string) => {
+        // Parse as local time
+        const localDate = new Date(localDateTimeString)
+        // Return ISO string which will be in UTC
+        return localDate.toISOString()
+      }
+
+      // Prepare data with UTC timestamps
+      const dataToSubmit = {
+        ...formData,
+        pickup_datetime: convertToUTC(formData.pickup_datetime),
+        return_datetime: convertToUTC(formData.return_datetime),
+        linked_bus_schedule_id: formData.linked_bus_schedule_id || null
+      }
+
+      await onSubmit(dataToSubmit)
       // Only close and reset if successful
       onClose()
       setFormData({
@@ -148,7 +178,8 @@ export function ResourceScheduleForm({
         return_datetime: '',
         status: 'scheduled',
         participant_count: 0,
-        notes: ''
+        notes: '',
+        linked_bus_schedule_id: ''
       })
       setConflictInfo(null)
       setValidationError(null)
@@ -167,6 +198,7 @@ export function ResourceScheduleForm({
       setFormData(prev => ({
         ...prev,
         trip_id: tripId,
+        linked_bus_schedule_id: '',
         pickup_datetime: prev.pickup_datetime || `${trip.departure_date}T06:00:00`,
         return_datetime: prev.return_datetime || `${trip.return_date}T18:00:00`
       }))
@@ -284,6 +316,40 @@ export function ResourceScheduleForm({
             </Alert>
           )}
 
+          {isCrewType && formData.trip_id && tripBusSchedules.length > 0 && (
+            <div className="space-y-2">
+              <Label htmlFor="linked_bus_schedule_id">
+                Assign ke Bus
+                {tripBusSchedules.length > 1 && (
+                  <span className="ml-2 text-xs font-normal text-blue-600">
+                    {tripBusSchedules.length} bus tersedia dalam trip ini
+                  </span>
+                )}
+              </Label>
+              <Select
+                value={formData.linked_bus_schedule_id || 'none'}
+                onValueChange={(value) => setFormData({ ...formData, linked_bus_schedule_id: value === 'none' ? '' : value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih bus (opsional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Tidak spesifik (crew trip umum)</SelectItem>
+                  {tripBusSchedules.map((bs) => (
+                    <SelectItem key={bs.id} value={bs.id}>
+                      {bs.buses?.plate_number || 'Bus'}
+                      {bs.buses?.model ? ` - ${bs.buses.model}` : ''}
+                      {bs.buses?.capacity ? ` (${bs.buses.capacity} kursi)` : ''}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-gray-500">
+                Jika tidak dipilih, crew akan ditampilkan sebagai crew trip umum dan muncul di semua bus.
+              </p>
+            </div>
+          )}
+
           <div className="space-y-2">
             <Label htmlFor="meeting_point_id">Meeting Point (Opsional)</Label>
             <Select
@@ -305,7 +371,7 @@ export function ResourceScheduleForm({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-3">
+            <div className="space-y-2">
               <Label>Waktu Penjemputan *</Label>
               <Input
                 type="date"
@@ -313,20 +379,31 @@ export function ResourceScheduleForm({
                 onChange={(e) => {
                   const date = e.target.value
                   const currentTime = formData.pickup_datetime?.substring(11, 16) || '06:00'
-                  setFormData({ ...formData, pickup_datetime: `${date}T${currentTime}:00` })
+
+                  // Create date in local timezone and format as ISO string WITHOUT timezone conversion
+                  const localDateTime = `${date}T${currentTime}:00`
+                  setFormData({ ...formData, pickup_datetime: localDateTime })
                 }}
                 required
               />
               <TimePicker
+                label="Jam Penjemputan"
                 value={formData.pickup_datetime?.substring(11, 16) || '06:00'}
                 onChange={(time) => {
-                  const date = formData.pickup_datetime?.substring(0, 10) || new Date().toISOString().substring(0, 10)
-                  setFormData({ ...formData, pickup_datetime: `${date}T${time}:00` })
+                  const today = new Date()
+                  const year = today.getFullYear()
+                  const month = String(today.getMonth() + 1).padStart(2, '0')
+                  const day = String(today.getDate()).padStart(2, '0')
+                  const date = formData.pickup_datetime?.substring(0, 10) || `${year}-${month}-${day}`
+
+                  // Create date in local timezone
+                  const localDateTime = `${date}T${time}:00`
+                  setFormData({ ...formData, pickup_datetime: localDateTime })
                 }}
               />
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2">
               <Label>Waktu Kepulangan *</Label>
               <Input
                 type="date"
@@ -334,15 +411,26 @@ export function ResourceScheduleForm({
                 onChange={(e) => {
                   const date = e.target.value
                   const currentTime = formData.return_datetime?.substring(11, 16) || '18:00'
-                  setFormData({ ...formData, return_datetime: `${date}T${currentTime}:00` })
+
+                  // Create date in local timezone
+                  const localDateTime = `${date}T${currentTime}:00`
+                  setFormData({ ...formData, return_datetime: localDateTime })
                 }}
                 required
               />
               <TimePicker
+                label="Jam Kepulangan"
                 value={formData.return_datetime?.substring(11, 16) || '18:00'}
                 onChange={(time) => {
-                  const date = formData.return_datetime?.substring(0, 10) || new Date().toISOString().substring(0, 10)
-                  setFormData({ ...formData, return_datetime: `${date}T${time}:00` })
+                  const today = new Date()
+                  const year = today.getFullYear()
+                  const month = String(today.getMonth() + 1).padStart(2, '0')
+                  const day = String(today.getDate()).padStart(2, '0')
+                  const date = formData.return_datetime?.substring(0, 10) || `${year}-${month}-${day}`
+
+                  // Create date in local timezone
+                  const localDateTime = `${date}T${time}:00`
+                  setFormData({ ...formData, return_datetime: localDateTime })
                 }}
               />
             </div>

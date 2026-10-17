@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Plus, Calendar, Filter, Bus, UserCheck, Users, AlertCircle, Clock, CheckCircle2, Zap } from 'lucide-react'
+import { Plus, Calendar, Filter, Bus, UserCheck, Users, AlertCircle, Clock, CheckCircle2, Zap, Search } from 'lucide-react'
 import { useResourceSchedules, useCreateResourceSchedule, useUpdateResourceSchedule, useDeleteResourceSchedule } from '@/hooks/useResourceSchedules'
 import { useTrips } from '@/hooks/useTrips'
 import { useBuses } from '@/hooks/useBuses'
@@ -35,6 +35,7 @@ export function ResourceSchedulingPage() {
     endDate: format(addDays(new Date(), 365), 'yyyy-MM-dd')
   })
   const [viewMode, setViewMode] = useState<'date' | 'resource' | 'trip'>('date')
+  const [searchQuery, setSearchQuery] = useState('')
   const [error, setError] = useState<string | null>(null)
 
   const { schedules, loading: schedulesLoading, refetch: refetchSchedules } = useResourceSchedules(filters)
@@ -78,8 +79,22 @@ export function ResourceSchedulingPage() {
       filtered = filtered.filter(s => s.resource_type === activeTab)
     }
 
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim()
+      filtered = filtered.filter(s => {
+        const resourceName =
+          s.buses?.plate_number?.toLowerCase() ||
+          s.buses?.model?.toLowerCase() ||
+          s.drivers?.name?.toLowerCase() ||
+          s.tour_leaders?.name?.toLowerCase() || ''
+        const tripName = s.trips?.name?.toLowerCase() || ''
+        const meetingPoint = s.meeting_point_name?.toLowerCase() || ''
+        return resourceName.includes(q) || tripName.includes(q) || meetingPoint.includes(q)
+      })
+    }
+
     return filtered
-  }, [schedules, activeTab])
+  }, [schedules, activeTab, searchQuery])
 
   const handleCreateSchedule = async (data: any) => {
     try {
@@ -319,6 +334,17 @@ export function ResourceSchedulingPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
+          <div className="mb-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Cari nama bus, plat, driver, tour leader, atau trip..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
             <div className="space-y-2">
               <Label>Tanggal Mulai</Label>

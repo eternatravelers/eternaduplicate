@@ -1,10 +1,16 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
-import { Bus, UserCheck, Users, MapPin, Clock, Calendar, FileText } from 'lucide-react'
+import { Bus, UserCheck, Users, MapPin, Clock, Calendar, FileText, Route, ClipboardList } from 'lucide-react'
 import { format } from 'date-fns'
 import { id as idLocale } from 'date-fns/locale'
+import { useBusRouteStops } from '@/hooks/useBusRouteStops'
+import { useBusPassengerAssignments } from '@/hooks/useBusPassengerAssignments'
+import { BusRouteStopsManager } from './BusRouteStopsManager'
+import { SeatAssignmentModal } from './SeatAssignmentModal'
+import { BusManifestView } from './BusManifestView'
 
 interface ScheduleDetailModalProps {
   isOpen: boolean
@@ -17,6 +23,15 @@ export function ScheduleDetailModal({
   onClose,
   schedule
 }: ScheduleDetailModalProps) {
+  const [showRouteManager, setShowRouteManager] = useState(false)
+  const [showSeatAssignment, setShowSeatAssignment] = useState(false)
+  const [showManifest, setShowManifest] = useState(false)
+
+  const isBus = schedule?.resource_type === 'bus'
+
+  const { stops, refetch: refetchStops } = useBusRouteStops(isBus && isOpen ? schedule?.id : null)
+  const { assignments, refetch: refetchAssignments } = useBusPassengerAssignments(isBus && isOpen ? schedule?.id : null)
+
   if (!schedule) return null
 
   const getStatusColor = (status: string) => {
@@ -34,7 +49,7 @@ export function ScheduleDetailModal({
     switch (type) {
       case 'bus': return <Bus className="h-5 w-5 text-blue-600" />
       case 'driver': return <UserCheck className="h-5 w-5 text-green-600" />
-      case 'tour_leader': return <Users className="h-5 w-5 text-purple-600" />
+      case 'tour_leader': return <Users className="h-5 w-5 text-orange-600" />
       default: return null
     }
   }
@@ -84,141 +99,236 @@ export function ScheduleDetailModal({
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center space-x-2">
-            {getResourceIcon(schedule.resource_type)}
-            <span>Detail Jadwal Resource</span>
-          </DialogTitle>
-        </DialogHeader>
+    <>
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              {getResourceIcon(schedule.resource_type)}
+              <span>Detail Jadwal Resource</span>
+            </DialogTitle>
+          </DialogHeader>
 
-        <div className="space-y-6 mt-4">
-          {/* Status */}
-          <div>
-            <Label className="text-gray-500 text-sm">Status</Label>
-            <div className="mt-1">
-              <Badge className={getStatusColor(schedule.status)}>
-                {schedule.status}
-              </Badge>
-            </div>
-          </div>
-
-          {/* Resource Info */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-6 mt-4">
             <div>
-              <Label className="text-gray-500 text-sm">Tipe Resource</Label>
-              <div className="mt-1 flex items-center space-x-2">
-                {getResourceIcon(schedule.resource_type)}
-                <span className="font-medium">{getResourceLabel(schedule.resource_type)}</span>
+              <Label className="text-gray-500 text-sm">Status</Label>
+              <div className="mt-1">
+                <Badge className={getStatusColor(schedule.status)}>
+                  {schedule.status}
+                </Badge>
               </div>
             </div>
-            <div>
-              <Label className="text-gray-500 text-sm">Nama Resource</Label>
-              <div className="mt-1 font-medium">{getResourceName()}</div>
-              {getResourceDetails()}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label className="text-gray-500 text-sm">Tipe Resource</Label>
+                <div className="mt-1 flex items-center space-x-2">
+                  {getResourceIcon(schedule.resource_type)}
+                  <span className="font-medium">{getResourceLabel(schedule.resource_type)}</span>
+                </div>
+              </div>
+              <div>
+                <Label className="text-gray-500 text-sm">Nama Resource</Label>
+                <div className="mt-1 font-medium">{getResourceName()}</div>
+                {getResourceDetails()}
+              </div>
             </div>
-          </div>
 
-          {/* Trip Info */}
-          <div>
-            <Label className="text-gray-500 text-sm flex items-center space-x-1">
-              <MapPin className="h-4 w-4" />
-              <span>Trip</span>
-            </Label>
-            <div className="mt-1 font-medium">{schedule.trips?.name || 'N/A'}</div>
-          </div>
-
-          {/* Meeting Point */}
-          {schedule.meeting_point_name && (
             <div>
               <Label className="text-gray-500 text-sm flex items-center space-x-1">
                 <MapPin className="h-4 w-4" />
-                <span>Meeting Point</span>
+                <span>Trip</span>
               </Label>
-              <div className="mt-1 font-medium">{schedule.meeting_point_name}</div>
+              <div className="mt-1 font-medium">{schedule.trips?.name || 'N/A'}</div>
             </div>
-          )}
 
-          {/* Date & Time */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label className="text-gray-500 text-sm flex items-center space-x-1">
-                <Clock className="h-4 w-4" />
-                <span>Waktu Penjemputan</span>
-              </Label>
-              <div className="mt-1">
-                <div className="font-medium">
-                  {format(new Date(schedule.pickup_datetime), 'EEEE, dd MMMM yyyy', { locale: idLocale })}
+            {schedule.meeting_point_name && (
+              <div>
+                <Label className="text-gray-500 text-sm flex items-center space-x-1">
+                  <MapPin className="h-4 w-4" />
+                  <span>Meeting Point</span>
+                </Label>
+                <div className="mt-1 font-medium">{schedule.meeting_point_name}</div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label className="text-gray-500 text-sm flex items-center space-x-1">
+                  <Clock className="h-4 w-4" />
+                  <span>Waktu Penjemputan</span>
+                </Label>
+                <div className="mt-1">
+                  <div className="font-medium">
+                    {format(new Date(schedule.pickup_datetime), 'EEEE, dd MMMM yyyy', { locale: idLocale })}
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    Jam {format(new Date(schedule.pickup_datetime), 'HH:mm', { locale: idLocale })} WIB
+                  </div>
                 </div>
-                <div className="text-sm text-gray-600">
-                  Jam {format(new Date(schedule.pickup_datetime), 'HH:mm', { locale: idLocale })} WIB
+              </div>
+              <div>
+                <Label className="text-gray-500 text-sm flex items-center space-x-1">
+                  <Clock className="h-4 w-4" />
+                  <span>Waktu Kepulangan</span>
+                </Label>
+                <div className="mt-1">
+                  <div className="font-medium">
+                    {format(new Date(schedule.return_datetime), 'EEEE, dd MMMM yyyy', { locale: idLocale })}
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    Jam {format(new Date(schedule.return_datetime), 'HH:mm', { locale: idLocale })} WIB
+                  </div>
                 </div>
               </div>
             </div>
-            <div>
-              <Label className="text-gray-500 text-sm flex items-center space-x-1">
-                <Clock className="h-4 w-4" />
-                <span>Waktu Kepulangan</span>
-              </Label>
-              <div className="mt-1">
-                <div className="font-medium">
-                  {format(new Date(schedule.return_datetime), 'EEEE, dd MMMM yyyy', { locale: idLocale })}
+
+            {schedule.resource_type === 'bus' && (
+              <div>
+                <Label className="text-gray-500 text-sm flex items-center space-x-1">
+                  <Users className="h-4 w-4" />
+                  <span>Kapasitas Terisi</span>
+                </Label>
+                <div className="mt-1">
+                  <div className="font-medium">
+                    {assignments.length} / {schedule.buses?.capacity || 0} kursi
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    {schedule.buses?.capacity
+                      ? `${Math.round((assignments.length / schedule.buses.capacity) * 100)}% terisi`
+                      : '-'
+                    }
+                  </div>
                 </div>
-                <div className="text-sm text-gray-600">
-                  Jam {format(new Date(schedule.return_datetime), 'HH:mm', { locale: idLocale })} WIB
+              </div>
+            )}
+
+            {schedule.notes && (
+              <div>
+                <Label className="text-gray-500 text-sm flex items-center space-x-1">
+                  <FileText className="h-4 w-4" />
+                  <span>Catatan</span>
+                </Label>
+                <div className="mt-1 p-3 bg-gray-50 rounded-lg border">
+                  <p className="text-sm text-gray-700 whitespace-pre-wrap">{schedule.notes}</p>
                 </div>
+              </div>
+            )}
+
+            {/* Bus-specific: Route Summary */}
+            {isBus && stops.length > 0 && (
+              <div>
+                <Label className="text-gray-500 text-sm flex items-center space-x-1">
+                  <Route className="h-4 w-4" />
+                  <span>Rute Bus ({stops.length} stop)</span>
+                </Label>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {stops.map((stop, i) => (
+                    <div key={stop.id} className="flex items-center gap-1">
+                      <div className="flex items-center gap-1 bg-blue-50 border border-blue-200 rounded-full px-2 py-0.5 text-xs">
+                        <span className="w-4 h-4 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-xs">
+                          {stop.stop_order}
+                        </span>
+                        <span className="text-blue-800 font-medium">{stop.meeting_point_name}</span>
+                        {stop.arrival_time && <span className="text-blue-500">{stop.arrival_time}</span>}
+                      </div>
+                      {i < stops.length - 1 && <span className="text-gray-300 text-xs">&rarr;</span>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Bus Action Buttons */}
+            {isBus && (
+              <div className="border-t pt-4">
+                <Label className="text-gray-500 text-sm mb-3 block">Manajemen Bus</Label>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowRouteManager(true)}
+                    className="gap-2 text-blue-600 border-blue-200 hover:bg-blue-50"
+                  >
+                    <Route className="h-4 w-4" />
+                    {stops.length > 0 ? `Edit Rute (${stops.length} stop)` : 'Setup Rute'}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowSeatAssignment(true)}
+                    className="gap-2 text-green-600 border-green-200 hover:bg-green-50"
+                  >
+                    <Users className="h-4 w-4" />
+                    {assignments.length > 0 ? `Edit Penumpang (${assignments.length})` : 'Assign Penumpang'}
+                  </Button>
+                  {assignments.length > 0 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowManifest(true)}
+                      className="gap-2 text-gray-600 border-gray-200 hover:bg-gray-50"
+                    >
+                      <ClipboardList className="h-4 w-4" />
+                      Lihat Manifest
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-4 pt-4 border-t text-xs text-gray-500">
+              <div>
+                <div>Dibuat:</div>
+                <div>{format(new Date(schedule.created_at), 'dd MMM yyyy HH:mm', { locale: idLocale })}</div>
+              </div>
+              <div>
+                <div>Terakhir diubah:</div>
+                <div>{format(new Date(schedule.updated_at), 'dd MMM yyyy HH:mm', { locale: idLocale })}</div>
               </div>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
 
-          {/* Participant Count (for bus) */}
-          {schedule.resource_type === 'bus' && schedule.participant_count > 0 && (
-            <div>
-              <Label className="text-gray-500 text-sm flex items-center space-x-1">
-                <Users className="h-4 w-4" />
-                <span>Kapasitas Terisi</span>
-              </Label>
-              <div className="mt-1">
-                <div className="font-medium">
-                  {schedule.participant_count} / {schedule.buses?.capacity || 0} kursi
-                </div>
-                <div className="text-sm text-gray-600">
-                  {schedule.buses?.capacity
-                    ? `${Math.round((schedule.participant_count / schedule.buses.capacity) * 100)}% terisi`
-                    : '-'
-                  }
-                </div>
-              </div>
-            </div>
-          )}
+      {isBus && (
+        <>
+          <BusRouteStopsManager
+            isOpen={showRouteManager}
+            onClose={() => setShowRouteManager(false)}
+            resourceScheduleId={schedule.id}
+            busPlateNumber={schedule.buses?.plate_number}
+            tripName={schedule.trips?.name}
+            onSaved={() => refetchStops()}
+          />
 
-          {/* Notes */}
-          {schedule.notes && (
-            <div>
-              <Label className="text-gray-500 text-sm flex items-center space-x-1">
-                <FileText className="h-4 w-4" />
-                <span>Catatan</span>
-              </Label>
-              <div className="mt-1 p-3 bg-gray-50 rounded-lg border">
-                <p className="text-sm text-gray-700 whitespace-pre-wrap">{schedule.notes}</p>
-              </div>
-            </div>
-          )}
+          <SeatAssignmentModal
+            isOpen={showSeatAssignment}
+            onClose={() => setShowSeatAssignment(false)}
+            resourceScheduleId={schedule.id}
+            tripId={schedule.trip_id}
+            busPlateNumber={schedule.buses?.plate_number}
+            busCapacity={schedule.buses?.capacity}
+            tripName={schedule.trips?.name}
+            onSaved={() => refetchAssignments()}
+          />
 
-          {/* Metadata */}
-          <div className="grid grid-cols-2 gap-4 pt-4 border-t text-xs text-gray-500">
-            <div>
-              <div>Dibuat:</div>
-              <div>{format(new Date(schedule.created_at), 'dd MMM yyyy HH:mm', { locale: idLocale })}</div>
-            </div>
-            <div>
-              <div>Terakhir diubah:</div>
-              <div>{format(new Date(schedule.updated_at), 'dd MMM yyyy HH:mm', { locale: idLocale })}</div>
-            </div>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+          <BusManifestView
+            isOpen={showManifest}
+            onClose={() => setShowManifest(false)}
+            resourceScheduleId={schedule.id}
+            tripId={schedule.trip_id}
+            busPlateNumber={schedule.buses?.plate_number}
+            busModel={schedule.buses?.model}
+            busCapacity={schedule.buses?.capacity}
+            tripName={schedule.trips?.name}
+            pickupDatetime={schedule.pickup_datetime}
+          />
+        </>
+      )}
+    </>
   )
 }
